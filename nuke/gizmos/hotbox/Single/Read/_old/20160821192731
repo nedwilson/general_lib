@@ -1,0 +1,22 @@
+#----------------------------------------------------------------------------------------------------------
+#
+# AUTOMATICALLY GENERATED FILE TO BE USED BY W_HOTBOX
+#
+# NAME: Play in RV
+#
+#----------------------------------------------------------------------------------------------------------
+
+import subprocess
+import nuke
+
+cmd = ['rv']
+
+cmd.append('-rec709')
+cmd.append('-over')
+
+
+for i in nuke.selectedNodes():
+    if i.Class() in ['Write','Read']:
+        cmd.append("'" + i.knob('file').value() + "'")
+ocmd = ' '.join(cmd)
+subprocess.Popen(ocmd, shell=True)

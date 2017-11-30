@@ -1,0 +1,71 @@
+#! /Applications/Nuke8.0v6/Nuke8.0v6.app/Contents/MacOS/libnuke-8.0.6.dylib -nx
+version 8.0 v5
+Gizmo {
+ name Rec709Switcher
+ addUserKnob {20 Rec709Switcher}
+ addUserKnob {4 direction M {"Compressed to Full Range" "Full Range to Compressed"}}
+}
+ Input {
+  inputs 0
+  name Input1
+  xpos 826
+  ypos -321
+ }
+ Colorspace {
+  colorspace_out rec709
+  name Colorspace1
+  xpos 826
+  ypos -281
+ }
+set N3ddb0440 [stack 0]
+ Dot {
+  name Dot1
+  xpos 970
+  ypos -278
+ }
+ ColorLookup {
+  lut {master {curve C k 0.062561 0.91886598}
+    red {}
+    green {}
+    blue {}
+    alpha {}}
+  name ColorLookup2
+  xpos 936
+  ypos -202
+ }
+ Dot {
+  name Dot2
+  selected true
+  xpos 970
+  ypos -134
+ }
+push $N3ddb0440
+ ColorLookup {
+  lut {master {curve C k x0.0625609979 0 x0.9188659787 1}
+    red {}
+    green {}
+    blue {}
+    alpha {}}
+  name ColorLookup1
+  xpos 826
+  ypos -202
+ }
+ Switch {
+  inputs 2
+  which {{parent.direction}}
+  name Switch1
+  xpos 826
+  ypos -137
+ }
+ Colorspace {
+  colorspace_in rec709
+  name Colorspace3
+  xpos 826
+  ypos -82
+ }
+ Output {
+  name Output1
+  xpos 826
+  ypos -30
+ }
+end_group

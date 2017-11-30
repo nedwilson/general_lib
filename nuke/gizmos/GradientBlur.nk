@@ -1,0 +1,336 @@
+#! /Applications/Nuke6.2v2/NukeX6.2v2.app/../Nuke6.2v2.app/Contents/MacOS/Nuke6.2v2 -nx
+version 6.2 v2
+define_window_layout_xml {<?xml version="1.0" encoding="UTF-8"?>
+<layout version="1.0">
+    <window x="0" y="22" w="2560" h="1352" screen="0">
+        <splitter orientation="1">
+            <split size="1853"/>
+            <splitter orientation="1">
+                <split size="46"/>
+                <dock id="" hideTitles="1" activePageId="Toolbar.1">
+                    <page id="Toolbar.1"/>
+                </dock>
+                <split size="1803"/>
+                <splitter orientation="2">
+                    <split size="1330"/>
+                    <dock id="" activePageId="DAG.1">
+                        <page id="DAG.1"/>
+                        <page id="Curve Editor.1"/>
+                        <page id="DopeSheet.1"/>
+                        <page id="Script Editor.1"/>
+                        <page id="Error Console.1"/>
+                    </dock>
+                </splitter>
+            </splitter>
+            <split size="703"/>
+            <dock id="" activePageId="Properties.1">
+                <page id="Properties.1"/>
+            </dock>
+        </splitter>
+    </window>
+    <window x="3050" y="303" w="2560" h="1440" screen="1">
+        <splitter orientation="2">
+            <split size="1424"/>
+            <dock id="" activePageId="Viewer.1">
+                <page id="Viewer.1"/>
+            </dock>
+        </splitter>
+    </window>
+</layout>
+}
+Root {
+ inputs 0
+ name /Volumes/home_raid/work/SHARED/lib/nuke/gizmos/GradientBlur.nk
+}
+Group {
+ inputs 0
+ name GradientBlur
+ help "Extends the edge of an image based on alpha threshold."
+ addUserKnob {20 "" l User}
+ addUserKnob {7 alphaThreshold}
+ alphaThreshold 0.9
+ addUserKnob {30 scaleUV l "scale uv"}
+ scaleUV {1 1}
+ addUserKnob {7 blurUVs R 0 5}
+ addUserKnob {7 spread R 0 20}
+ spread 20
+ addUserKnob {7 fillHoles R 0 4}
+ fillHoles 1
+ addUserKnob {41 blurResultSize l "blur result" T Blur3.size}
+ addUserKnob {26 ""}
+ addUserKnob {6 processAlpha -STARTLINE}
+ processAlpha true
+}
+ BackdropNode {
+  inputs 0
+  name BackdropNode2
+  tile_color 0x222222ff
+  label "make vectors"
+  note_font_size 40
+  xpos -281
+  ypos -461
+  bdwidth 609
+  bdheight 360
+ }
+ BackdropNode {
+  inputs 0
+  name BackdropNode3
+  tile_color 0x222222ff
+  label "blur along gradient"
+  note_font_size 40
+  xpos -288
+  ypos 17
+  bdwidth 631
+  bdheight 292
+ }
+ BackdropNode {
+  inputs 0
+  name BackdropNode1
+  tile_color 0x27272700
+  label "process alpha"
+  note_font_size 40
+  xpos -277
+  ypos -1007
+  bdwidth 645
+  bdheight 451
+ }
+ BackdropNode {
+  inputs 0
+  name BackdropNode4
+  tile_color 0x222222ff
+  label "blur result"
+  note_font_size 40
+  xpos -280
+  ypos 341
+  bdwidth 609
+  bdheight 307
+ }
+ Input {
+  inputs 0
+  name Input1
+  xpos -58
+  ypos -1173
+ }
+ Unpremult {
+  name Unpremult1
+  xpos -58
+  ypos -924
+ }
+ Grade {
+  channels alpha
+  blackpoint {0 0 0 {parent.alphaThreshold}}
+  black_clamp false
+  name Grade1
+  label alphaThreshold
+  xpos -58
+  ypos -886
+ }
+ Clamp {
+  channels alpha
+  name Clamp1
+  xpos -58
+  ypos -820
+ }
+ Premult {
+  name Premult4
+  xpos -58
+  ypos -754
+ }
+ Expression {
+  expr0 a==0?0:r/a
+  expr1 a==0?0:g/a
+  expr2 a==0?0:b/a
+  expr3 a==0?0:a/a
+  name Expression1
+  label rgba/a
+  xpos -58
+  ypos -709
+ }
+set N1c213b90 [stack 0]
+push $N1c213b90
+ Dilate {
+  channels alpha
+  size -2
+  name Dilate1
+  xpos 52
+  ypos -709
+ }
+ Premult {
+  name Premult2
+  xpos 52
+  ypos -629
+ }
+ Merge2 {
+  inputs 2
+  operation minus
+  name Merge2
+  xpos -58
+  ypos -629
+ }
+ Dot {
+  name Dot2
+  xpos -24
+  ypos -377
+ }
+set N1c22d820 [stack 0]
+ Shuffle {
+  red alpha
+  green alpha
+  blue alpha
+  name Shuffle2
+  xpos 52
+  ypos -381
+ }
+ Matrix {
+  channels {rgba.red -rgba.green -rgba.blue}
+  matrix {
+      {-1 0 1}
+      {-2 0 2}
+      {-1 0 1}
+    }
+  name Matrix3
+  xpos 52
+  ypos -355
+ }
+ Matrix {
+  channels {-rgba.red rgba.green -rgba.blue}
+  matrix {
+      {1 2 1}
+      {0 0 0}
+      {-1 -2 -1}
+    }
+  name Matrix4
+  xpos 52
+  ypos -313
+ }
+ Blur {
+  channels {rgba.red rgba.green -rgba.blue -rgba.alpha}
+  size {{parent.blurUVs i} {parent.blurUVs i}}
+  name Blur2
+  xpos 52
+  ypos -267
+ }
+ Premult {
+  name Premult1
+  xpos 52
+  ypos -188
+ }
+ Expression {
+  temp_name0 len
+  temp_expr0 "a != 0 ? 1/sqrt(r*r + g*g) : 0"
+  expr0 "r==0?0:r * len"
+  expr1 "g==0?0:g * len"
+  name Expression3
+  xpos 52
+  ypos -156
+ }
+push $N1c22d820
+ ShuffleCopy {
+  inputs 2
+  alpha alpha2
+  black red
+  white green
+  out2 forward
+  name ShuffleCopy3
+  xpos -58
+  ypos -156
+ }
+ VectorBlur {
+  uv forward
+  scale {{"parent.spread * parent.scaleUV.u"} {"parent.spread* parent.scaleUV.v"}}
+  method forward
+  name VectorBlur1
+  selected true
+  xpos -58
+  ypos 110
+ }
+set N1c260370 [stack 0]
+push $N1c260370
+ Blur {
+  size {{parent.fillHoles i} {parent.fillHoles}}
+  name Blur1
+  label fillHoles
+  xpos 56
+  ypos 103
+ }
+ MergeExpression {
+  inputs 2
+  expr0 A.a==0?B.r:A.r
+  expr1 A.a==0?B.g:A.g
+  expr2 A.a==0?B.b:A.b
+  expr3 A.a==0?B.a:A.a
+  name MergeExpression1
+  xpos -58
+  ypos 176
+ }
+ Expression {
+  expr0 a==0?0:r/a
+  expr1 a==0?0:g/a
+  expr2 a==0?0:b/a
+  expr3 a==0?0:a/a
+  name Expression2
+  label "rgba/a\n"
+  xpos -60
+  ypos 220
+ }
+set N1c275b20 [stack 0]
+ Dot {
+  name Dot1
+  xpos -26
+  ypos 421
+ }
+set N1c27cfe0 [stack 0]
+push $N1c27cfe0
+ Blur {
+  channels rgba
+  name Blur3
+  xpos 41
+  ypos 416
+ }
+ Unpremult {
+  name Unpremult2
+  xpos 41
+  ypos 444
+ }
+ Copy {
+  inputs 2
+  from0 rgba.alpha
+  to0 rgba.alpha
+  name Copy1
+  xpos -60
+  ypos 491
+ }
+ Premult {
+  name Premult3
+  xpos -60
+  ypos 533
+ }
+set N1c291c70 [stack 0]
+ Shuffle {
+  alpha black
+  name Shuffle1
+  xpos -60
+  ypos 883
+  disable {{parent.processAlpha}}
+ }
+set N1c295a40 [stack 0]
+ Output {
+  name Output1
+  xpos -60
+  ypos 950
+ }
+push $N1c295a40
+push 0
+push $N1c275b20
+push $N1c291c70
+push $N1c27cfe0
+ Viewer {
+  inputs 5
+  frame_range 1,100
+  input_number 1
+  input_process false
+  name Viewer1
+  xpos 485
+  ypos 1091
+ }
+end_group

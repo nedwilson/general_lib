@@ -1,0 +1,238 @@
+#! /Applications/Nuke9.0v7/Nuke9.0v7.app/Contents/MacOS//libnuke-9.0.7.dylib -nx
+version 9.0 v7
+Gizmo {
+ inputs 2
+ name InteractiveLighting
+ tile_color 0x71c671ff
+ addUserKnob {20 User l InteractiveLighting}
+ addUserKnob {3 mfstart l "muzzle flash start frame"}
+ mfstart 71
+ addUserKnob {3 mfglowsize l "muzzle flash glow size"}
+ mfglowsize 30
+ addUserKnob {7 mfmix l "muzzle flash mixback"}
+ mfmix 0.415
+}
+ BackdropNode {
+  inputs 0
+  name BackdropNode20
+  tile_color 0x71c67100
+  label "INTERACTIVE LIGHTING"
+  note_font_size 42
+  xpos 487
+  ypos -999
+  bdwidth 757
+  bdheight 740
+  z_order 1
+ }
+ Input {
+  inputs 0
+  name muzzle_flash
+  xpos 585
+  ypos -962
+ }
+ Grade {
+  channels alpha
+  whitepoint 0.145
+  white_clamp true
+  name Grade26
+  xpos 585
+  ypos -921
+ }
+ FilterErode {
+  size {{parent.mfglowsize*-2}}
+  name FilterErode5
+  xpos 585
+  ypos -864
+ }
+set N307bec00 [stack 0]
+ FilterErode {
+  size {{parent.mfglowsize*-2}}
+  name FilterErode6
+  xpos 695
+  ypos -864
+ }
+ Blur {
+  size 50
+  name Blur9
+  xpos 695
+  ypos -802
+ }
+ Grade {
+  channels all
+  white 0.5
+  name Grade32
+  xpos 695
+  ypos -770
+ }
+push $N307bec00
+ Blur {
+  size 50
+  name Blur10
+  xpos 585
+  ypos -811
+ }
+ Dot {
+  name Dot38
+  xpos 619
+  ypos -726
+ }
+ ChannelMerge {
+  inputs 2
+  operation max
+  name ChannelMerge5
+  xpos 695
+  ypos -738
+ }
+ Blur {
+  size 20
+  name Blur11
+  xpos 695
+  ypos -696
+ }
+set N6f336010 [stack 0]
+ Dot {
+  name Dot39
+  xpos 729
+  ypos -637
+ }
+set N6f341ed0 [stack 0]
+ FilterErode {
+  size {{parent.mfglowsize*-2}}
+  name FilterErode7
+  xpos 695
+  ypos -596
+ }
+ Blur {
+  size 50
+  name Blur12
+  xpos 695
+  ypos -542
+ }
+set N6f350630 [stack 0]
+ Dot {
+  name Dot40
+  xpos 585
+  ypos -535
+ }
+ Dot {
+  name Dot41
+  xpos 585
+  ypos -307
+ }
+push $N6f350630
+ FilterErode {
+  size {{parent.mfglowsize*-2}}
+  name FilterErode8
+  xpos 695
+  ypos -487
+ }
+ Blur {
+  size 50
+  name Blur13
+  xpos 695
+  ypos -434
+ }
+ Input {
+  inputs 0
+  name plate
+  xpos 922
+  ypos -865
+  number 1
+ }
+ Dot {
+  name Dot42
+  xpos 956
+  ypos -826
+ }
+set N6f37dbe0 [stack 0]
+ Dot {
+  name Dot43
+  xpos 1149
+  ypos -826
+ }
+set N6f381ed0 [stack 0]
+ Keyer {
+  invert true
+  operation "luminance key"
+  range {0.02197545517 0.2627206384 1 1}
+  name Keyer4
+  xpos 1115
+  ypos -488
+ }
+ ChannelMerge {
+  inputs 2
+  operation multiply
+  name ChannelMerge6
+  xpos 1115
+  ypos -439
+ }
+ Dot {
+  name Dot44
+  xpos 1149
+  ypos -370
+ }
+push $N6f341ed0
+push $N6f336010
+push $N6f37dbe0
+ Grade {
+  inputs 1+1
+  white {0.71 1 1.4 1}
+  white_panelDropped true
+  multiply {0.458533 0.832063 1.109404 1}
+  multiply_panelDropped true
+  mix {{curve(frame-mfstart) x-1 0 0.5555161834 1 0.7771991491 0.2954480648 0}}
+  name Grade33
+  xpos 922
+  ypos -692
+ }
+ Grade {
+  inputs 1+1
+  white 4
+  mix {{curve(frame-mfstart) x-1 0 0.5412430763 1 0.7771991491 0.2607939243 0}}
+  name Grade34
+  xpos 922
+  ypos -640
+ }
+ Grade {
+  inputs 1+1
+  white 0.81
+  multiply 3.85
+  mix {{curve(frame-mfstart) x-1 0 0.5270541906 1 0.7771991491 0.2216997743 0 x7 0.52705419}}
+  name Grade35
+  xpos 922
+  ypos -373
+ }
+ EXPTool {
+  inputs 1+1
+  red 0.105
+  green 0.105
+  blue 0.105
+  name Exposure1
+  xpos 922
+  ypos -310
+ }
+push $N6f381ed0
+ Dot {
+  name Dot1
+  xpos 1374
+  ypos -826
+ }
+ Dot {
+  name Dot2
+  xpos 1374
+  ypos -252
+ }
+ Dissolve {
+  inputs 2
+  which {{parent.mfmix}}
+  name Dissolve1
+  selected true
+  xpos 922
+  ypos -259
+ }
+ Output {
+  name Output1
+  xpos 922
+  ypos -210
+ }
+end_group

@@ -1,0 +1,155 @@
+#! /Applications/Nuke8.0v5/Nuke8.0v5.app/Contents/MacOS/libnuke-8.0.v5.dylib -nx
+version 8.0 v5
+Gizmo {
+name EdgeScatter
+addUserKnob {20 EdgeScatter l "Edge Scatter"}
+addUserKnob {26 ""}
+addUserKnob {6 useAlpha l INVISIBLE +INVISIBLE +STARTLINE}
+useAlpha true
+addUserKnob {4 alphaInput l "use input alpha" t "Check yes if you want to use an embedded alpha." M {Yes No "" ""}}
+addUserKnob {41 which_1 l INVISIBLE +INVISIBLE T no_alpha.which}
+addUserKnob {26 ""}
+addUserKnob {41 size l width t "Width of scatter effect.\n\n" T width.size}
+addUserKnob {41 which_2 l intensity t "Intensity of edge scatter effect." T overall_intensity.which}
+addUserKnob {26 ""}
+addUserKnob {4 alphaOutput l "alpha output" t "Pick the alpha to be embedded." M {"original alpha" "scatter alpha" "combined alpha" "no alpha"}}
+addUserKnob {26 ""}
+addUserKnob {41 which l INVISIBLE +INVISIBLE T SwitchAlpha.which}
+}
+Input {
+inputs 0
+name Image
+xpos 488
+ypos -506
+}
+NoOp {
+name Image1
+xpos 488
+ypos -466
+}
+set N8022ce90 [stack 0]
+Shuffle {
+alpha black
+name NoAlpha
+xpos 488
+ypos 250
+}
+push $N8022ce90
+Blur {
+size 20
+name width
+xpos 972
+ypos -473
+}
+set N80236290 [stack 0]
+Expression {
+channel0 none
+channel1 none
+channel2 none
+channel3 alpha
+expr3 (clamp(3*(1-pow(2*fabs((a)-.5),2))))
+name matte_math2
+xpos 1043
+ypos -372
+}
+Blur {
+size {{parent.width.size i}}
+name widthAlpha
+xpos 971
+ypos -303
+}
+set N4d54c330 [stack 0]
+push $N80236290
+push $N8022ce90
+Merge2 {
+inputs 2
+operation minus
+name subtract
+xpos 855
+ypos -176
+}
+Clamp {
+name Clamp
+xpos 855
+ypos -147
+}
+push $N8022ce90
+Merge2 {
+inputs 2
+operation plus
+name add
+xpos 749
+ypos -57
+}
+set N4d559920 [stack 0]
+ShuffleCopy {
+inputs 2
+name ShuffleCopy
+xpos 971
+ypos -9
+}
+push $N8022ce90
+AddMix {
+inputs 2
+name AddMix
+xpos 566
+ypos 63
+}
+set N8023e4b0 [stack 0]
+push $N4d54c330
+Merge2 {
+inputs 2
+operation max
+name add_mattes
+xpos 874
+ypos 185
+}
+push $N4d54c330
+push $N8022ce90
+Switch {
+inputs 4
+which {{alphaOutput}}
+name SwitchAlpha
+xpos 785
+ypos 250
+}
+push $N8023e4b0
+push $N4d559920
+Switch {
+inputs 2
+which {{!alphaInput}}
+name no_alpha
+xpos 620
+ypos 156
+}
+set N802554b0 [stack 0]
+push $N8022ce90
+Dissolve {
+inputs 2
+which 0.6
+name overall_intensity
+xpos 538
+ypos 359
+}
+ShuffleCopy {
+inputs 2
+name ShuffleAlphaOrig
+xpos 710
+ypos 381
+}
+set N80262ce0 [stack 0]
+Output {
+name Output1
+xpos 710
+ypos 477
+}
+push $N802554b0
+push $N4d559920
+push $N80262ce0
+Viewer {
+inputs 3
+name Viewer1
+xpos 1076
+ypos 439
+}
+end_group

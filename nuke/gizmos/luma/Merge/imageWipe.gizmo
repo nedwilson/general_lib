@@ -1,0 +1,48 @@
+#! /Applications/Nuke8.0v5/Nuke8.0v5.app/Contents/MacOS/libnuke-8.0.v5.dylib -nx
+version 8.0 v5
+Gizmo {
+ inputs 3
+ addUserKnob {20 GradWipeKernel}
+ addUserKnob {41 "Local GPU: " T BlinkScript2.gpuName}
+ addUserKnob {41 "Use GPU if Available" T BlinkScript2.useGPUIfAvailable}
+ addUserKnob {26 "" +STARTLINE}
+ addUserKnob {41 Mix T BlinkScript2.GradWipeKernel_Mix}
+}
+ Input {
+  inputs 0
+  name MixImage
+  xpos 1342
+  ypos 271
+  number 2
+ }
+ Input {
+  inputs 0
+  name srcB
+  xpos 1497
+  ypos 234
+  number 1
+ }
+ Input {
+  inputs 0
+  name srcA
+  xpos 1614
+  ypos 280
+ }
+ BlinkScript {
+  inputs 3
+  ProgramGroup 1
+  KernelDescription "1 \"GradWipeKernel\" iterate componentWise 9db6fbb31b456acbec65014f61c7119c73b894d9dc5aabefbd03e74402338149 4 \"srcA\" Read Point \"srcB\" Read Point \"srcM\" Read Point \"dst\" Write Point 1 \"Mix\" Float 1 AACAPw=="
+  EncodedSource "1 699 kS/spLe+UxZDb/aJRJAv/2om6Hwxp9xVC2TtEnuoXwe8Fh6X9fRNa3XJ/aGytZLoCYzIm8Fpd81iT7jLnEacIMiAh61HHDoW2VnxD8yAWLnQP0rBSL3RFrHkDPAcsBKcEwD6dLsCsIdFoXGPrOQFEfnNNff0oP5GWdY1pkglFFkpurV1PsAsQrVuLqfKk5WysKeV0km6/ud7inESilCJUWBrvOQaAnzLK7BWesFpHyq7fOVDf9nIX2Kuo2fHXd4jF3hh8qNyshwar6SZ4UMHoPMJku3fWfj0sorpiojq4Gjttwq9WO5irjnRyMtHQPewVRHKt9DAqcQRM/b3ZA0jL/LuCZ16z/WmfHVsLVDISK9sWZM/jBNEpPDh12oT+88ZRcZgiJr1QPSEmHBomwu/i/GMAjIiBGiFWtn14sQm4Sxj5llriUbrEOBkMOZEkJ4FPD561DXuJTcqIxj9SMtOYvcfCZzB349MgyafqlVVCOrhLatZ5xpaL2rcIR3VFnt0wi2CZRC7xKvQC8NsdJ0v6mu72OhVxIAgkEapsesm4MSvO66TGxosK1cmmTzvVzGmla6fOR3bHcYYhQbcA3yU4eL8yqWgp7gxsD34ujQ1wjT7uxwzV7zxWGYwY1LrFOB8Yc0igQqAjzdkVh2R6W1cLmCKEkC7YBtvpfzzGTnttqQ/xVh4/OAaivf/L9aUzWXdvup7Mm+hs4EPWTT6XycVR7P0K+oiP6QMIJXNTFIeMihAHP5F/tOMdvyrMiU1AAcfEnTHYl0swD6l5+ELHzD20gZVjHcqjYmq/mnogzObaXeiDIYK6nyBdzBwYi9pNCCCoilYr9VnGeBBVj1yIhVtEcexaHs6IKpEXHJx65lg+lwdJGP8N4poEEKNUTNDyjKsLXQ4kPVf2819AXC5QWezx30KZWYB6QQQmnzSGKSRYHw="
+  rebuild ""
+  GradWipeKernel_Mix 0.5
+  protectKernelWhenPublishing true
+  name BlinkScript2
+  xpos 1614
+  ypos 356
+ }
+ Output {
+  name Output1
+  xpos 1614
+  ypos 456
+ }
+end_group

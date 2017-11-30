@@ -1,0 +1,62 @@
+#! /Applications/Nuke9.0v7/Nuke9.0v7.app/Contents/MacOS//libnuke-9.0.7.dylib -nx
+version 9.0 v7
+Gizmo {
+name BradKeyer
+tile_color 0x1fff00ff
+}
+Input {
+inputs 0
+name Input1
+xpos 826
+ypos -673
+}
+Dot {
+name Dot7
+xpos 860
+ypos -633
+}
+set N29c75540 [stack 0]
+Shuffle {
+green blue
+name Shuffle4
+xpos 737
+ypos -636
+}
+Dot {
+name Dot8
+xpos 771
+ypos -523
+}
+push $N29c75540
+Shuffle {
+green red
+name Shuffle2
+xpos 911
+ypos -636
+}
+Dot {
+name Dot9
+xpos 945
+ypos -523
+}
+Merge2 {
+inputs 2
+operation average
+name Merge2
+xpos 821
+ypos -526
+}
+Grade {
+multiply {0.78 1 0.83 1}
+multiply_panelDropped true
+name Grade2
+xpos 821
+ypos -388
+}
+Output {
+name Output1
+selected true
+xpos 821
+ypos -347
+}
+end_group

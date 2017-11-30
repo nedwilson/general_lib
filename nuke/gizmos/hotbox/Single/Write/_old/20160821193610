@@ -1,0 +1,19 @@
+#----------------------------------------------------------------------------------------------------------
+#
+# AUTOMATICALLY GENERATED FILE TO BE USED BY W_HOTBOX
+#
+# NAME: Set Descriptor
+#
+#----------------------------------------------------------------------------------------------------------
+
+#launch panel to define Description
+descriptionPanel = nuke.Panel('Description')
+descriptionPanel.addSingleLineInput('Description', nuke.selectedNode().knob('optional_descriptor').value())
+descriptionPanel.show()
+
+
+description = descriptionPanel.value('Description')
+
+for i in nuke.selectedNodes():
+	i.knob('auto_descriptor').setValue(False)
+	i.knob('optional_descriptor').setValue(description)

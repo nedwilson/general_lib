@@ -1,0 +1,65 @@
+#----------------------------------------------------------------------------------------------------------
+#
+# AUTOMATICALLY GENERATED FILE TO BE USED BY W_HOTBOX
+#
+# NAME: Neutralize Ref
+#
+#----------------------------------------------------------------------------------------------------------
+
+import os.path, nuke
+
+def emptySelection(selection):
+    for i in selection:
+        i.knob('selected').setValue(False)
+
+def setCDL(n, shot):
+
+    topcheck = n['top'].value()
+
+    if not topcheck:
+        show = os.getenv('M_JOB', '')
+        sequence = shot[:2]
+
+    else:
+        gettopnode = nuke.tcl("value [topnode %s].file" % n.name())
+        show = gettopnode.split('/')[2]
+        shot = gettopnode.split('/')[4]
+        sequence = gettopnode.split('/')[3]
+
+    file_path = "/jobs/"+show+"/"+sequence+"/"+shot+"/TECH/lib/ocio/__default__/neutral"
+
+    if os.path.exists(file_path):
+        cdl_file = os.path.realpath(file_path)
+        for x in n.nodes():
+            if x.Class() in ['OCIOCDLTransform']:
+                x['read_from_file'].setValue(1)
+                x['file'].setValue(cdl_file)
+                n['label'].setValue(shot)
+    else:
+        for x in n.nodes():
+            if x.Class() in ['OCIOCDLTransform']:
+                x['file'].setValue('')
+                x['read_from_file'].setValue(0)
+                x['slope'].setValue(1)
+                x['offset'].setValue(0)
+                x['power'].setValue(1)
+                x['saturation'].setValue(1)
+                n['label'].setValue('no CDL')
+
+selection = nuke.selectedNodes()
+
+for i in selection:
+    emptySelection(selection)
+
+for i in selection:
+    i.knob('selected').setValue(True)
+    selectedShot = i.knob('file').value()[21:27]
+    currentShot = os.environ['M_SHOT']
+    
+    neutral = nuke.createNode('bos_neut', inpanel = False)
+    deneutral = nuke.createNode('bos_neut', inpanel = False)
+
+    setCDL(neutral,selectedShot)
+    setCDL(deneutral,currentShot)
+
+    deneutral.knob('direction').setValue('inverse')

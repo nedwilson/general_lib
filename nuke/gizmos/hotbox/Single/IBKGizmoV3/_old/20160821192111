@@ -1,0 +1,11 @@
+#----------------------------------------------------------------------------------------------------------
+#
+# AUTOMATICALLY GENERATED FILE TO BE USED BY W_HOTBOX
+#
+# NAME: Blue Screen
+#
+#----------------------------------------------------------------------------------------------------------
+
+for i in nuke.selectedNodes():
+    i.knob('st').setValue('C-blue')
+    i.knob('tile_color').setValue(3407871)

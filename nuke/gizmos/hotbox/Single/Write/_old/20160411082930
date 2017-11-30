@@ -1,0 +1,31 @@
+#----------------------------------------------------------------------------------------------------------
+#
+# AUTOMATICALLY GENERATED FILE TO BE USED BY W_HOTBOX
+#
+# NAME: Send to Farm
+#
+#----------------------------------------------------------------------------------------------------------
+
+writeNodes = nuke.selectedNodes()
+
+allWriteNodes = []
+origWriteNodes = []
+
+for i in nuke.allNodes():
+	if i.Class() == 'Write':
+		allWriteNodes.append(i)
+		if i.knob('selected').value():
+			origWriteNodes.append(i)
+		i.knob('selected').setValue(False)
+
+for i in writeNodes:
+	i.knob('selected').setValue(True)
+
+from NukeJobCodeBase.plugins.IO import RenderSubmit
+RenderSubmit.runNukeSubmit()
+
+for i in allWriteNodes:
+	if i in origWriteNodes:
+		i.knob('selected').setValue(True)
+	else:
+		i.knob('selected').setValue(False)

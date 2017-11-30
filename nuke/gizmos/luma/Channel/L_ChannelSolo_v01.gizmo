@@ -1,0 +1,175 @@
+#! /Applications/Nuke9.0v1/Nuke9.0v1.app/Contents/MacOS//libnuke-9.0.1.dylib -nx
+version 9.0 v1
+Gizmo {
+help "<b><u>L_ChannelSolo_v01\t</b></u>\nShuffles the chosen channel into RGBA\n\n<i>(For any questions, comments or suggestions please email gizmos@luma-pictures.com)</i>"
+addUserKnob {20 ChannelSolo}
+addUserKnob {41 in l "input Layer" t "The layer set to operate on\n" T shuffle_In.in}
+addUserKnob {4 channelSelector l "Solo Channel" t "fills all rgbs channels with the selected channel" M {RED GREEN BLUE ALPHA LUMINANCE CYAN YELLOW MAGENTA "" "" ""}}
+channelSelector YELLOW
+addUserKnob {41 out l "output Layer" t "Where you want the solo result" T shuffleOut.out}
+addUserKnob {26 ""}
+addUserKnob {22 Button l "     Luma Pictures     " T "import os\nimport sys\n\ntry:\n    import subprocess\n    def _run(cmd, shell, wait):\n        opener = subprocess.Popen(cmd, shell=shell)\n        if wait:\n            opener.wait()\n        return opener.pid\nexcept ImportError:\n    import popen2\n    def _run(cmd, shell, wait):\n        opener = popen2.Popen3(cmd)\n        if wait:\n            opener.wait()\n        return opener.pid\n\ndef _open(url, wait=0):\n    if sys.platform == \"darwin\":\n        cmd = \[\"open\", url]\n    elif hasattr(os, \"startfile\"):\n        return os.startfile(url)\n    elif os.environ.has_key(\"KDE_FULL_SESSION\") or os.environ.has_key(\"KDE_MULTIHEAD\") or \\\n        os.environ.has_key(\"GNOME_DESKTOP_SESSION_ID\") or os.environ.has_key(\"GNOME_KEYRING_SOCKET\"):\n        cmd = \[\"xdg-open\", url]\n    else:\n        raise OSError, \"Desktop not supported.\"\n\n    return _run(cmd, 0, wait)\n\n_open('http://www.luma-pictures.com/tools/nuke/')" +STARTLINE}
+}
+Input {
+inputs 0
+name Input1
+xpos -10
+ypos -276
+}
+set Ne712a070 [stack 0]
+Shuffle {
+name shuffle_In
+xpos -10
+ypos -219
+}
+set Ne712c2a0 [stack 0]
+Shuffle {
+green red
+blue red
+alpha red
+name FloodRed1
+tile_color 0xc6717100
+xpos -150
+ypos -69
+addUserKnob {20 User}
+}
+set Ne714e040 [stack 0]
+push $Ne712c2a0
+Shuffle {
+red blue
+green blue
+alpha blue
+name BlueFlood
+tile_color 0xf1ff
+xpos 43
+ypos -66
+addUserKnob {20 User}
+}
+set Ne7140320 [stack 0]
+Merge2 {
+inputs 2
+operation in
+name Magenta
+xpos 423
+ypos 111
+}
+set Nf9210250 [stack 0]
+push $Ne714e040
+push $Ne712c2a0
+Shuffle {
+red green
+blue green
+alpha green
+name GreenFlood
+tile_color 0xec10ff
+xpos -55
+ypos -66
+addUserKnob {20 User}
+}
+set Ne71471b0 [stack 0]
+Merge2 {
+inputs 2
+operation in
+name Yellow
+xpos 151
+ypos 111
+}
+push $Ne7140320
+push $Ne71471b0
+Merge2 {
+inputs 2
+operation in
+name CYAN
+xpos 274
+ypos 111
+}
+push $Ne712c2a0
+Expression {
+channel0 rgba
+expr0 "(r*0.3) + (g*0.59) + (b*0.11)"
+channel1 {-rgba.red -rgba.green -rgba.blue none}
+channel2 {-rgba.red -rgba.green -rgba.blue none}
+name expression_MONO
+xpos 232
+ypos -67
+}
+push $Ne712c2a0
+Shuffle {
+red alpha
+green alpha
+blue alpha
+name AlphaFlood
+tile_color 0x272323ff
+xpos 130
+ypos -67
+addUserKnob {20 User}
+}
+push $Ne7140320
+push 0
+push $Ne71471b0
+push $Ne714e040
+Dissolve {
+inputs 8+1
+channels rgba
+which {{parent.channelSelector}}
+name Dissolve1
+xpos -6
+ypos 141
+}
+add_layer {gzmoTmp gzmoTmp.red gzmoTmp.green gzmoTmp.blue gzmoTmp.alpha}
+AddChannels {
+channels gzmoTmp
+name AddChannels1
+xpos -6
+ypos 180
+}
+Shuffle {
+out gzmoTmp
+name RGBA_gzmoTmp
+xpos -6
+ypos 218
+}
+push $Ne712a070
+Dot {
+name Dot1
+xpos -265
+ypos 1
+}
+Copy {
+inputs 2
+from0 -rgba.alpha
+to0 -rgba.alpha
+channels gzmoTmp
+name Copy_gzmoTmp
+xpos -6
+ypos 326
+}
+Shuffle {
+in gzmoTmp
+name shuffleOut
+xpos -6
+ypos 381
+}
+Remove {
+channels gzmoTmp
+name Remove1
+xpos -6
+ypos 418
+}
+Output {
+name Output1
+xpos -6
+ypos 479
+}
+push $Nf9210250
+push $Ne712c2a0
+Viewer {
+inputs 2
+frame_range 1001-1375
+fps 23.97602463
+viewerProcess "rec709 (default)"
+name Viewer1
+xpos 559
+ypos 111
+}
+end_group

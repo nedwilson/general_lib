@@ -1,0 +1,16 @@
+#----------------------------------------------------------------------------------------------------------
+#
+# AUTOMATICALLY GENERATED FILE TO BE USED BY W_HOTBOX
+#
+# NAME: Jump to Frame
+#
+#----------------------------------------------------------------------------------------------------------
+
+node = nuke.selectedNode()
+print 'yes'
+print node.knob('curves').rootLayer[0].center.getControlPointKeyTimes()
+
+#convert framenumbers to integers
+keyFrames = [int(i) for i in keyFrames]
+print keyFrames
+nuke.frame(keyFrames[0])

@@ -1,0 +1,11 @@
+#----------------------------------------------------------------------------------------------------------
+#
+# AUTOMATICALLY GENERATED FILE TO BE USED BY W_HOTBOX
+#
+# NAME: Green Screen
+#
+#----------------------------------------------------------------------------------------------------------
+
+for i in nuke.selectedNodes():
+    i.knob('screen_type').setValue('C-green')
+    i.knob('tile_color').setValue(10027008)

@@ -1,0 +1,125 @@
+#! /Applications/Nuke10.0v3/Nuke10.0v3.app/Contents/MacOS//libnuke-10.0.3.dylib -nx
+version 10.0 v3
+Gizmo {
+inputs 2
+note_font "Bitstream Vera Sans"
+mapsize {0.15 0.15}
+addUserKnob {20 CDL_SATURATION l "CDL Saturator"}
+addUserKnob {26 ""}
+addUserKnob {41 channels T Saturation.channels}
+addUserKnob {41 saturation T Saturation.saturation}
+addUserKnob {41 mode l "luminance math" T Saturation.mode}
+addUserKnob {26 ""}
+addUserKnob {41 cdl_mix l "CDL mix" T GizmoControl.cdl_mix}
+addUserKnob {41 cdl_file l "CDL File" T GizmoControl.cdl_file}
+addUserKnob {26 ""}
+addUserKnob {41 maskChannelMask l mask -STARTLINE T Saturation.maskChannelMask}
+addUserKnob {41 inject -STARTLINE T Saturation.inject}
+addUserKnob {41 invert_mask l invert -STARTLINE T Saturation.invert_mask}
+addUserKnob {41 fringe -STARTLINE T Saturation.fringe}
+addUserKnob {41 unpremult l "(un)premult by" T Saturation.unpremult}
+addUserKnob {41 invert_unpremult l invert -STARTLINE T Saturation.invert_unpremult}
+addUserKnob {41 mix T Saturation.mix}
+}
+NoOp {
+inputs 0
+name NoOp1
+xpos 373
+ypos 230
+addUserKnob {20 User}
+addUserKnob {7 aefdfa}
+addUserKnob {1 teas}
+}
+NoOp {
+inputs 0
+name GizmoControl
+xpos 534
+ypos 162
+addUserKnob {20 User}
+addUserKnob {7 cdl_mix l "CDL mix"}
+cdl_mix 1
+addUserKnob {2 cdl_file l "CDL file"}
+cdl_file "\[value root.txt_leg_shot_path]/data/cdl/\[value root.txt_leg_shot].cdl"
+addUserKnob {26 version l v1.0}
+}
+Viewer {
+inputs 0
+frame_range 1001-1054
+fps 23.97602463
+name Viewer1
+xpos 428
+ypos 301
+}
+Input {
+inputs 0
+name mask
+xpos 51
+ypos 220
+number 1
+}
+Input {
+inputs 0
+name img
+xpos 262
+ypos -342
+}
+Dot {
+name Dot6
+xpos 296
+ypos -186
+}
+OCIOColorSpace {
+in_colorspace linear
+out_colorspace AlexaV3LogC
+name OCIOColorSpace1
+xpos 257
+ypos 164
+}
+OCIOCDLTransform {
+slope {0.9671000242 0.9581699967 1.07772994}
+offset {0.04985599965 0.07270400226 0.06644000113}
+power {0.9988229871 1.016330004 0.9848510027}
+saturation 1.399000049
+working_space linear
+read_from_file true
+file "\[value GizmoControl.cdl_file]"
+version 2
+mix {{GizmoControl.cdl_mix}}
+name OCIOCDLTransform1
+xpos 257
+ypos 194
+}
+Saturation {
+inputs 1+1
+name Saturation
+xpos 257
+ypos 224
+}
+OCIOCDLTransform {
+slope {0.9671000242 0.9581699967 1.07772994}
+offset {0.04985599965 0.07270400226 0.06644000113}
+power {0.9988229871 1.016330004 0.9848510027}
+saturation 1.399000049
+direction inverse
+working_space linear
+read_from_file true
+file "\[value GizmoControl.cdl_file]"
+mix {{GizmoControl.cdl_mix}}
+name OCIOCDLTransform_
+xpos 257
+ypos 254
+}
+OCIOColorSpace {
+in_colorspace AlexaV3LogC
+out_colorspace linear
+name OCIOColorSpace2
+xpos 257
+ypos 284
+}
+Output {
+name Output2
+selected true
+xpos 257
+ypos 411
+}
+end_group

@@ -1,0 +1,47 @@
+#----------------------------------------------------------------------------------------------------------
+#
+# AUTOMATICALLY GENERATED FILE TO BE USED BY W_HOTBOX
+#
+# NAME: Cleanplate
+#
+#----------------------------------------------------------------------------------------------------------
+
+def emptySelection():
+    for i in nuke.selectedNodes():
+        i.knob('selected').setValue(False)
+
+firstFrame = int(nuke.Root().knob('first_frame').value())
+lastFrame = int(nuke.Root().knob('last_frame').value())
+
+nuke.selectedNode()
+
+startNode = nuke.createNode('Dot', inpanel = False)
+startNode.setYpos(startNode.ypos()+100)
+startNodeXpos = startNode.xpos() + (startNode.screenWidth()/2)
+startNodeYpos = startNode.ypos() + (startNode.screenHeight()/2)
+
+frameHoldNodes = []
+
+for i in range(lastFrame-firstFrame+1):
+
+    emptySelection()
+
+    curFrame = firstFrame+i
+    frameHoldNode = nuke.createNode('FrameHold', inpanel = False)
+    frameHoldNode.knob('first_frame').setValue(curFrame)
+
+    frameHoldNode.setInput(0,startNode)
+
+    frameHoldNode.setXpos((startNodeXpos-frameHoldNode.screenWidth()/2)+(i*100))
+    frameHoldNode.setYpos((startNodeYpos-frameHoldNode.screenHeight()/2)+ 100)
+    frameHoldNodes.append(frameHoldNode)
+
+emptySelection()
+for i in frameHoldNodes:
+    i.knob('selected').setValue(True)
+
+mergeNode = nuke.createNode('Merge2', inpanel = False)
+mergeNode.knob('operation').setValue('min')
+
+mergeNode.setXpos((startNodeXpos-frameHoldNode.screenWidth()/2))
+mergeNode.setYpos((startNodeYpos-frameHoldNode.screenHeight()/2)+ 200)

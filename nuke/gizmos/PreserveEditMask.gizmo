@@ -1,0 +1,207 @@
+#! /Applications/Nuke9.0v8/Nuke9.0v8.app/Contents/MacOS//libnuke-9.0.8.dylib -nx
+version 9.0 v8
+Gizmo {
+ inputs 2
+ addUserKnob {20 User l PreserveEditMask}
+ addUserKnob {4 aspect l "mask aspect ratio" M {2.35:1 2:1 1.77:1 custom... "" ""}}
+}
+ Input {
+  inputs 0
+  name mask
+  xpos 372
+  ypos -446
+  number 1
+ }
+ Shuffle {
+  alpha white
+  name Shuffle1
+  xpos 372
+  ypos -381
+  disable {{"\[exists input1] ? 1:0"}}
+ }
+ Dot {
+  name Dot10
+  xpos 406
+  ypos -41
+ }
+ Read {
+  inputs 0
+  file "\[value root.Read1.file]"
+  format {{{root.Read1.format}}}
+  proxy "\[value root.Read1.proxy]"
+  proxy_format {{{root.Read1.proxy_format}}}
+  first {{root.Read1.first}}
+  last {{root.Read1.last}}
+  frame "\[value root.Read1.frame]"
+  origfirst {{root.Read1.origfirst}}
+  origlast {{root.Read1.origlast}}
+  origset true
+  name Read2
+  xpos 1011
+  ypos -211
+ }
+ Dot {
+  name Dot2
+  xpos 1045
+  ypos -103
+ }
+set N68503be0 [stack 0]
+ Dot {
+  name Dot9
+  xpos 628
+  ypos -103
+ }
+ Copy {
+  inputs 2
+  from0 rgba.alpha
+  to0 rgba.alpha
+  name Copy1
+  selected true
+  xpos 594
+  ypos -48
+ }
+ Premult {
+  name Premult3
+  xpos 594
+  ypos -16
+ }
+ Input {
+  inputs 0
+  name Input
+  xpos 826
+  ypos -498
+ }
+ Dot {
+  name Dot3
+  xpos 860
+  ypos -357
+ }
+set N7432c980 [stack 0]
+ Dot {
+  name Dot11
+  xpos 860
+  ypos -66
+ }
+set N74284460 [stack 0]
+ Dot {
+  name Dot12
+  xpos 738
+  ypos -66
+ }
+ Merge2 {
+  inputs 2
+  name Merge3
+  xpos 704
+  ypos -16
+ }
+ Dot {
+  name Dot13
+  xpos 738
+  ypos 79
+ }
+push $N7432c980
+ Dot {
+  name Dot7
+  xpos 540
+  ypos -357
+ }
+ Dot {
+  name Dot8
+  xpos 540
+  ypos 142
+ }
+push $N68503be0
+ Dot {
+  name Dot1
+  xpos 1172
+  ypos -103
+ }
+ Rectangle {
+  output alpha
+  replace true
+  area {0 1020 1920 1080}
+  name Rectangle3
+  xpos 1138
+  ypos -20
+ }
+ Rectangle {
+  output alpha
+  area {0 0 1920 64}
+  name Rectangle4
+  xpos 1138
+  ypos 12
+ }
+ Premult {
+  name Premult2
+  xpos 1138
+  ypos 44
+ }
+push $N7432c980
+ Dot {
+  name Dot4
+  xpos 1377
+  ypos -357
+ }
+ Dot {
+  name Dot5
+  xpos 1377
+  ypos 102
+ }
+ Merge2 {
+  inputs 2
+  name Merge2
+  xpos 1138
+  ypos 99
+ }
+ Dot {
+  name Dot6
+  xpos 1172
+  ypos 142
+ }
+push $N68503be0
+ Rectangle {
+  output alpha
+  replace true
+  area {0 970 1920 1080}
+  name Rectangle1
+  xpos 1011
+  ypos -26
+ }
+ Rectangle {
+  output alpha
+  area {0 0 1920 110}
+  name Rectangle2
+  xpos 1011
+  ypos 6
+ }
+ Premult {
+  name Premult1
+  xpos 1011
+  ypos 38
+ }
+push $N74284460
+ Merge2 {
+  inputs 2
+  name Merge1
+  xpos 826
+  ypos 38
+ }
+ Switch {
+  inputs 4
+  which {{parent.aspect}}
+  name Switch1
+  xpos 826
+  ypos 139
+ }
+ Crop {
+  box {0 0 1920 1080}
+  name Crop1
+  xpos 826
+  ypos 193
+ }
+ Output {
+  name Output
+  xpos 826
+  ypos 241
+ }
+end_group

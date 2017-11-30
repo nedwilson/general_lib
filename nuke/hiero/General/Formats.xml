@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hieroXML>
+<hieroXML version="1">
+ <formats>
+  <format width="2048" height="1152" pixelAspect="1"  name="2K 1.77 Aspect Ratio (.2k177)" />
+  <format width="2048" height="852" pixelAspect="1"  name="2K 2.40 Aspect Ratio (.2k240)" />
+  <format width="2100" height="1152" pixelAspect="1"  name="Spinel 2K Delivery (.sp2k)" />
+  <format width="6560" height="3100" pixelAspect="1"  name="Arri Alexa 65 (.a65)" />
+  <format width="3424" height="2202" pixelAspect="1"  name="Arri Alexa Mini Open Gate (.amog)" />
+ </formats>
+</hieroXML>

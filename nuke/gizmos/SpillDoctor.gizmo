@@ -1,0 +1,131 @@
+#! /usr/local/Nuke7.0v6/Nuke7.0 -nx
+version 7.0 v6
+Gizmo {
+ inputs 2
+ addUserKnob {20 Main}
+ addUserKnob {26 title l "" -STARTLINE T "Spill Doctor v1.0 \n"}
+ addUserKnob {41 view l View T View_Spill.which}
+ addUserKnob {26 lumcomp l "Luminance Compensation"}
+ addUserKnob {41 mixplus l Strength T Plus.mix}
+ addUserKnob {41 hue_rotation l Hue T HueShift1.hue_rotation}
+ addUserKnob {41 saturation l Saturation T Saturation1.saturation}
+ addUserKnob {26 ""}
+ addUserKnob {41 Mix T Dissolve1.which}
+ addUserKnob {26 ""}
+ addUserKnob {41 hue l "" -STARTLINE T HueCorrect1.hue}
+}
+ Constant {
+  inputs 0
+  color 1
+  name Constant1
+  xpos 821
+  ypos 159
+ }
+ Input {
+  inputs 0
+  name InputHoldout
+  xpos 976
+  ypos 290
+  number 1
+ }
+ Invert {
+  name Invert1
+  xpos 976
+  ypos 358
+  disable true
+ }
+ Merge2 {
+  inputs 2
+  operation minus
+  name Merge1
+  xpos 821
+  ypos 363
+ }
+ Input {
+  inputs 0
+  name Input
+  xpos 497
+  ypos 43
+ }
+set N6beced0 [stack 0]
+push $N6beced0
+ HueCorrect {
+  hue {sat {}
+    lum {}
+    red {}
+    green {}
+    blue {}
+    r_sup {}
+    g_sup {curve 1 1 x2.038382769 0.6771144867 x2.767009258 0.250248909 x3.377022028 0.1407961845 x4 0.4800995588 x5 1 1}
+    b_sup {}
+    sat_thrsh {}}
+  name HueCorrect1
+  xpos 497
+  ypos 125
+ }
+set N6bf17b0 [stack 0]
+ Merge2 {
+  inputs 2
+  operation difference
+  name Merge2
+  xpos 627
+  ypos 125
+ }
+set N6c03e40 [stack 0]
+push $N6c03e40
+ Saturation {
+  saturation 0
+  name Saturation1
+  xpos 627
+  ypos 153
+ }
+ HueShift {
+  name HueShift1
+  xpos 627
+  ypos 177
+ }
+set N6c1bfb0 [stack 0]
+push $N6c1bfb0
+push $N6bf17b0
+ Merge2 {
+  inputs 2
+  operation plus
+  name Plus
+  xpos 497
+  ypos 177
+ }
+ Switch {
+  inputs 3
+  name View_Spill
+  xpos 497
+  ypos 233
+ }
+push $N6beced0
+ Dot {
+  name Dot1
+  xpos 387
+  ypos 46
+ }
+ Dot {
+  name Dot2
+  xpos 387
+  ypos 366
+ }
+ Dissolve {
+  inputs 2+1
+  which 1
+  name Dissolve1
+  xpos 497
+  ypos 358
+ }
+ Output {
+  name Output1
+  xpos 497
+  ypos 413
+ }
+ Viewer {
+  name Viewer1
+  xpos 146
+  ypos 324
+ }
+end_group

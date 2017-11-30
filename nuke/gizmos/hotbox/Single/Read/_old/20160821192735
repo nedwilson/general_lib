@@ -1,0 +1,44 @@
+#----------------------------------------------------------------------------------------------------------
+#
+# AUTOMATICALLY GENERATED FILE TO BE USED BY W_HOTBOX
+#
+# NAME: Compare with Plate in RV
+#
+#----------------------------------------------------------------------------------------------------------
+
+import subprocess
+import nuke
+
+cmd = ['rv']
+
+cmd.append('-rec709')
+cmd.append('-over')
+
+for i in nuke.selectedNodes():
+    if i.Class() in ['Write','Read']:
+        cmd.append("'" + i.knob('file').value() + "'")
+
+#find plate
+platePath =  os.getenv('M_SHOT_PATH') + '/PRODUCTS/images/plates/'
+
+for i in sorted(os.listdir(platePath)):
+    if 'plates_pl' in i:
+        platePath += i + '/'
+        break
+
+for i in sorted(os.listdir(platePath)):
+    if 'ingest' in i and 'exr' in i:
+        platePath += i + '/'
+        break
+
+for i in sorted(os.listdir(platePath)):
+    if i[0] != '.':
+        padding = i.split('.')[1]
+        platePath += i.replace(padding,'%0'+'%id'%len(padding))
+        break
+
+platePath
+cmd.append("'" + platePath + "'")
+
+ocmd = ' '.join(cmd)
+subprocess.Popen(ocmd, shell=True)

@@ -1,0 +1,12 @@
+#----------------------------------------------------------------------------------------------------------
+#
+# AUTOMATICALLY GENERATED FILE TO BE USED BY W_HOTBOX
+#
+# NAME: Next Layer
+#
+#----------------------------------------------------------------------------------------------------------
+
+for i in nuke.selectedNodes():
+    knob = i.knob('in')
+    currentValue = knob.getValue()
+    knob.setValue(currentValue + 1)

@@ -1,0 +1,2614 @@
+#! /Applications/Nuke10.0v1/Nuke10.0v1.app/Contents/MacOS//libnuke-10.0.1.dylib -nx
+version 10.0 v1
+Gizmo {
+ inputs 0
+ tile_color 0xff4400ff
+ addUserKnob {20 fxmoke l SMOKE}
+ addUserKnob {4 whichsim l "SIM (largest - smallest)" M {A B C D ""}}
+ addUserKnob {4 fs l "SIM speed" -STARTLINE M {FAST SLOW}}
+ fs SLOW
+ addUserKnob {26 ""}
+ addUserKnob {26 fbfill1 l "" +STARTLINE T "SMOKE FILL 1"}
+ addUserKnob {41 multiply T GrFILL1_.multiply}
+ addUserKnob {41 gamma T GrFILL1_.gamma}
+ addUserKnob {26 ""}
+ addUserKnob {26 fbfill2 l "" +STARTLINE T "SMOKE FILL 2"}
+ addUserKnob {41 multiply_1 l multiply T GrFILL2_.multiply}
+ addUserKnob {41 gamma_1 l gamma T GrFILL2_.gamma}
+ addUserKnob {26 ""}
+ addUserKnob {26 fbkey l "" +STARTLINE T "SMOKE KEY"}
+ addUserKnob {41 multiply_2 l multiply T GrKEY.multiply}
+ addUserKnob {41 gamma_2 l gamma T GrKEY.gamma}
+ addUserKnob {26 ""}
+ addUserKnob {26 mVol l "" +STARTLINE T "SMOKE GRADE"}
+ addUserKnob {41 multiply_3 l multiply T GrSMOKE.multiply}
+ addUserKnob {41 gamma_3 l gamma T GrSMOKE.gamma}
+ addUserKnob {41 gamma_4 l "ALPHA gamma" T GrALPHA.gamma}
+ addUserKnob {20 fire l FIRE}
+ addUserKnob {41 multiply_5 l "Scatter Internal Mult" T ScatterGrade.multiply}
+ addUserKnob {26 sg l "" +STARTLINE T "<b>\nscatter internal grad"}
+ addUserKnob {41 hue_rotation l "hue rotation" T HueShift1.hue_rotation}
+ addUserKnob {41 mix_2 l mix T HueShift1.mix}
+ addUserKnob {26 fm l "" +STARTLINE T <b>fire}
+ addUserKnob {41 multiply_4 l "Scatter Fire Mult" T FireGrade.multiply}
+ addUserKnob {41 mix l "Scatter Fire Add" T ScatterFireAdd.mix}
+ addUserKnob {26 ""}
+ addUserKnob {41 multiply_6 l "Core Decay Mult" T CoreDecay.multiply}
+ addUserKnob {7 cdMix l "Core Decay Burn"}
+ cdMix 0.4
+ addUserKnob {26 ""}
+ addUserKnob {41 mix_1 l "Fire Effect Mix" T FireEffect.mix}
+ addUserKnob {26 ""}
+ addUserKnob {26 fb l "" +STARTLINE T <b><i>FIREBALL}
+ addUserKnob {41 white l gain T CoreGr.white}
+}
+ BackdropNode {
+  inputs 0
+  name fireball_CloseUp_core_A_4_
+  tile_color 0x3f5766ff
+  label fireball_CloseUp_core_A_4
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos 338
+  ypos -1941
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_CloseUp_core_A_SLOW_L_
+  tile_color 0x3f5766ff
+  label fireball_CloseUp_core_A_SLOW_L
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos 651
+  ypos -1950
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_CloseUp_core_A_SLOW__deep__L_
+  tile_color 0x3f5766ff
+  label "fireball_CloseUp_core_A_SLOW (deep)_L"
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos 639
+  ypos -2281
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_CloseUp_core_A__deep__4_
+  tile_color 0x3f5766ff
+  label "fireball_CloseUp_core_A (deep)_4"
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos 322
+  ypos -2314
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_CloseUp_core_B_4_
+  tile_color 0x3f5766ff
+  label fireball_CloseUp_core_B_4
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos 975
+  ypos -1957
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_CloseUp_core_B_SLOW_L_
+  tile_color 0x3f5766ff
+  label fireball_CloseUp_core_B_SLOW_L
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos 1282
+  ypos -1962
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_CloseUp_core_B_SLOW__deep__L_
+  tile_color 0x3f5766ff
+  label "fireball_CloseUp_core_B_SLOW (deep)_L"
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos 1274
+  ypos -2303
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_CloseUp_core_B__deep__4_
+  tile_color 0x3f5766ff
+  label "fireball_CloseUp_core_B (deep)_4"
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos 988
+  ypos -2297
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_CloseUp_core_C_4_
+  tile_color 0x3f5766ff
+  label fireball_CloseUp_core_C_4
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos 1614
+  ypos -1981
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_CloseUp_core_C_SLOW_L_
+  tile_color 0x3f5766ff
+  label fireball_CloseUp_core_C_SLOW_L
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos 1956
+  ypos -1987
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_CloseUp_core_C_SLOW__deep__L_
+  tile_color 0x3f5766ff
+  label "fireball_CloseUp_core_C_SLOW (deep)_L"
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos 1956
+  ypos -2318
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_CloseUp_core_C__deep__4_
+  tile_color 0x3f5766ff
+  label "fireball_CloseUp_core_C (deep)_4"
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos 1613
+  ypos -2304
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_CloseUp_core_D_4_
+  tile_color 0x3f5766ff
+  label fireball_CloseUp_core_D_4
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos 2330
+  ypos -1989
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_CloseUp_core_D_SLOW_L_
+  tile_color 0x3f5766ff
+  label fireball_CloseUp_core_D_SLOW_L
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos 2674
+  ypos -1993
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_CloseUp_core_D_SLOW__deep__L_
+  tile_color 0x3f5766ff
+  label "fireball_CloseUp_core_D_SLOW (deep)_L"
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos 2667
+  ypos -2324
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_CloseUp_core_D__deep__4_
+  tile_color 0x3f5766ff
+  label "fireball_CloseUp_core_D (deep)_4"
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos 2334
+  ypos -2323
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_pyro_Closeup_A_4_
+  tile_color 0x3f5766ff
+  label fireball_pyro_Closeup_A_4
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos -2421
+  ypos -2009
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_pyro_Closeup_A_SLOW_L_
+  tile_color 0x3f5766ff
+  label fireball_pyro_Closeup_A_SLOW_L
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos -2127
+  ypos -2010
+  bdwidth 263
+  bdheight 298
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_pyro_Closeup_A_SLOW__deep__L_
+  tile_color 0x3f5766ff
+  label "fireball_pyro_Closeup_A_SLOW (deep)_L"
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos -2121
+  ypos -2344
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_pyro_Closeup_A__deep__4_
+  tile_color 0x3f5766ff
+  label "fireball_pyro_Closeup_A (deep)_4"
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos -2431
+  ypos -2350
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_pyro_Closeup_B_4_
+  tile_color 0x3f5766ff
+  label fireball_pyro_Closeup_B_4
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos -1787
+  ypos -1997
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_pyro_Closeup_B_SLOW_L_
+  tile_color 0x3f5766ff
+  label fireball_pyro_Closeup_B_SLOW_L
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos -1483
+  ypos -2011
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_pyro_Closeup_B_SLOW__deep__L_
+  tile_color 0x3f5766ff
+  label "fireball_pyro_Closeup_B_SLOW (deep)_L"
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos -1482
+  ypos -2344
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_pyro_Closeup_B__deep__4_
+  tile_color 0x3f5766ff
+  label "fireball_pyro_Closeup_B (deep)_4"
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos -1788
+  ypos -2347
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_pyro_Closeup_C_4_
+  tile_color 0x3f5766ff
+  label fireball_pyro_Closeup_C_4
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos -1153
+  ypos -2011
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_pyro_Closeup_C_SLOW_L_
+  tile_color 0x3f5766ff
+  label fireball_pyro_Closeup_C_SLOW_L
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos -840
+  ypos -2009
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_pyro_Closeup_C_SLOW__deep__L_
+  tile_color 0x3f5766ff
+  label "fireball_pyro_Closeup_C_SLOW (deep)_L"
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos -837
+  ypos -2342
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_pyro_Closeup_C__deep__4_
+  tile_color 0x3f5766ff
+  label "fireball_pyro_Closeup_C (deep)_4"
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos -1150
+  ypos -2344
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_pyro_Closeup_D_4_
+  tile_color 0x3f5766ff
+  label fireball_pyro_Closeup_D_4
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos -492
+  ypos -1999
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_pyro_Closeup_D_SLOW_L_
+  tile_color 0x3f5766ff
+  label fireball_pyro_Closeup_D_SLOW_L
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos -176
+  ypos -2002
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_pyro_Closeup_D_SLOW__deep__L_
+  tile_color 0x3f5766ff
+  label "fireball_pyro_Closeup_D_SLOW (deep)_L"
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos -189
+  ypos -2335
+  bdwidth 270
+  bdheight 310
+ }
+ BackdropNode {
+  inputs 0
+  name fireball_pyro_Closeup_D__deep__4_
+  tile_color 0x3f5766ff
+  label "fireball_pyro_Closeup_D (deep)_4"
+  note_font_size 42
+  note_font_color 0xffffffff
+  xpos -510
+  ypos -2330
+  bdwidth 270
+  bdheight 310
+ }
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_pyro_Closeup_D_SLOW/rgba/faw0000.fireball_pyro_Closeup_D_SLOW.rgba.%04d.exr
+  format "2156 1221 0 0 2156 1221 1 "
+  first 1001
+  before black
+  last 1600
+  after black
+  origfirst 1001
+  origlast 1600
+  origset true
+  on_error black
+  version 1
+  name fireball_pyro_Closeup_D_SLOW_rgba_L_
+  label Render_rgba
+  selected true
+  xpos -136
+  ypos -1921
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_pyro_Closeup_D_SLOW}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T L}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_pyro_Closeup_D_SLOW_L_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_rgba}
+ }
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_pyro_Closeup_D_SLOW/aovs/faw0000.fireball_pyro_Closeup_D_SLOW.aovs.%d.exr
+  first 1001
+  before black
+  last 1600
+  after black
+  origfirst 1001
+  origlast 1600
+  origset true
+  on_error black
+  name fireball_pyro_Closeup_D_SLOW_aovs_L_
+  label Render_aovs
+  selected true
+  xpos -26
+  ypos -1921
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_pyro_Closeup_D_SLOW}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T L}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_pyro_Closeup_D_SLOW_L_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_aovs}
+ }
+ Group {
+  inputs 2
+  name mix7
+  xpos -82
+  ypos -1772
+ }
+  Input {
+   inputs 0
+   name RGBa
+   xpos -545
+   ypos -658
+   number 1
+  }
+  Input {
+   inputs 0
+   name AOVs
+   xpos -357
+   ypos -651
+  }
+  ShuffleCopy {
+   inputs 2
+   in2 none
+   red red
+   green green
+   blue blue
+   name ShuffleCopy1
+   selected true
+   xpos -465
+   ypos -556
+  }
+  AddChannels {
+   channels depth
+   name AddChannels1
+   xpos -465
+   ypos -511
+  }
+  Reformat {
+   pbb true
+   name Reformat1
+   xpos -465
+   ypos -436
+  }
+  Output {
+   name Output1
+   xpos -465
+   ypos -336
+  }
+ end_group
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_pyro_Closeup_D/rgba/faw0000.4.fireball_pyro_Closeup_D.rgba.%d.exr
+  first 1001
+  before black
+  last 1200
+  after black
+  on_error black
+  name fireball_pyro_Closeup_D_rgba_4_
+  label Render_rgba
+  selected true
+  xpos -437
+  ypos -1914
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_pyro_Closeup_D}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T 4}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_pyro_Closeup_D_4_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_rgba}
+ }
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_pyro_Closeup_D/aovs/faw0000.4.fireball_pyro_Closeup_D.aovs.%d.exr
+  first 1001
+  before black
+  last 1200
+  after black
+  on_error black
+  name fireball_pyro_Closeup_D_aovs_4_
+  label Render_aovs
+  selected true
+  xpos -327
+  ypos -1914
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_pyro_Closeup_D}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T 4}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_pyro_Closeup_D_4_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_aovs}
+ }
+ Group {
+  inputs 2
+  name mix6
+  xpos -377
+  ypos -1761
+ }
+  Input {
+   inputs 0
+   name RGBa
+   xpos -545
+   ypos -658
+   number 1
+  }
+  Input {
+   inputs 0
+   name AOVs
+   xpos -357
+   ypos -651
+  }
+  ShuffleCopy {
+   inputs 2
+   in2 none
+   red red
+   green green
+   blue blue
+   name ShuffleCopy1
+   selected true
+   xpos -465
+   ypos -556
+  }
+  AddChannels {
+   channels depth
+   name AddChannels1
+   xpos -465
+   ypos -511
+  }
+  Reformat {
+   pbb true
+   name Reformat1
+   xpos -465
+   ypos -436
+  }
+  Output {
+   name Output1
+   xpos -465
+   ypos -336
+  }
+ end_group
+ Switch {
+  inputs 2
+  which {{fs}}
+  name Switch6
+  xpos -280
+  ypos -1618
+ }
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_pyro_Closeup_C_SLOW/rgba/faw0000.fireball_pyro_Closeup_C_SLOW.rgba.%04d.exr
+  format "2156 1221 0 0 2156 1221 1 "
+  first 1001
+  before black
+  last 1600
+  after black
+  origfirst 1001
+  origlast 1600
+  origset true
+  on_error black
+  version 1
+  name fireball_pyro_Closeup_C_SLOW_rgba_L_
+  label Render_rgba
+  selected true
+  xpos -800
+  ypos -1924
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_pyro_Closeup_C_SLOW}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T L}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_pyro_Closeup_C_SLOW_L_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_rgba}
+ }
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_pyro_Closeup_C_SLOW/aovs/faw0000.fireball_pyro_Closeup_C_SLOW.aovs.%d.exr
+  first 1001
+  before black
+  last 1600
+  after black
+  origfirst 1001
+  origlast 1600
+  origset true
+  on_error black
+  name fireball_pyro_Closeup_C_SLOW_aovs_L_
+  label Render_aovs
+  selected true
+  xpos -690
+  ypos -1924
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_pyro_Closeup_C_SLOW}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T L}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_pyro_Closeup_C_SLOW_L_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_aovs}
+ }
+ Group {
+  inputs 2
+  name mix5
+  xpos -745
+  ypos -1771
+ }
+  Input {
+   inputs 0
+   name RGBa
+   xpos -545
+   ypos -658
+   number 1
+  }
+  Input {
+   inputs 0
+   name AOVs
+   xpos -357
+   ypos -651
+  }
+  ShuffleCopy {
+   inputs 2
+   in2 none
+   red red
+   green green
+   blue blue
+   name ShuffleCopy1
+   selected true
+   xpos -465
+   ypos -556
+  }
+  AddChannels {
+   channels depth
+   name AddChannels1
+   xpos -465
+   ypos -511
+  }
+  Reformat {
+   pbb true
+   name Reformat1
+   xpos -465
+   ypos -436
+  }
+  Output {
+   name Output1
+   xpos -465
+   ypos -336
+  }
+ end_group
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_pyro_Closeup_C/rgba/faw0000.4.fireball_pyro_Closeup_C.rgba.%d.exr
+  first 1001
+  before black
+  last 1200
+  after black
+  origfirst 1001
+  origlast 1200
+  origset true
+  on_error black
+  name fireball_pyro_Closeup_C_rgba_4_
+  label Render_rgba
+  selected true
+  xpos -1113
+  ypos -1917
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_pyro_Closeup_C}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T 4}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_pyro_Closeup_C_4_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_rgba}
+ }
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_pyro_Closeup_C/aovs/faw0000.4.fireball_pyro_Closeup_C.aovs.%d.exr
+  first 1001
+  before black
+  last 1200
+  after black
+  on_error black
+  name fireball_pyro_Closeup_C_aovs_4_
+  label Render_aovs
+  selected true
+  xpos -1003
+  ypos -1917
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_pyro_Closeup_C}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T 4}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_pyro_Closeup_C_4_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_aovs}
+ }
+ Group {
+  inputs 2
+  name mix4
+  xpos -1054
+  ypos -1770
+ }
+  Input {
+   inputs 0
+   name RGBa
+   xpos -545
+   ypos -658
+   number 1
+  }
+  Input {
+   inputs 0
+   name AOVs
+   xpos -357
+   ypos -651
+  }
+  ShuffleCopy {
+   inputs 2
+   in2 none
+   red red
+   green green
+   blue blue
+   name ShuffleCopy1
+   selected true
+   xpos -465
+   ypos -556
+  }
+  AddChannels {
+   channels depth
+   name AddChannels1
+   xpos -465
+   ypos -511
+  }
+  Reformat {
+   pbb true
+   name Reformat1
+   xpos -465
+   ypos -436
+  }
+  Output {
+   name Output1
+   xpos -465
+   ypos -336
+  }
+ end_group
+ Switch {
+  inputs 2
+  which {{fs}}
+  name Switch5
+  xpos -936
+  ypos -1618
+ }
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_pyro_Closeup_B_SLOW/rgba/faw0000.fireball_pyro_Closeup_B_SLOW.rgba.%04d.exr
+  format "2156 1221 0 0 2156 1221 1 "
+  first 1001
+  before black
+  last 1600
+  after black
+  origfirst 1001
+  origlast 1600
+  origset true
+  on_error black
+  version 2
+  name fireball_pyro_Closeup_B_SLOW_rgba_L_
+  label Render_rgba
+  selected true
+  xpos -1436
+  ypos -1931
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_pyro_Closeup_B_SLOW}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T L}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_pyro_Closeup_B_SLOW_L_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_rgba}
+ }
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_pyro_Closeup_B_SLOW/aovs/faw0000.fireball_pyro_Closeup_B_SLOW.aovs.%d.exr
+  first 1001
+  before black
+  last 1600
+  after black
+  origfirst 1001
+  origlast 1600
+  origset true
+  on_error black
+  name fireball_pyro_Closeup_B_SLOW_aovs_L_
+  label Render_aovs
+  selected true
+  xpos -1326
+  ypos -1931
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_pyro_Closeup_B_SLOW}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T L}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_pyro_Closeup_B_SLOW_L_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_aovs}
+ }
+ Group {
+  inputs 2
+  name mix3
+  xpos -1394
+  ypos -1774
+ }
+  Input {
+   inputs 0
+   name RGBa
+   xpos -545
+   ypos -658
+   number 1
+  }
+  Input {
+   inputs 0
+   name AOVs
+   xpos -357
+   ypos -651
+  }
+  ShuffleCopy {
+   inputs 2
+   in2 none
+   red red
+   green green
+   blue blue
+   name ShuffleCopy1
+   selected true
+   xpos -465
+   ypos -556
+  }
+  AddChannels {
+   channels depth
+   name AddChannels1
+   xpos -465
+   ypos -511
+  }
+  Reformat {
+   pbb true
+   name Reformat1
+   xpos -465
+   ypos -436
+  }
+  Output {
+   name Output1
+   xpos -465
+   ypos -336
+  }
+ end_group
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_pyro_Closeup_B/rgba/faw0000.4.fireball_pyro_Closeup_B.rgba.%d.exr
+  first 1001
+  before black
+  last 1200
+  after black
+  origfirst 1001
+  origlast 1200
+  origset true
+  on_error black
+  version 1
+  name fireball_pyro_Closeup_B_rgba_4_
+  label Render_rgba
+  selected true
+  xpos -1725
+  ypos -1927
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_pyro_Closeup_B}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T 4}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_pyro_Closeup_B_4_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_rgba}
+ }
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_pyro_Closeup_B/aovs/faw0000.4.fireball_pyro_Closeup_B.aovs.%d.exr
+  first 1001
+  before black
+  last 1200
+  after black
+  on_error black
+  name fireball_pyro_Closeup_B_aovs_4_
+  label Render_aovs
+  selected true
+  xpos -1615
+  ypos -1927
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_pyro_Closeup_B}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T 4}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_pyro_Closeup_B_4_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_aovs}
+ }
+ Group {
+  inputs 2
+  name mix2
+  xpos -1671
+  ypos -1771
+ }
+  Input {
+   inputs 0
+   name RGBa
+   xpos -545
+   ypos -658
+   number 1
+  }
+  Input {
+   inputs 0
+   name AOVs
+   xpos -357
+   ypos -651
+  }
+  ShuffleCopy {
+   inputs 2
+   in2 none
+   red red
+   green green
+   blue blue
+   name ShuffleCopy1
+   selected true
+   xpos -465
+   ypos -556
+  }
+  AddChannels {
+   channels depth
+   name AddChannels1
+   xpos -465
+   ypos -511
+  }
+  Reformat {
+   pbb true
+   name Reformat1
+   xpos -465
+   ypos -436
+  }
+  Output {
+   name Output1
+   xpos -465
+   ypos -336
+  }
+ end_group
+ Switch {
+  inputs 2
+  which {{fs}}
+  name Switch4
+  xpos -1535
+  ypos -1568
+ }
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_pyro_Closeup_A_SLOW/rgba/faw0000.fireball_pyro_Closeup_A_SLOW.rgba.%04d.exr
+  format "2156 1221 0 0 2156 1221 1 "
+  first 1001
+  before black
+  last 1600
+  after black
+  origfirst 1001
+  origlast 1600
+  origset true
+  on_error black
+  version 21
+  name fireball_pyro_Closeup_A_SLOW_rgba_L_
+  label Render_rgba
+  selected true
+  xpos -2089
+  ypos -1941
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_pyro_Closeup_A_SLOW}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T L}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_pyro_Closeup_A_SLOW_L_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_rgba}
+ }
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_pyro_Closeup_A_SLOW/aovs/faw0000.fireball_pyro_Closeup_A_SLOW.aovs.%d.exr
+  first 1001
+  before black
+  last 1200
+  after black
+  origfirst 1001
+  origlast 1200
+  origset true
+  on_error black
+  name fireball_pyro_Closeup_A_SLOW_aovs_L_
+  label Render_aovs
+  selected true
+  xpos -1977
+  ypos -1938
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_pyro_Closeup_A_SLOW}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T L}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_pyro_Closeup_A_SLOW_L_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_aovs}
+ }
+ Group {
+  inputs 2
+  name mix1
+  xpos -2045
+  ypos -1777
+ }
+  Input {
+   inputs 0
+   name RGBa
+   xpos -545
+   ypos -658
+   number 1
+  }
+  Input {
+   inputs 0
+   name AOVs
+   xpos -357
+   ypos -651
+  }
+  ShuffleCopy {
+   inputs 2
+   in2 none
+   red red
+   green green
+   blue blue
+   name ShuffleCopy1
+   selected true
+   xpos -465
+   ypos -556
+  }
+  AddChannels {
+   channels depth
+   name AddChannels1
+   xpos -465
+   ypos -511
+  }
+  Reformat {
+   pbb true
+   name Reformat1
+   xpos -465
+   ypos -436
+  }
+  Output {
+   name Output1
+   xpos -465
+   ypos -336
+  }
+ end_group
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_pyro_Closeup_A/rgba/faw0000.4.fireball_pyro_Closeup_A.rgba.%d.exr
+  first 1001
+  before black
+  last 1200
+  after black
+  origfirst 1001
+  origlast 1200
+  origset true
+  on_error black
+  version 4
+  name fireball_pyro_Closeup_A_rgba_4_
+  label Render_rgba
+  selected true
+  xpos -2382
+  ypos -1921
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_pyro_Closeup_A}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T 4}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_pyro_Closeup_A_4_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_rgba}
+ }
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_pyro_Closeup_A/aovs/faw0000.4.fireball_pyro_Closeup_A.aovs.%d.exr
+  first 1001
+  before black
+  last 1200
+  after black
+  on_error black
+  name fireball_pyro_Closeup_A_aovs_4_
+  label Render_aovs
+  selected true
+  xpos -2260
+  ypos -1923
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_pyro_Closeup_A}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T 4}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_pyro_Closeup_A_4_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_aovs}
+ }
+ Group {
+  inputs 2
+  name mix
+  xpos -2325
+  ypos -1764
+ }
+  Input {
+   inputs 0
+   name RGBa
+   xpos -545
+   ypos -658
+   number 1
+  }
+  Input {
+   inputs 0
+   name AOVs
+   xpos -357
+   ypos -651
+  }
+  ShuffleCopy {
+   inputs 2
+   in2 none
+   red red
+   green green
+   blue blue
+   name ShuffleCopy1
+   selected true
+   xpos -465
+   ypos -556
+  }
+  AddChannels {
+   channels depth
+   name AddChannels1
+   xpos -465
+   ypos -511
+  }
+  Reformat {
+   pbb true
+   name Reformat1
+   xpos -465
+   ypos -436
+  }
+  Output {
+   name Output1
+   xpos -465
+   ypos -336
+  }
+ end_group
+ Switch {
+  inputs 2
+  which {{fs}}
+  name Switch3
+  xpos -2087
+  ypos -1578
+ }
+ Switch {
+  inputs 4
+  which {{whichsim}}
+  name Switch2
+  xpos 242
+  ypos -694
+ }
+ Dot {
+  name Dot1
+  xpos 276
+  ypos -470
+ }
+set N3fe56240 [stack 0]
+add_layer {id_ball id_ball.red id_ball.green id_ball.blue}
+ Shuffle {
+  in id_ball
+  green red
+  blue red
+  alpha red
+  name Shuffle1
+  label "\[value in]-->\[value out]"
+  xpos 242
+  ypos -365
+ }
+set N3fe5a630 [stack 0]
+push $N3fe56240
+ Dot {
+  name Dot6
+  xpos 394
+  ypos -470
+ }
+set N3fe67520 [stack 0]
+ Dot {
+  name Dot7
+  xpos 594
+  ypos -470
+ }
+set N3fe6b7b0 [stack 0]
+ ChannelMerge {
+  inputs 2
+  operation from
+  name ChannelMerge1
+  xpos 560
+  ypos -371
+ }
+ Dot {
+  name Dot8
+  xpos 594
+  ypos 331
+ }
+push $N3fe5a630
+ Dot {
+  name Dot2
+  xpos 276
+  ypos -293
+ }
+push $N3fe67520
+ Unpremult {
+  name Unpremult1
+  xpos 360
+  ypos -333
+ }
+ Merge2 {
+  inputs 2
+  operation from
+  name Merge4
+  xpos 360
+  ypos -297
+ }
+ Clamp {
+  channels rgb
+  maximum_enable false
+  name Clamp1
+  xpos 360
+  ypos -271
+ }
+set N3fe977f0 [stack 0]
+add_layer {obj_fireBall_KEY_direct_volume obj_fireBall_KEY_direct_volume.red obj_fireBall_KEY_direct_volume.green obj_fireBall_KEY_direct_volume.blue}
+ Shuffle {
+  in obj_fireBall_KEY_direct_volume
+  green red
+  blue red
+  alpha red
+  name Shuffle5
+  label "\[value in]-->\[value out]"
+  xpos 484
+  ypos -212
+ }
+ Grade {
+  name GrKEY
+  xpos 484
+  ypos -174
+ }
+push $N3fe977f0
+add_layer {obj_fireBall_Fill2_direct_volume obj_fireBall_Fill2_direct_volume.red obj_fireBall_Fill2_direct_volume.green obj_fireBall_Fill2_direct_volume.blue}
+ Shuffle {
+  in obj_fireBall_Fill2_direct_volume
+  green red
+  blue red
+  alpha red
+  name Shuffle21
+  label "\[value in]-->\[value out]"
+  xpos 360
+  ypos -212
+ }
+ Grade {
+  multiply 2
+  name GrFILL2_
+  xpos 360
+  ypos -174
+ }
+push $N3fe977f0
+add_layer {obj_fireBall_Fill1_direct_volume obj_fireBall_Fill1_direct_volume.red obj_fireBall_Fill1_direct_volume.green obj_fireBall_Fill1_direct_volume.blue}
+ Shuffle {
+  in obj_fireBall_Fill1_direct_volume
+  green red
+  blue red
+  alpha red
+  name Shuffle4
+  label "\[value in]-->\[value out]"
+  xpos 251
+  ypos -213
+ }
+ Grade {
+  multiply 0.5
+  name GrFILL1_
+  xpos 251
+  ypos -175
+ }
+ Dot {
+  name Dot9
+  xpos 285
+  ypos -137
+ }
+ Merge2 {
+  inputs 2
+  operation plus
+  name Merge2
+  xpos 360
+  ypos -141
+ }
+ Merge2 {
+  inputs 2
+  operation plus
+  name Merge3
+  xpos 484
+  ypos -141
+ }
+ Dot {
+  name Dot16
+  xpos 518
+  ypos -102
+ }
+set N42c13d70 [stack 0]
+ Grade {
+  white {1.402111888 1.440000057 1.42349565 0.493919462}
+  multiply {1.363254666 1.365439773 1.351305604 0}
+  gamma 0.9
+  name GrSMOKE
+  xpos 484
+  ypos 86
+ }
+set N42c17fe0 [stack 0]
+push $N3fe6b7b0
+ Dot {
+  name Dot3
+  xpos 699
+  ypos -470
+ }
+set N42c24fb0 [stack 0]
+ Dot {
+  name Dot4
+  xpos 809
+  ypos -470
+ }
+set N42c29290 [stack 0]
+ Dot {
+  name Dot5
+  xpos 1105
+  ypos -470
+ }
+set N42c2d5a0 [stack 0]
+ Dot {
+  name Dot12
+  xpos 1295
+  ypos -470
+ }
+ Keyer {
+  operation "max keyer"
+  range {0.5 1 1 1}
+  name Keyer1
+  xpos 1261
+  ypos -26
+ }
+push $N42c13d70
+ Ramp {
+  inputs 0
+  output alpha
+  invert true
+  p0 {{Switch2.bbox.x} {Switch2.bbox.y}}
+  p1 {{Switch2.bbox.r} {Switch2.bbox.t}}
+  type smooth1
+  name Ramp1
+  xpos 665
+  ypos -183
+ }
+push $N42c24fb0
+add_layer {fire fire.red fire.green fire.blue}
+ Shuffle {
+  in fire
+  alpha black
+  name Shuffle2
+  label "\[value in]-->\[value out]"
+  xpos 665
+  ypos -371
+ }
+ Grade {
+  multiply 2.02
+  name FireGrade
+  xpos 665
+  ypos -333
+ }
+ Dot {
+  name Dot11
+  xpos 699
+  ypos -224
+ }
+push $N42c29290
+add_layer {scatter_internal scatter_internal.red scatter_internal.green scatter_internal.blue}
+ Shuffle {
+  in scatter_internal
+  alpha black
+  name Shuffle3
+  label "\[value in]-->\[value out]"
+  xpos 775
+  ypos -371
+ }
+ Grade {
+  multiply {0.3600000143 0.08598805964 0.0757997632 0.1049999967}
+  name ScatterGrade
+  xpos 775
+  ypos -333
+ }
+ Merge2 {
+  inputs 2
+  operation plus
+  Achannels rgb
+  Bchannels rgb
+  mix 0.53
+  name ScatterFireAdd
+  xpos 775
+  ypos -228
+ }
+ HueShift {
+  inputs 1+1
+  hue_rotation -30
+  mix 0
+  name HueShift1
+  xpos 775
+  ypos -177
+ }
+ Merge2 {
+  inputs 2
+  operation from
+  Achannels rgb
+  Bchannels rgb
+  name Merge7
+  xpos 775
+  ypos -106
+ }
+set N42c9b890 [stack 0]
+ Grade {
+  multiply 0.3
+  name Grade1
+  xpos 872
+  ypos -106
+ }
+push $N42c2d5a0
+add_layer {u_ramp u_ramp.red u_ramp.green u_ramp.blue}
+ Shuffle {
+  in u_ramp
+  green red
+  blue red
+  name Shuffle7
+  label "\[value in]-->\[value out]"
+  xpos 1070
+  ypos -376
+ }
+ Grade {
+  multiply {5 3.456404209 -0.6999999285 20}
+  name CoreDecay
+  xpos 1070
+  ypos -203
+ }
+ Merge2 {
+  inputs 2
+  operation multiply
+  mix {{1-cdMix}}
+  name Multiply
+  xpos 1070
+  ypos -106
+ }
+ Merge2 {
+  inputs 2
+  operation mask
+  name Merge10
+  xpos 1070
+  ypos -20
+ }
+push $N42c9b890
+ Dot {
+  name Dot10
+  xpos 809
+  ypos 27
+ }
+ Merge2 {
+  inputs 2
+  operation plus
+  name Merge9
+  xpos 1070
+  ypos 23
+ }
+ Merge2 {
+  inputs 2
+  operation soft-light
+  Achannels rgb
+  Bchannels rgb
+  mix 0.7
+  name FireEffect
+  xpos 1070
+  ypos 86
+ }
+push $N42c17fe0
+ Dot {
+  name Dot13
+  xpos 518
+  ypos 196
+ }
+ Merge2 {
+  inputs 2
+  operation plus
+  name Merge6
+  xpos 1070
+  ypos 192
+ }
+set N42d114d0 [stack 0]
+ Copy {
+  inputs 2
+  from0 rgba.alpha
+  to0 rgba.alpha
+  name Copy3
+  xpos 1070
+  ypos 321
+ }
+ Unpremult {
+  name Unpremult2
+  xpos 1070
+  ypos 359
+ }
+ Grade {
+  channels alpha
+  white_clamp true
+  name GrALPHA
+  xpos 1070
+  ypos 398
+ }
+ Premult {
+  name Premult2
+  xpos 1070
+  ypos 447
+ }
+push $N42d114d0
+ Dot {
+  name Dot14
+  xpos 1266
+  ypos 196
+ }
+ Blur {
+  channels rgb
+  size 30
+  name Blur9
+  label "w: \[value size.w] h: \[value size.h]"
+  xpos 1232
+  ypos 342
+ }
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_CloseUp_core_D_SLOW/rgba/faw0000.fireball_CloseUp_core_D_SLOW.rgba.%d.exr
+  first 1001
+  before black
+  last 1190
+  after black
+  origfirst 1001
+  origlast 1190
+  origset true
+  on_error black
+  name fireball_CloseUp_core_D_SLOW_rgba_L_
+  label Render_rgba
+  selected true
+  xpos 2726
+  ypos -1912
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_CloseUp_core_D_SLOW}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T L}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_CloseUp_core_D_SLOW_L_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_rgba}
+ }
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr//fireball_CloseUp_core_D_SLOW/aovs/faw0000.fireball_CloseUp_core_D_SLOW.aovs.%d.exr
+  first 1001
+  before black
+  last 1190
+  after black
+  origfirst 1001
+  origlast 1190
+  origset true
+  on_error black
+  name fireball_CloseUp_core_D_SLOW_aovs_L_
+  label Render_aovs
+  xpos 2833
+  ypos -1913
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_CloseUp_core_D_SLOW}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T L}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_CloseUp_core_D_SLOW_L_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_aovs}
+ }
+ Group {
+  inputs 2
+  name mix15
+  xpos 2766
+  ypos -1763
+ }
+  Input {
+   inputs 0
+   name RGBa
+   xpos -545
+   ypos -658
+   number 1
+  }
+  Input {
+   inputs 0
+   name AOVs
+   xpos -357
+   ypos -651
+  }
+  ShuffleCopy {
+   inputs 2
+   in2 none
+   red red
+   green green
+   blue blue
+   name ShuffleCopy1
+   selected true
+   xpos -465
+   ypos -556
+  }
+  AddChannels {
+   channels depth
+   name AddChannels1
+   xpos -465
+   ypos -511
+  }
+  Reformat {
+   pbb true
+   name Reformat1
+   xpos -465
+   ypos -436
+  }
+  Output {
+   name Output1
+   xpos -465
+   ypos -336
+  }
+ end_group
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_CloseUp_core_D/rgba/faw0000.4.fireball_CloseUp_core_D.rgba.%d.exr
+  first 1001
+  before black
+  last 1030
+  after black
+  origfirst 1001
+  origlast 1200
+  origset true
+  on_error black
+  version 1
+  name fireball_CloseUp_core_D_rgba_4_
+  label Render_rgba
+  selected true
+  xpos 2372
+  ypos -1906
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_CloseUp_core_D}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T 4}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_CloseUp_core_D_4_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_rgba}
+ }
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_CloseUp_core_D/aovs/faw0000.4.fireball_CloseUp_core_D.aovs.%d.exr
+  first 1001
+  before black
+  last 1030
+  after black
+  on_error black
+  name fireball_CloseUp_core_D_aovs_4_
+  label Render_aovs
+  selected true
+  xpos 2482
+  ypos -1906
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_CloseUp_core_D}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T 4}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_CloseUp_core_D_4_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_aovs}
+ }
+ Group {
+  inputs 2
+  name mix14
+  xpos 2431
+  ypos -1746
+ }
+  Input {
+   inputs 0
+   name RGBa
+   xpos -545
+   ypos -658
+   number 1
+  }
+  Input {
+   inputs 0
+   name AOVs
+   xpos -357
+   ypos -651
+  }
+  ShuffleCopy {
+   inputs 2
+   in2 none
+   red red
+   green green
+   blue blue
+   name ShuffleCopy1
+   selected true
+   xpos -465
+   ypos -556
+  }
+  AddChannels {
+   channels depth
+   name AddChannels1
+   xpos -465
+   ypos -511
+  }
+  Reformat {
+   pbb true
+   name Reformat1
+   xpos -465
+   ypos -436
+  }
+  Output {
+   name Output1
+   xpos -465
+   ypos -336
+  }
+ end_group
+ Switch {
+  inputs 2
+  which {{fs}}
+  name Switch10
+  xpos 2533
+  ypos -1497
+ }
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_CloseUp_core_C_SLOW/rgba/faw0000.fireball_CloseUp_core_C_SLOW.rgba.%d.exr
+  first 1001
+  before black
+  last 1190
+  after black
+  origfirst 1001
+  origlast 1190
+  origset true
+  on_error black
+  name fireball_CloseUp_core_C_SLOW_rgba_L_
+  label Render_rgba
+  selected true
+  xpos 2012
+  ypos -1906
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_CloseUp_core_C_SLOW}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T L}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_CloseUp_core_C_SLOW_L_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_rgba}
+ }
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_CloseUp_core_C_SLOW/aovs/faw0000.fireball_CloseUp_core_C_SLOW.aovs.%d.exr
+  first 1001
+  before black
+  last 1190
+  after black
+  on_error black
+  name fireball_CloseUp_core_C_SLOW_aovs_L_
+  label Render_aovs
+  selected true
+  xpos 2122
+  ypos -1906
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_CloseUp_core_C_SLOW}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T L}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_CloseUp_core_C_SLOW_L_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_aovs}
+ }
+ Group {
+  inputs 2
+  name mix13
+  xpos 2054
+  ypos -1754
+ }
+  Input {
+   inputs 0
+   name RGBa
+   xpos -545
+   ypos -658
+   number 1
+  }
+  Input {
+   inputs 0
+   name AOVs
+   xpos -357
+   ypos -651
+  }
+  ShuffleCopy {
+   inputs 2
+   in2 none
+   red red
+   green green
+   blue blue
+   name ShuffleCopy1
+   selected true
+   xpos -465
+   ypos -556
+  }
+  AddChannels {
+   channels depth
+   name AddChannels1
+   xpos -465
+   ypos -511
+  }
+  Reformat {
+   pbb true
+   name Reformat1
+   xpos -465
+   ypos -436
+  }
+  Output {
+   name Output1
+   xpos -465
+   ypos -336
+  }
+ end_group
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_CloseUp_core_C/rgba/faw0000.4.fireball_CloseUp_core_C.rgba.%d.exr
+  first 1001
+  before black
+  last 1030
+  after black
+  origfirst 1001
+  origlast 1200
+  origset true
+  on_error black
+  version 3
+  name fireball_CloseUp_core_C_rgba_4_
+  label Render_rgba
+  selected true
+  xpos 1663
+  ypos -1898
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_CloseUp_core_C}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T 4}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_CloseUp_core_C_4_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_rgba}
+ }
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_CloseUp_core_C/aovs/faw0000.4.fireball_CloseUp_core_C.aovs.%d.exr
+  first 1001
+  before black
+  last 1030
+  after black
+  origfirst 1001
+  origlast 1200
+  origset true
+  on_error black
+  name fireball_CloseUp_core_C_aovs_4_
+  label Render_aovs
+  selected true
+  xpos 1779
+  ypos -1899
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_CloseUp_core_C}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T 4}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_CloseUp_core_C_4_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_aovs}
+ }
+ Group {
+  inputs 2
+  name mix12
+  xpos 1703
+  ypos -1743
+ }
+  Input {
+   inputs 0
+   name RGBa
+   xpos -545
+   ypos -658
+   number 1
+  }
+  Input {
+   inputs 0
+   name AOVs
+   xpos -357
+   ypos -651
+  }
+  ShuffleCopy {
+   inputs 2
+   in2 none
+   red red
+   green green
+   blue blue
+   name ShuffleCopy1
+   selected true
+   xpos -465
+   ypos -556
+  }
+  AddChannels {
+   channels depth
+   name AddChannels1
+   xpos -465
+   ypos -511
+  }
+  Reformat {
+   pbb true
+   name Reformat1
+   xpos -465
+   ypos -436
+  }
+  Output {
+   name Output1
+   xpos -465
+   ypos -336
+  }
+ end_group
+ Switch {
+  inputs 2
+  which {{fs}}
+  name Switch9
+  xpos 1816
+  ypos -1497
+ }
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_CloseUp_core_B_SLOW/rgba/faw0000.fireball_CloseUp_core_B_SLOW.rgba.%d.exr
+  first 1001
+  before black
+  last 1190
+  after black
+  on_error black
+  name fireball_CloseUp_core_B_SLOW_rgba_L_
+  label Render_rgba
+  selected true
+  xpos 1340
+  ypos -1889
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_CloseUp_core_B_SLOW}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T L}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_CloseUp_core_B_SLOW_L_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_rgba}
+ }
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_CloseUp_core_B_SLOW/aovs/faw0000.fireball_CloseUp_core_B_SLOW.aovs.%d.exr
+  first 1001
+  before black
+  last 1190
+  after black
+  on_error black
+  name fireball_CloseUp_core_B_SLOW_aovs_L_
+  label Render_aovs
+  selected true
+  xpos 1450
+  ypos -1889
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_CloseUp_core_B_SLOW}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T L}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_CloseUp_core_B_SLOW_L_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_aovs}
+ }
+ Group {
+  inputs 2
+  name mix11
+  xpos 1352
+  ypos -1737
+ }
+  Input {
+   inputs 0
+   name RGBa
+   xpos -545
+   ypos -658
+   number 1
+  }
+  Input {
+   inputs 0
+   name AOVs
+   xpos -357
+   ypos -651
+  }
+  ShuffleCopy {
+   inputs 2
+   in2 none
+   red red
+   green green
+   blue blue
+   name ShuffleCopy1
+   selected true
+   xpos -465
+   ypos -556
+  }
+  AddChannels {
+   channels depth
+   name AddChannels1
+   xpos -465
+   ypos -511
+  }
+  Reformat {
+   pbb true
+   name Reformat1
+   xpos -465
+   ypos -436
+  }
+  Output {
+   name Output1
+   xpos -465
+   ypos -336
+  }
+ end_group
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_CloseUp_core_B/rgba/faw0000.4.fireball_CloseUp_core_B.rgba.%d.exr
+  first 1001
+  before black
+  last 1030
+  after black
+  origfirst 1001
+  origlast 1200
+  origset true
+  on_error black
+  version 1
+  name fireball_CloseUp_core_B_rgba_4_
+  label Render_rgba
+  selected true
+  xpos 1019
+  ypos -1875
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_CloseUp_core_B}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T 4}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_CloseUp_core_B_4_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_rgba}
+ }
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_CloseUp_core_B/aovs/faw0000.4.fireball_CloseUp_core_B.aovs.%d.exr
+  first 1001
+  before black
+  last 1030
+  after black
+  on_error black
+  name fireball_CloseUp_core_B_aovs_4_
+  label Render_aovs
+  selected true
+  xpos 1129
+  ypos -1875
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_CloseUp_core_B}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T 4}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_CloseUp_core_B_4_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_aovs}
+ }
+ Group {
+  inputs 2
+  name mix10
+  xpos 1062
+  ypos -1708
+ }
+  Input {
+   inputs 0
+   name RGBa
+   xpos -545
+   ypos -658
+   number 1
+  }
+  Input {
+   inputs 0
+   name AOVs
+   xpos -357
+   ypos -651
+  }
+  ShuffleCopy {
+   inputs 2
+   in2 none
+   red red
+   green green
+   blue blue
+   name ShuffleCopy1
+   selected true
+   xpos -465
+   ypos -556
+  }
+  AddChannels {
+   channels depth
+   name AddChannels1
+   xpos -465
+   ypos -511
+  }
+  Reformat {
+   pbb true
+   name Reformat1
+   xpos -465
+   ypos -436
+  }
+  Output {
+   name Output1
+   xpos -465
+   ypos -336
+  }
+ end_group
+ Switch {
+  inputs 2
+  which {{fs}}
+  name Switch8
+  xpos 1099
+  ypos -1497
+ }
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_CloseUp_core_A_SLOW/rgba/faw0000.fireball_CloseUp_core_A_SLOW.rgba.%d.exr
+  first 1001
+  before black
+  last 1190
+  after black
+  on_error black
+  name fireball_CloseUp_core_A_SLOW_rgba_L_
+  label Render_rgba
+  selected true
+  xpos 690
+  ypos -1873
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_CloseUp_core_A_SLOW}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T L}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_CloseUp_core_A_SLOW_L_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_rgba}
+ }
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_CloseUp_core_A_SLOW/aovs/faw0000.fireball_CloseUp_core_A_SLOW.aovs.%d.exr
+  first 1001
+  before black
+  last 1190
+  after black
+  on_error black
+  name fireball_CloseUp_core_A_SLOW_aovs_L_
+  label Render_aovs
+  selected true
+  xpos 800
+  ypos -1873
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_CloseUp_core_A_SLOW}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T L}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_CloseUp_core_A_SLOW_L_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_aovs}
+ }
+ Group {
+  inputs 2
+  name mix9
+  xpos 744
+  ypos -1713
+ }
+  Input {
+   inputs 0
+   name RGBa
+   xpos -545
+   ypos -658
+   number 1
+  }
+  Input {
+   inputs 0
+   name AOVs
+   xpos -357
+   ypos -651
+  }
+  ShuffleCopy {
+   inputs 2
+   in2 none
+   red red
+   green green
+   blue blue
+   name ShuffleCopy1
+   selected true
+   xpos -465
+   ypos -556
+  }
+  AddChannels {
+   channels depth
+   name AddChannels1
+   xpos -465
+   ypos -511
+  }
+  Reformat {
+   pbb true
+   name Reformat1
+   xpos -465
+   ypos -436
+  }
+  Output {
+   name Output1
+   xpos -465
+   ypos -336
+  }
+ end_group
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_CloseUp_core_A/rgba/faw0000.4.fireball_CloseUp_core_A.rgba.%d.exr
+  first 1001
+  before black
+  last 1030
+  after black
+  origfirst 1001
+  origlast 1200
+  origset true
+  on_error black
+  version 5
+  name fireball_CloseUp_core_A_rgba_4_
+  label Render_rgba
+  selected true
+  xpos 390
+  ypos -1853
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_CloseUp_core_A}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T 4}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_CloseUp_core_A_4_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_rgba}
+ }
+ Read {
+  inputs 0
+  file /Volumes/monovfx/inhouse/zmonolith/SHARED/ILM_BGS/PKG-ILM_Fireball_Setup/ILM_fireball/rndr/fireball_CloseUp_core_A/aovs/faw0000.4.fireball_CloseUp_core_A.aovs.%d.exr
+  first 1001
+  before black
+  last 1030
+  after black
+  on_error black
+  name fireball_CloseUp_core_A_aovs_4_
+  label Render_aovs
+  selected true
+  xpos 500
+  ypos -1853
+  addUserKnob {20 NAI}
+  addUserKnob {26 NAI_assetName l "Asset Name :" T fireball_CloseUp_core_A}
+  addUserKnob {26 NAI_assetTake l "Asset Take :" T 4}
+  addUserKnob {26 NAI_Block l "Asset Block : " T fireball_CloseUp_core_A_4_}
+  addUserKnob {26 NAI_assetType l "Asset Type : " T Render_aovs}
+ }
+ Group {
+  inputs 2
+  name mix8
+  xpos 446
+  ypos -1696
+ }
+  Input {
+   inputs 0
+   name RGBa
+   xpos -545
+   ypos -658
+   number 1
+  }
+  Input {
+   inputs 0
+   name AOVs
+   xpos -357
+   ypos -651
+  }
+  ShuffleCopy {
+   inputs 2
+   in2 none
+   red red
+   green green
+   blue blue
+   name ShuffleCopy1
+   selected true
+   xpos -465
+   ypos -556
+  }
+  AddChannels {
+   channels depth
+   name AddChannels1
+   xpos -465
+   ypos -511
+  }
+  Reformat {
+   pbb true
+   name Reformat1
+   xpos -465
+   ypos -436
+  }
+  Output {
+   name Output1
+   xpos -465
+   ypos -336
+  }
+ end_group
+ Switch {
+  inputs 2
+  which {{fs}}
+  name Switch7
+  xpos 565
+  ypos -1497
+ }
+ Switch {
+  inputs 4
+  which {{whichsim}}
+  name Switch1
+  xpos 1356
+  ypos -725
+ }
+ Grade {
+  white {25 8.437008858 3.500002623 0.01698854938}
+  unpremult rgba.alpha
+  name CoreGr
+  xpos 1356
+  ypos 236
+ }
+ Merge2 {
+  inputs 2
+  operation atop
+  mix 0.65
+  name Merge112
+  xpos 1356
+  ypos 348
+ }
+ Merge2 {
+  inputs 2
+  name Merge1
+  xpos 1356
+  ypos 447
+ }
+set N43036310 [stack 0]
+ Output {
+  name Output1
+  xpos 1356
+  ypos 605
+ }
+ DeepRead {
+  inputs 0
+  file rndr/fireball_pyro_Closeup_A/deep/faw0000.4.fireball_pyro_Closeup_A.deep.%d.exr
+  first 1001
+  before black
+  last 1200
+  after black
+  origfirst 1001
+  origlast 1200
+  origset true
+  on_error black
+  name fireball_pyro_Closeup_A__deep__deep_4_
+  label Render_deep
+  xpos -2344
+  ypos -2196
+ }
+ DeepRead {
+  inputs 0
+  file rndr/fireball_pyro_Closeup_A_SLOW/deep/faw0000.fireball_pyro_Closeup_A_SLOW.deep.%d.exr
+  first 1001
+  before black
+  last 1600
+  after black
+  origfirst 1001
+  origlast 1600
+  origset true
+  on_error black
+  name fireball_pyro_Closeup_A_SLOW__deep_L_
+  label Render_deep
+  xpos -2045
+  ypos -2194
+ }
+ DeepRead {
+  inputs 0
+  file rndr/fireball_pyro_Closeup_B/deep/faw0000.4.fireball_pyro_Closeup_B.deep.%d.exr
+  first 1001
+  before black
+  last 1200
+  after black
+  origfirst 1001
+  origlast 1200
+  origset true
+  on_error black
+  name fireball_pyro_Closeup_B__deep__deep_4_
+  label Render_deep
+  xpos -1710
+  ypos -2173
+ }
+ DeepRead {
+  inputs 0
+  file rndr/fireball_pyro_Closeup_B_SLOW/deep/faw0000.fireball_pyro_Closeup_B_SLOW.deep.%d.exr
+  first 1001
+  before black
+  last 1600
+  after black
+  origfirst 1001
+  origlast 1600
+  origset true
+  on_error black
+  name fireball_pyro_Closeup_B_SLOW__deep_L_
+  label Render_deep
+  xpos -1403
+  ypos -2192
+ }
+ DeepRead {
+  inputs 0
+  file rndr/fireball_pyro_Closeup_C/deep/faw0000.4.fireball_pyro_Closeup_C.deep.%d.exr
+  first 1001
+  before black
+  last 1200
+  after black
+  origfirst 1001
+  origlast 1200
+  origset true
+  on_error black
+  name fireball_pyro_Closeup_C__deep__deep_4_
+  label Render_deep
+  xpos -1071
+  ypos -2170
+ }
+ DeepRead {
+  inputs 0
+  file rndr/fireball_pyro_Closeup_C_SLOW/deep/faw0000.fireball_pyro_Closeup_C_SLOW.deep.%d.exr
+  first 1001
+  before black
+  last 1600
+  after black
+  origfirst 1001
+  origlast 1600
+  origset true
+  on_error black
+  name fireball_pyro_Closeup_C_SLOW__deep_L_
+  label Render_deep
+  xpos -755
+  ypos -2192
+ }
+ DeepRead {
+  inputs 0
+  file rndr/fireball_pyro_Closeup_D/deep/faw0000.4.fireball_pyro_Closeup_D.deep.%d.exr
+  first 1001
+  before black
+  last 1200
+  after black
+  origfirst 1001
+  origlast 1200
+  origset true
+  on_error black
+  name fireball_pyro_Closeup_D__deep__deep_4_
+  label Render_deep
+  xpos -407
+  ypos -2175
+ }
+ DeepRead {
+  inputs 0
+  file rndr/fireball_pyro_Closeup_D_SLOW/deep/faw0000.fireball_pyro_Closeup_D_SLOW.deep.%d.exr
+  first 1001
+  before black
+  last 1600
+  after black
+  origfirst 1001
+  origlast 1600
+  origset true
+  on_error black
+  name fireball_pyro_Closeup_D_SLOW__deep_L_
+  label Render_deep
+  xpos -110
+  ypos -2183
+ }
+ DeepRead {
+  inputs 0
+  file rndr/fireball_CloseUp_core_A/deep/faw0000.4.fireball_CloseUp_core_A.deep.%d.exr
+  first 1001
+  before black
+  last 1030
+  after black
+  origfirst 1001
+  origlast 1030
+  origset true
+  on_error black
+  name fireball_CloseUp_core_A__deep__deep_4_
+  label Render_deep
+  xpos 399
+  ypos -2134
+ }
+ DeepRead {
+  inputs 0
+  file rndr/fireball_CloseUp_core_A_SLOW/deep/faw0000.fireball_CloseUp_core_A_SLOW.deep.%d.exr
+  first 1001
+  before black
+  last 1190
+  after black
+  origfirst 1001
+  origlast 1190
+  origset true
+  on_error black
+  name fireball_CloseUp_core_A_SLOW__deep_L_
+  label Render_deep
+  xpos 718
+  ypos -2131
+ }
+ DeepRead {
+  inputs 0
+  file rndr/fireball_CloseUp_core_B/deep/faw0000.4.fireball_CloseUp_core_B.deep.%d.exr
+  first 1001
+  before black
+  last 1030
+  after black
+  origfirst 1001
+  origlast 1030
+  origset true
+  on_error black
+  name fireball_CloseUp_core_B__deep__deep_4_
+  label Render_deep
+  xpos 1063
+  ypos -2119
+ }
+ DeepRead {
+  inputs 0
+  file rndr/fireball_CloseUp_core_C/deep/faw0000.4.fireball_CloseUp_core_C.deep.%d.exr
+  first 1001
+  before black
+  last 1030
+  after black
+  origfirst 1001
+  origlast 1030
+  origset true
+  on_error black
+  name fireball_CloseUp_core_C__deep__deep_4_
+  label Render_deep
+  xpos 1701
+  ypos -2140
+ }
+ DeepRead {
+  inputs 0
+  file rndr/fireball_CloseUp_core_B_SLOW/deep/faw0000.fireball_CloseUp_core_B_SLOW.deep.%d.exr
+  first 1001
+  before black
+  last 1190
+  after black
+  origfirst 1001
+  origlast 1190
+  origset true
+  on_error black
+  name fireball_CloseUp_core_B_SLOW__deep_L_
+  label Render_deep
+  xpos 1348
+  ypos -2149
+ }
+ DeepRead {
+  inputs 0
+  file rndr/fireball_CloseUp_core_C_SLOW/deep/faw0000.fireball_CloseUp_core_C_SLOW.deep.%d.exr
+  first 1001
+  before black
+  last 1190
+  after black
+  origfirst 1001
+  origlast 1190
+  origset true
+  on_error black
+  name fireball_CloseUp_core_C_SLOW__deep_L_
+  label Render_deep
+  xpos 2041
+  ypos -2163
+ }
+ DeepRead {
+  inputs 0
+  file rndr/fireball_CloseUp_core_D/deep/faw0000.4.fireball_CloseUp_core_D.deep.%d.exr
+  first 1001
+  before black
+  last 1030
+  after black
+  origfirst 1001
+  origlast 1030
+  origset true
+  on_error black
+  name fireball_CloseUp_core_D__deep__deep_4_
+  label Render_deep
+  xpos 2428
+  ypos -2154
+ }
+ DeepRead {
+  inputs 0
+  file rndr/fireball_CloseUp_core_D_SLOW/deep/faw0000.fireball_CloseUp_core_D_SLOW.deep.%d.exr
+  first 1001
+  before black
+  last 1190
+  after black
+  origfirst 1001
+  origlast 1190
+  origset true
+  on_error black
+  name fireball_CloseUp_core_D_SLOW__deep_L_
+  label Render_deep
+  xpos 2748
+  ypos -2173
+ }
+push $N43036310
+ Viewer {
+  frame_range 1001-1600
+  name Viewer1
+  xpos 1940
+  ypos -10
+  hide_input true
+ }
+end_group

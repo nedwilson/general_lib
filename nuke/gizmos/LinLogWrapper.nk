@@ -1,0 +1,12 @@
+set cut_paste_input [stack 0]
+version 6.2 v2
+push $cut_paste_input
+Log2Lin {
+ operation lin2log
+ name Log2Lin3
+ selected true
+}
+Log2Lin {
+ name Log2Lin4
+ selected true
+}

@@ -1,0 +1,13 @@
+#----------------------------------------------------------------------------------------------------------
+#
+# AUTOMATICALLY GENERATED FILE TO BE USED BY W_HOTBOX
+#
+# NAME: Append number
+#
+#----------------------------------------------------------------------------------------------------------
+
+for index, i in enumerate(nuke.selectedNodes()):
+    
+        i.knob('auto_descriptor').setValue(False)
+
+        i.knob('optional_descriptor').setValue(i.knob('optional_descriptor').value()+str(index+1).zfill(2))

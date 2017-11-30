@@ -1,0 +1,29 @@
+#----------------------------------------------------------------------------------------------------------
+#
+# AUTOMATICALLY GENERATED FILE TO BE USED BY W_HOTBOX
+#
+# NAME: DeepRecolor
+#
+#----------------------------------------------------------------------------------------------------------
+
+def emptySelection():
+    for i in nuke.selectedNodes():
+        i.knob('selected').setValue(False)
+
+for i in nuke.selectedNodes():
+    emptySelection()
+    i.knob('selected').setValue(True)    
+    nuke.menu('Nuke').findItem('Boswell/Get Deeps From Reads').invoke()
+    deepRead = nuke.selectedNode()
+
+    deepRead.setXpos(i.xpos()+200)
+    deepRead.setYpos(i.ypos())
+    
+    dotNode = nuke.createNode('Dot')
+
+
+    dotNode.setYpos(i.ypos()+200)
+    
+    i.knob('selected').setValue(True)
+    nuke.createNode('DeepRecolor')
+    
