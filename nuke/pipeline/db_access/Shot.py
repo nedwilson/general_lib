@@ -10,18 +10,6 @@
     
 class Shot():
 
-#     def __init__(self):
-#         self.g_shot_code = None
-#         self.g_path = None
-#         self.g_dbid = None
-#         self.g_sequence = None
-#         self.g_task_template = None
-#         self.g_head_in = None
-#         self.g_cut_in = None
-#         self.g_cut_out = None
-#         self.g_tail_out = None
-#         self.g_cut_duration = None
-#         
     def __init__(self, m_shot_code, m_path, m_dbid, m_sequence, m_task_template, m_head_in, m_cut_in, m_cut_out, m_tail_out, m_cut_duration):
         self.g_shot_code = m_shot_code
         self.g_path = m_path

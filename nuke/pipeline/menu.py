@@ -1,4 +1,9 @@
 #!/usr/bin/python
+import datetime
+start_time = datetime.datetime.now()
+import cProfile, pstats, StringIO
+pr = cProfile.Profile()
+pr.enable()
 
 import sys
 import os.path
@@ -74,3 +79,11 @@ if not nd_menu == None:
     nd_menu.addCommand("&Node/&Filename/Version Up", "version_up_mkdir()", "#Up")
 else:
     print "WARN: nd_menu object is None."
+
+pr.disable()
+s = StringIO.StringIO()
+sortby = 'cumulative'
+ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+ps.print_stats()
+print s.getvalue()
+print "INFO: general menu.py execution complete. Time: %s"%(datetime.datetime.now() - start_time)

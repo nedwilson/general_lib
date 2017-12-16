@@ -10,11 +10,12 @@ from timecode import TimeCode
 import db_access as DB
 
 sgdb = DB.DBAccessGlobals.get_db_access()
-# shot = sgdb.fetch_shot('TS000_000')
-shot = sgdb.fetch_shot('CB061_300')
-print shot
-seq = sgdb.fetch_sequence('CB061')
+
+seq = sgdb.fetch_sequence('HC019')
 print seq
+
+shot = sgdb.fetch_shot('HC019_300')
+print shot
 
 # print "Sequence Create"
 # new_seq_path = DB.DBAccess.get_path_for_sequence('TS000')
@@ -28,9 +29,9 @@ print seq
 # sgdb.create_shot(new_shot_obj)
 # print new_shot_obj
 
-plate = sgdb.fetch_plate('CB061_300_BG', shot)
-print plate
-
+# plate = sgdb.fetch_plate('CB061_300_BG', shot)
+# print plate
+# 
 # print "Plate Create"
 # 
 # plates = ['/Volumes/raid_vol01/shows/spinel/CB061/CB061_300/pix/plates/CB061_300_BG/CB061_300_BG']
@@ -76,6 +77,34 @@ print plate
 # new_plate_obj = DB.Plate(plate_name, start_frame, end_frame, duration, plate_path, start_timecode, clip_name, scene, take, end_timecode, shot, -1)
 # sgdb.create_plate(new_plate_obj)
 # print new_plate_obj
+
+tasks = sgdb.fetch_tasks_for_shot(shot)
+task = None
+for task_tmp in tasks:
+    if "final" in task_tmp.g_task_name.lower():
+        task = task_tmp
+print task
+    
+artist = sgdb.fetch_artist("Ned Wilson")
+print artist
+
+# print "Version Create"
+# new_version_obj = DB.Version('HC019_300_comp_v002', 
+#                              -1, 
+#                              'Removed white halo around A-pillar.', 
+#                              1001, 
+#                              1065, 
+#                              65, 
+#                              '/Volumes/raid_vol01/shows/spinel/HC019/HC019_300/pix/comp/HC019_300_comp_v002/HC019_300_comp_v002.%04d.exr', 
+#                              '/Volumes/raid_vol01/shows/spinel/HC019/HC019_300/pix/comp/HC019_300_comp_v002/HC019_300_comp_v002.mov',
+#                              shot,
+#                              artist,
+#                              task)
+# sgdb.create_version(new_version_obj)
+# print new_version_obj
+
+version = sgdb.fetch_version('HC019_300_comp_v002', shot)
+print version
 
 
 

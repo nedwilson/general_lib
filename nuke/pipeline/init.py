@@ -42,6 +42,14 @@ def make_dir_path():
             print "ERROR: Filename: %s" % e.filename
             print "ERROR: Error String: %s" % e.strerror
 
+# Prints "Rendered frame N of example.mov." Useful when rendering Quicktimes in non-interactive mode.
+# Not in use currently. Will be adding code to the after each frame knob of the DNXHD Quicktime Write
+# node in the template.
+def print_render_frame():
+    file = os.path.basename(nuke.thisNode()['file'].evaluate())
+    frame = nuke.frame()
+    print "Rendered frame %s of %s."%(frame, file)
+
 
 # function attempts to determine show, sequence, and shot from the nuke script name.
 # does nothing if the path does not produce a match to the shot regular expression
@@ -221,4 +229,5 @@ if nuke.NUKE_VERSION_MAJOR > 8:
 
 # add callback to auto-create directory path for write nodes
 nuke.addBeforeRender(make_dir_path, nodeClass = 'Write')
+# nuke.addAfterFrameRender(print_render_frame, nodeClass = 'Write')
 
