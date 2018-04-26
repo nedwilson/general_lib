@@ -40,6 +40,10 @@ class DBAccess(object):
     @abc.abstractmethod
     def fetch_task_from_id(self, m_task_id, m_shot_obj):
         """Returns a task object assosciated with the shot object from the database using the database ID as a search parameter"""
+
+    @abc.abstractmethod
+    def update_task_status(self, m_task_obj):
+        """Sets a status on an existing task."""
             
     @abc.abstractmethod
     def fetch_version(self, m_version_name, m_shot_obj):

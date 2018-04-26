@@ -6,6 +6,7 @@ import re
 import ConfigParser
 import shotgun_api3
 import pprint
+import threading
 
 
 import Sequence
@@ -55,7 +56,13 @@ class ShotgunDBAccess(DBAccess.DBAccess):
         if not sg_shot:
             return shot_ret
         else:
-            local_seq = Sequence.Sequence(sg_shot['sg_sequence']['name'], DBAccessGlobals.DBAccessGlobals.get_path_for_sequence(sg_shot['sg_sequence']['name']), sg_shot['sg_sequence']['id'])
+            print "%s - inside fetch_shot(\'%s\')"%(threading.current_thread().getName(), m_shot_code)
+            local_seq = None
+            try:
+                local_seq = Sequence.Sequence(sg_shot['sg_sequence']['name'], DBAccessGlobals.DBAccessGlobals.get_path_for_sequence(sg_shot['sg_sequence']['name']), sg_shot['sg_sequence']['id'])
+            except KeyError:
+                print "ERROR: %s - Sequence is NULL! %s"%(threading.current_thread().getName(), sg_shot)
+                local_seq = Sequence.Sequence(m_shot_code[0:5], DBAccessGlobals.DBAccessGlobals.get_path_for_sequence(m_shot_code[0:5]), -1)
             local_shot_path = DBAccessGlobals.DBAccessGlobals.get_path_for_shot(sg_shot['code'])
             shot_ret = Shot.Shot(sg_shot['code'],
                             local_shot_path,
@@ -160,6 +167,8 @@ class ShotgunDBAccess(DBAccess.DBAccess):
         if not sg_artist:
             return artist_ret
         else:
+            print threading.current_thread().getName()
+            print sg_artist
             artist_ret = Artist.Artist(sg_artist['firstname'], sg_artist['lastname'], sg_artist['login'], sg_artist['id'])
             return artist_ret
 
@@ -169,14 +178,16 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             ['project', 'is', {'type' : 'Project', 'id' : int(self.g_shotgun_project_id)}],
             ['entity', 'is', {'type' : 'Shot', 'id' : int(m_shot_obj.g_dbid)}],
         ]
-        fields = ['content', 'task_assignees', 'entity', 'id']
+        fields = ['content', 'task_assignees', 'sg_status_list', 'entity', 'id']
         sg_tasks = self.g_sg.find("Task", filters, fields)
         if not sg_tasks:
             return tasks_array
         else:
             for sg_task in sg_tasks:
-                artist = self.fetch_artist_from_id(sg_task['task_assignees'][0]['id'])
-                task_ret = Task.Task(sg_task['content'], artist, m_shot_obj, sg_task['id'])
+                artist = Artist.Artist('Alan', 'Smithee', 'asmithee', -1)
+                if len(sg_task['task_assignees']) > 0:
+                    artist = self.fetch_artist_from_id(sg_task['task_assignees'][0]['id'])
+                task_ret = Task.Task(sg_task['content'], artist, sg_task['sg_status_list'], m_shot_obj, sg_task['id'])
                 tasks_array.append(task_ret)
             return tasks_array
     
@@ -187,14 +198,27 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             ['entity', 'is', {'type' : 'Shot', 'id' : int(m_shot_obj.g_dbid)}],
             ['id', 'is', m_task_id]
         ]
-        fields = ['content', 'task_assignees', 'entity', 'id']
+        fields = ['content', 'task_assignees', 'sg_status_list', 'entity', 'id']
         sg_task = self.g_sg.find_one("Task", filters, fields)
         if not sg_task:
             return task_ret
         else:
-            artist = self.fetch_artist_from_id(sg_task['task_assignees'][0]['id'])
-            task_ret = Task.Task(sg_task['content'], artist, m_shot_obj, sg_task['id'])
+            print threading.current_thread().getName()
+            print sg_task
+            artist = None
+            try:
+                artist = self.fetch_artist_from_id(sg_task['task_assignees'][0]['id'])
+            except KeyError:
+                print "ERROR: Task assignees for task %s is NULL!"%sg_task
+                artist = Artist.Artist('Alan', 'Smithee', 'asmithee', -1)
+            task_ret = Task.Task(sg_task['content'], artist, sg_task['sg_status_list'], m_shot_obj, sg_task['id'])
             return task_ret
+
+    def update_task_status(self, m_task_obj):
+        data = {
+            'sg_status_list' : m_task_obj.g_status,
+        }
+        self.g_sg.update('Task', m_task_obj.g_dbid, data)
                         
     def fetch_version(self, m_version_name, m_shot_obj):
         ver_ret = None
@@ -225,7 +249,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             return ver_ret
         else:
             local_shot = self.fetch_shot_from_id(sg_ver['entity']['id'])
-            local_task = self.fetch_task_from_id(int(sg_ver['sg_task']['id']), m_shot_obj)
+            local_task = self.fetch_task_from_id(int(sg_ver['sg_task']['id']), local_shot)
             local_artist = self.fetch_artist_from_id(int(sg_ver['user']['id']))
             ver_ret = Version.Version(sg_ver['code'], sg_ver['id'], sg_ver['description'], sg_ver['sg_first_frame'], sg_ver['sg_last_frame'], sg_ver['frame_count'], sg_ver['sg_path_to_frames'], sg_ver['sg_path_to_movie'], local_shot, local_artist, local_task)
             return ver_ret
@@ -346,13 +370,15 @@ class ShotgunDBAccess(DBAccess.DBAccess):
 
     # uploads a thumbnail for a given database object type.
     # currently, valid values are 'Shot', 'Plate', and 'Version'
-    def upload_thumbnail(self, m_entity_type, m_entity, m_thumb_path):
+    def upload_thumbnail(self, m_entity_type, m_entity, m_thumb_path, altid = -1):
         if m_entity_type == 'Plate':
             self.g_sg.upload_thumbnail('CustomEntity01', m_entity.g_dbid, m_thumb_path)
         elif m_entity_type == 'Shot':
             self.g_sg.upload_thumbnail('Shot', m_entity.g_dbid, m_thumb_path)
         elif m_entity_type == 'Version':
             self.g_sg.upload_thumbnail('Version', m_entity.g_dbid, m_thumb_path)
+        elif m_entity_type == 'PublishedFile':
+            self.g_sg.upload_thumbnail('PublishedFile', altid, m_thumb_path)
         else:
             raise ValueError('ShotgunDBAccess.upload_thumbnail(): entity type %s not supported.'%m_entity_type)
     

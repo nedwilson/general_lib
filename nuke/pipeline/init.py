@@ -54,8 +54,6 @@ def print_render_frame():
 # function attempts to determine show, sequence, and shot from the nuke script name.
 # does nothing if the path does not produce a match to the shot regular expression
 def init_shot_env():
-    if not nuke.env['gui']:
-        return
     script_path = os.path.normpath(nuke.root().name())
     script_path_lst = script_path.split(os.path.sep)
     path_idx = 0
@@ -96,19 +94,58 @@ def init_shot_env():
     cfg_shot_regexp = config.get(g_ih_show_code, 'shot_regexp')
     cfg_seq_regexp = config.get(g_ih_show_code, 'sequence_regexp')
     
+    # were we called from within shotgun?
+    b_shotgun = False
+    b_shotgun_res = False
+    engine = None
+    ctx = None
+    entity = None
+    
+    try:
+        project_config = os.environ['TANK_CURRENT_PC']
+        b_shotgun = True
+    except:
+        pass
 
     if not script_path.startswith(str_show_root):
-    	print "WARNING: Unable to match show root directory with Nuke script path. Skipping init_shot_env()."
-    	return
-    
+        print "WARNING: Unable to match show root directory with Nuke script path. Skipping init_shot_env()."
+        b_shotgun_res = True
+
     matchobject = re.search(cfg_shot_regexp, script_path)
     # make sure this file matches the shot pattern
     if not matchobject:
         print "WARNING: This script name does not match the shot regular expression pattern for the show."
-        return
+        b_shotgun_res = True
     else:
         str_shot = matchobject.group(0)
         str_seq = re.search(cfg_seq_regexp, str_shot).group(0)
+
+    if b_shotgun:        
+        print "INFO: Nuke executed from within Shotgun Desktop Integration."
+        import sgtk
+        engine = sgtk.platform.current_engine()
+        if engine == None:
+            print "WARNING: Nuke executed within Shotgun, but the engine associated with the sgtk.platform API is None."
+        else:
+            ctx = engine.context
+            if ctx == None:
+                print "WARNING: Nuke executed within Shotgun, but the context associated with the current engine is None."
+            else:
+                entity = ctx.entity
+                if entity == None:
+                    print "WARNING: Nuke executed within Shotgun, but the entity associated with the current context is None."
+                else:
+                    if entity['type'] != 'Shot':
+                        print "WARNING: Nuke executed within Shotgun, but not in the context of a specific shot."
+                    else:
+                        if b_shotgun_res:
+                            print "INFO: Nuke executed within Shotgun, but no active script available. Setting sequence and shot from current engine context."
+                            str_shot = entity['name']
+                            str_seq = re.search(cfg_seq_regexp, str_shot).group(0)
+    
+    if str_shot == None:
+        print "WARNING: Could not determine current shot from script name, or from database. Exiting init_shot_env()."
+        return
         
     str_seq_path = ""
     str_shot_path = ""
@@ -223,7 +260,14 @@ nuke.load("formats.tcl")
 
 if nuke.env['gui']:
    nuke.addOnScriptLoad(init_shot_env)
-
+# else:
+#     try:
+#         tmp = os.environ['TANK_CURRENT_PC']
+#         print "INFO: Nuke launched from Shotgun."
+#         nuke.addOnScriptLoad(init_shot_env)
+#     except KeyError:
+#         pass
+        
 if nuke.NUKE_VERSION_MAJOR > 8:
     nuke.knobDefault("Read.mov.mov64_decode_video_levels", "Video Range")
 

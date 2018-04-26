@@ -10,19 +10,19 @@
     
 class Plate():
 
-    def __init__(self):
-        self.g_plate_name = None
-        self.g_start_frame = None
-        self.g_end_frame = None
-        self.g_duration = None
-        self.g_filesystem_path = None
-        self.g_start_timecode = None
-        self.g_clip_name = None
-        self.g_scene = None
-        self.g_take = None
-        self.g_end_timecode = None
-        self.g_shot = None
-        self.g_dbid = None
+#     def __init__(self):
+#         self.g_plate_name = None
+#         self.g_start_frame = None
+#         self.g_end_frame = None
+#         self.g_duration = None
+#         self.g_filesystem_path = None
+#         self.g_start_timecode = None
+#         self.g_clip_name = None
+#         self.g_scene = None
+#         self.g_take = None
+#         self.g_end_timecode = None
+#         self.g_shot = None
+#         self.g_dbid = None
                 
     def __init__(self, m_plate_name, m_start_frame, m_end_frame, m_duration, m_filesystem_path, m_start_timecode, m_clip_name, m_scene, m_take, m_end_timecode, m_shot, m_dbid):
         self.g_plate_name = m_plate_name
