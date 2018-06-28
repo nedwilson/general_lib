@@ -1,0 +1,384 @@
+#! /Applications/Nuke7.0v1/Nuke7.0v1.app/Contents/MacOS//libnuke-7.0.1.dylib -nx
+version 7.0 v1
+Gizmo {
+ addUserKnob {20 gz_timerclock l TimerClock}
+ addUserKnob {41 output T Merge4.output}
+ addUserKnob {26 ""}
+ addUserKnob {20 minutes_group l Minutes n 1}
+ addUserKnob {6 minutes t "Show/hide minutes counter." +STARTLINE}
+ minutes true
+ addUserKnob {6 marker_min l marker t "Show/hide minutes marker." -STARTLINE}
+ marker_min true
+ addUserKnob {20 endGroup_minutes l endGroup n -1}
+ addUserKnob {26 ""}
+ addUserKnob {20 seconds_group l Seconds n 1}
+ addUserKnob {6 seconds t "Show/hide seconds counter" +STARTLINE}
+ seconds true
+ addUserKnob {6 marker_sec l marker t "Show/hide seconds marker" -STARTLINE}
+ marker_sec true
+ addUserKnob {20 endGroup_seconds l endGroup n -1}
+ addUserKnob {26 ""}
+ addUserKnob {20 Tenths_group l Tenths n 1}
+ addUserKnob {6 tenths t "Show/hide tenths counter." +STARTLINE}
+ tenths true
+ addUserKnob {20 endGroup_thenth l endGroup n -1}
+ addUserKnob {26 ""}
+ addUserKnob {3 duration l "duration (in seconds)" t "Note: this override project frame range."}
+ duration 60
+ addUserKnob {22 set_duration l Set -STARTLINE T "def dur():\n  getd = int(nuke.thisNode().knob('duration').value())\n  d = str(getd * nuke.Root().fps())\n  nuke.knob(\"root.last_frame\", d)\n  nuke.knob(\"root.first_frame\", \"0\")\n  \ndur()"}
+ addUserKnob {6 countdown -STARTLINE}
+ addUserKnob {6 markers_blinking l "markers blinking" -STARTLINE}
+ addUserKnob {20 about_tab l About}
+ addUserKnob {26 description l "" +STARTLINE T "GZ_TimerClock v1.0\n\nThis gizmo is a little and personal exercise. \nIt makes a digital timer with minuts, seconds and tenths."}
+ addUserKnob {26 ""}
+ addUserKnob {26 about l "" +STARTLINE T "Autor: AlbertoGz\nWebsite: albertogzg.tumblr.com"}
+}
+ BackdropNode {
+  inputs 0
+  name About
+  label "GZ_TimerClock v1.0\n\nThis gizmo is a little and personal exercise. \nIt makes a digital timer with minuts, seconds and tenths.\n\nAutor: AlbertoGZ\nWebsite: albertogzg.tumblr.com"
+  note_font "Verdana Italic Italic Italic"
+  xpos 1270
+  ypos -106
+  bdwidth 299
+  bdheight 317
+ }
+ BackdropNode {
+  inputs 0
+  name BackdropNode1
+  tile_color 0x7171c600
+  label "TIME MARKERS"
+  note_font_size 30
+  xpos 89
+  ypos -173
+  bdwidth 368
+  bdheight 443
+ }
+ BackdropNode {
+  inputs 0
+  name BackdropNode2
+  tile_color 0xaaa437ff
+  label "TIME NUMBERS"
+  note_font_size 30
+  xpos 531
+  ypos -103
+  bdwidth 622
+  bdheight 306
+ }
+ Text2 {
+  inputs 0
+  font_size_toolbar 100
+  font_width_toolbar 100
+  font_height_toolbar 100
+  message :
+  box {104 10 154 105}
+  transforms {{0 2}
+    }
+  scale {1 1}
+  cursor_initialised true
+  autofit_bbox false
+  initial_cursor_position {{104 108.5}
+    }
+  group_animations {{0} imported: 0 selected: items: "root transform/"}
+  animation_layers {{1 11 256 256 0 0 1 1 0 0 0 0}
+    }
+  name marker
+  xpos 98
+  ypos -84
+ }
+set N42c0cad0 [stack 0]
+ Transform {
+  translate {130 0}
+  center {256 256}
+  name marker2
+  xpos 314
+  ypos -84
+ }
+set N42c24620 [stack 0]
+push $N42c24620
+push 0
+ Merge2 {
+  inputs 2
+  mix {{"(sin(frame/5)/2)+0.5 > 0.5 ? 1 : 0"}}
+  name blinking
+  xpos 368
+  ypos 24
+ }
+ set C42c2fae0 [stack 0]
+ Switch {
+  inputs 2
+  which {{markers_blinking==0?1:0}}
+  name Switch_blinking
+  xpos 315
+  ypos 106
+ }
+ set C42c3ce50 [stack 0]
+ Switch {
+  which {{marker_sec==0?1:0}}
+  name mute_marker_seconds
+  xpos 314
+  ypos 168
+ }
+push $N42c0cad0
+push $N42c0cad0
+push 0
+clone $C42c2fae0 {
+  inputs 2
+  xpos 152
+  ypos 24
+  selected false
+ }
+clone $C42c3ce50 {
+  inputs 2
+  xpos 98
+  ypos 106
+  selected false
+ }
+ Switch {
+  which {{marker_min==0?1:0}}
+  name mute_marker_minutes
+  xpos 98
+  ypos 169
+ }
+ Merge2 {
+  inputs 2
+  name Merge2
+  xpos 205
+  ypos 234
+ }
+ Dot {
+  name Dot2
+  xpos 239
+  ypos 484
+ }
+ Text2 {
+  inputs 0
+  font_size_toolbar 100
+  font_width_toolbar 100
+  font_height_toolbar 100
+  message "\[python \{str(int((nuke.Root().lastFrame()+(nuke.Root().firstFrame()) - nuke.frame()) % nuke.root().fps() * 60 / nuke.root().fps())).zfill(2)\}]"
+  box {0 0 110 100}
+  transforms {{0 2}
+    }
+  cursor_position 2
+  scale {1 1}
+  cursor_initialised true
+  autofit_bbox false
+  initial_cursor_position {{0.2999992371 100.7000008}
+    }
+  group_animations {{0} imported: 0 selected: items: "root transform/"}
+  animation_layers {{1 11 1024 778 0 0 1 1 0 0 0 0}
+    }
+  name tenth_countdown
+  xpos 1051
+  ypos -22
+ }
+ Text2 {
+  inputs 0
+  font_size_toolbar 100
+  font_width_toolbar 100
+  font_height_toolbar 100
+  message "\[python \{str(int((nuke.frame() - nuke.Root().firstFrame()) % nuke.root().fps() * 60 / nuke.root().fps())).zfill(2)\}]"
+  box {0 0 110 100}
+  transforms {{0 2}
+    }
+  cursor_position 2
+  scale {1 1}
+  cursor_initialised true
+  autofit_bbox false
+  initial_cursor_position {{0.2999992371 100.7000008}
+    }
+  group_animations {{0} imported: 0 selected: items: "root transform/"}
+  animation_layers {{1 11 1024 778 0 0 1 1 0 0 0 0}
+    }
+  name tenth
+  xpos 965
+  ypos -22
+ }
+ Switch {
+  inputs 2
+  which {{countdown==1?1:0}}
+  name Switch_countdown
+  xpos 1008
+  ypos 23
+ }
+ set C42ca6f00 [stack 0]
+ Transform {
+  translate {260 0}
+  center {256 256}
+  name posx_tenth
+  xpos 1008
+  ypos 61
+ }
+ Switch {
+  which {{tenths==0?1:0}}
+  name Switch_Tenth
+  xpos 1008
+  ypos 106
+ }
+ Text2 {
+  inputs 0
+  font_size_toolbar 100
+  font_width_toolbar 100
+  font_height_toolbar 100
+  message "\[python \{str(int((nuke.Root().lastFrame()+(nuke.Root().firstFrame()) - nuke.frame()) / (nuke.root().fps()) % 60)).zfill(2)\}]"
+  box {0 0 110 100}
+  transforms {{0 2}
+    }
+  cursor_position 2
+  scale {1 1}
+  cursor_initialised true
+  autofit_bbox false
+  initial_cursor_position {{154.5 292.5}
+    }
+  group_animations {{0} imported: 0 selected: items: "root transform/"}
+  animation_layers {{1 11 1024 778 0 0 1 1 0 0 0 0}
+    }
+  name seconds_countdown
+  xpos 839
+  ypos -22
+ }
+ Text2 {
+  inputs 0
+  font_size_toolbar 100
+  font_width_toolbar 100
+  font_height_toolbar 100
+  message "\[python \{str(int((nuke.frame() - nuke.Root().firstFrame()) / (nuke.root().fps()) % 60)).zfill(2)\}]"
+  box {0 0 110 100}
+  transforms {{0 2}
+    }
+  cursor_position 2
+  scale {1 1}
+  cursor_initialised true
+  autofit_bbox false
+  initial_cursor_position {{154.5 292.5}
+    }
+  group_animations {{0} imported: 0 selected: items: "root transform/"}
+  animation_layers {{1 11 1024 778 0 0 1 1 0 0 0 0}
+    }
+  name seconds
+  xpos 755
+  ypos -22
+ }
+clone $C42ca6f00 {
+  inputs 2
+  xpos 793
+  ypos 23
+  selected false
+ }
+ Transform {
+  translate {130 0}
+  center {256 256}
+  name posx_seconds
+  xpos 793
+  ypos 55
+ }
+ Switch {
+  which {{seconds==0?1:0}}
+  name Switch_Sec
+  xpos 793
+  ypos 104
+ }
+push 0
+ Text2 {
+  inputs 0
+  font_size_toolbar 100
+  font_width_toolbar 100
+  font_height_toolbar 100
+  message "\[python \{str(int((nuke.Root().lastFrame()+(nuke.Root().firstFrame()) - nuke.frame()) / (nuke.root().fps()) / 60)).zfill(2)\}]"
+  box {0 0 110 100}
+  transforms {{0 2}
+    }
+  cursor_position 2
+  scale {1 1}
+  cursor_initialised true
+  autofit_bbox false
+  initial_cursor_position {{2.5 282.5}
+    }
+  group_animations {{0} imported: 0 selected: items: "root transform/"}
+  animation_layers {{1 11 1024 778 0 0 1 1 0 0 0 0}
+    }
+  name minutes_countdown
+  xpos 640
+  ypos -23
+ }
+ Text2 {
+  inputs 0
+  font_size_toolbar 100
+  font_width_toolbar 100
+  font_height_toolbar 100
+  message "\[python \{str(int((nuke.frame() - nuke.Root().firstFrame()) / (nuke.root().fps()) / 60)).zfill(2)\}]"
+  box {0 0 110 100}
+  transforms {{0 2}
+    }
+  cursor_position 2
+  scale {1 1}
+  cursor_initialised true
+  autofit_bbox false
+  initial_cursor_position {{2.5 282.5}
+    }
+  group_animations {{0} imported: 0 selected: items: "root transform/"}
+  animation_layers {{1 11 1024 778 0 0 1 1 0 0 0 0}
+    }
+  name minutes
+  xpos 557
+  ypos -23
+ }
+clone $C42ca6f00 {
+  inputs 2
+  xpos 599
+  ypos 25
+  selected false
+ }
+ Switch {
+  which {{minutes==0?1:0}}
+  name Switch_Min
+  xpos 599
+  ypos 102
+ }
+push 0
+ Merge2 {
+  inputs 4+1
+  name Merge1
+  xpos 793
+  ypos 160
+ }
+set N440497d0 [stack 0]
+ Merge2 {
+  inputs 2
+  name Merge3
+  xpos 793
+  ypos 480
+ }
+ Transform {
+  translate {{"\[python \{nuke.root()\['format'].value().width() / 2  -182\}]"} {"\[python \{nuke.root()\['format'].value().height() / 2 - 66\}]"}}
+  center {182 48.5}
+  name center
+  xpos 793
+  ypos 511
+ }
+ Input {
+  inputs 0
+  name bg
+  xpos 920
+  ypos 480
+ }
+ Merge2 {
+  inputs 2
+  name Merge4
+  xpos 793
+  ypos 551
+ }
+ Output {
+  name Output1
+  xpos 793
+  ypos 606
+ }
+push $N440497d0
+ Viewer {
+  frame_range 0-1440
+  name Viewer1
+  xpos 793
+  ypos 658
+ }
+end_group

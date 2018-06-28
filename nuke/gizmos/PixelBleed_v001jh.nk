@@ -1,0 +1,388 @@
+#! /Applications/Nuke7.0v6/NukeX7.0v6.app/../Nuke7.0v6.app/Contents/MacOS/Nuke7.0v6 -nx
+version 7.0 v6
+define_window_layout_xml {<?xml version="1.0" encoding="UTF-8"?>
+<layout version="1.0">
+    <window x="0" y="22" w="1680" h="1024" screen="0">
+        <splitter orientation="1">
+            <split size="1062"/>
+            <splitter orientation="1">
+                <split size="40"/>
+                <dock id="" hideTitles="1" activePageId="Toolbar.1">
+                    <page id="Toolbar.1"/>
+                </dock>
+                <split size="1018"/>
+                <splitter orientation="2">
+                    <split size="586"/>
+                    <dock id="" activePageId="Viewer.1">
+                        <page id="Viewer.1"/>
+                    </dock>
+                    <split size="412"/>
+                    <dock id="" activePageId="DAG.1">
+                        <page id="DAG.1"/>
+                        <page id="Curve Editor.1"/>
+                        <page id="DopeSheet.1"/>
+                        <page id="DAG.2"/>
+                    </dock>
+                </splitter>
+            </splitter>
+            <split size="614"/>
+            <dock id="" activePageId="Properties.1">
+                <page id="Properties.1"/>
+            </dock>
+        </splitter>
+    </window>
+</layout>
+}
+Root {
+ inputs 0
+ name /Volumes/Public/Projects/GetHard/02_2dComps/_templates/PixelBleed_001jh.nk
+ format "2048 1556 0 0 2048 1556 1 2K_Super_35(full-ap)"
+ proxy_type scale
+ proxy_format "1024 778 0 0 1024 778 1 1K_Super_35(full-ap)"
+}
+CheckerBoard2 {
+ inputs 0
+ name CheckerBoard1
+ xpos 106
+ ypos -320
+}
+RotoPaint {
+ output {-rgba.red -rgba.green -rgba.blue rgba.alpha}
+ curves {{{v x3f99999a}
+  {f 0}
+  {n
+   {layer Root
+    {f 512}
+    {t x44700000 x44070000}
+    {a}
+    {curvegroup Bezier1 512 bezier
+     {{cc
+       {f 8192}
+       {px 1
+        {x41f80000 xc1500000}
+        {x44b9c000 x446c4000}
+        {xc1f80000 x41500000}
+        {x41880000 x41d00000}
+        {x449ea000 x445e8000}
+        {xc1880000 xc1d00000}
+        {x41800000 xc0a00000}
+        {x44968000 x4449c000}
+        {xc1800000 x40a00000}
+        {x41000000 x41800000}
+        {x44900000 x44474000}
+        {xc1000000 xc1800000}
+        {x40800000 x41a00000}
+        {x448b0000 x443a4000}
+        {xc0800000 xc1a00000}
+        {xc0400000 x41600000}
+        {x448bc000 x441d4000}
+        {x40400000 xc1600000}
+        {xc1600000 xc0800000}
+        {x44900000 x44170000}
+        {x41600000 x40800000}
+        {0 xc0c00000}
+        {x4495e000 x441d0000}
+        {0 x40c00000}
+        {xc1980000 xc0e00000}
+        {x4493c000 x44258000}
+        {x41980000 x40e00000}
+        {xc1400000 0}
+        {x449b8000 x44268000}
+        {x41400000 0}
+        {x40c00000 xc0800000}
+        {x449e4000 x442e4000}
+        {xc0c00000 x40800000}
+        {xc1880000 0}
+        {x44a38000 x442e4000}
+        {x41880000 0}
+        {xc2140000 xc1e00000}
+        {x44af2000 x44318000}
+        {x42140000 x41e00000}
+        {xc21c0000 xc2000000}
+        {x44bb4000 x44498000}
+        {x421c0000 x42000000}}}     idem}
+     {tx 1 x449d1000 x4437a000}
+     {a r 0 g 0 b 0 a 0 str 1 spx x44700000 spy x44070000 sb 1 tt x40800000}}}}}}
+ toolbox {selectAll {
+  { selectAll str 1 ssx 1 ssy 1 sf 1 }
+  { createBezier ro 0 go 0 bo 0 ao 0 str 1 ssx 1 ssy 1 sf 1 sb 1 tt 4 }
+  { createBezierCusped str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createBSpline str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createEllipse str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createRectangle str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { createRectangleCusped str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { brush str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { eraser src 2 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { clone src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { reveal src 3 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { dodge src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { burn src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { blur src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { sharpen src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+  { smear src 1 str 1 ssx 1 ssy 1 sf 1 sb 1 }
+} }
+ toolbar_brush_hardness 0.200000003
+ toolbar_source_transform_scale {1 1}
+ toolbar_source_transform_center {960 540}
+ color 0
+ colorOverlay {0 0 0 0}
+ lifetime_type "all frames"
+ view {}
+ motionblur_on true
+ motionblur_shutter_offset_type centred
+ source_black_outside true
+ createNewTrack {{-1} "-1\t(none)\t-1" "1000\tNew Track Layer\t1000"}
+ name RotoPaint1
+ xpos 106
+ ypos -194
+}
+Group {
+ name PixelBleed
+ xpos 106
+ ypos -101
+}
+ Input {
+  inputs 0
+  name Input1
+  xpos 243
+  ypos 128
+ }
+ Premult {
+  name Premult1
+  xpos 243
+  ypos 168
+ }
+set N70aaff0 [stack 0]
+push $N70aaff0
+ Blur {
+  size 1
+  name Blur1
+  xpos 243
+  ypos 220
+ }
+ Unpremult {
+  name Unpremult1
+  xpos 243
+  ypos 254
+ }
+set N46c97240 [stack 0]
+ Keyer {
+  input alpha
+  operation "luminance key"
+  range {0 0.007733390571 1 1}
+  name Keyer11
+  xpos -520
+  ypos 249
+ }
+ Premult {
+  name Premult6
+  xpos -520
+  ypos 283
+ }
+push $N46c97240
+ Keyer {
+  input alpha
+  operation "luminance key"
+  range {0 0 1 1}
+  name Keyer1
+  xpos 243
+  ypos 278
+ }
+ Blur {
+  size 2
+  name Blur2
+  xpos 243
+  ypos 353
+ }
+ Unpremult {
+  name Unpremult2
+  xpos 243
+  ypos 387
+ }
+set N46cc0910 [stack 0]
+ Keyer {
+  input alpha
+  operation "luminance key"
+  range {0 0.007733390571 1 1}
+  name Keyer10
+  xpos -404
+  ypos 382
+ }
+ Premult {
+  name Premult5
+  xpos -404
+  ypos 416
+ }
+push $N46cc0910
+ Keyer {
+  input alpha
+  operation "luminance key"
+  range {0 0 1 1}
+  name Keyer2
+  xpos 243
+  ypos 411
+ }
+ Blur {
+  size 4
+  name Blur3
+  xpos 243
+  ypos 464
+ }
+ Unpremult {
+  name Unpremult3
+  xpos 243
+  ypos 498
+ }
+set N46ce4d70 [stack 0]
+ Keyer {
+  input alpha
+  operation "luminance key"
+  range {0 0.007733390571 1 1}
+  name Keyer9
+  xpos -296
+  ypos 493
+ }
+ Premult {
+  name Premult4
+  xpos -296
+  ypos 527
+ }
+push $N46ce4d70
+ Keyer {
+  input alpha
+  operation "luminance key"
+  range {0 0 1 1}
+  name Keyer3
+  xpos 243
+  ypos 522
+ }
+ Blur {
+  size 8
+  name Blur4
+  xpos 243
+  ypos 582
+ }
+ Unpremult {
+  name Unpremult4
+  xpos 243
+  ypos 616
+ }
+set N70c5bc0 [stack 0]
+ Keyer {
+  input alpha
+  operation "luminance key"
+  range {0 0.007733390571 1 1}
+  name Keyer8
+  xpos -209
+  ypos 611
+ }
+ Premult {
+  name Premult3
+  xpos -209
+  ypos 645
+ }
+push 0
+push $N70c5bc0
+ Keyer {
+  input alpha
+  operation "luminance key"
+  range {0 0 1 1}
+  name Keyer4
+  xpos 243
+  ypos 640
+ }
+ Blur {
+  size 16
+  name Blur5
+  xpos 243
+  ypos 700
+ }
+ Unpremult {
+  name Unpremult5
+  xpos 243
+  ypos 734
+ }
+set N46c65060 [stack 0]
+ Keyer {
+  input alpha
+  operation "luminance key"
+  range {0 0.007733390571 1 1}
+  name Keyer7
+  xpos -40
+  ypos 729
+ }
+ Premult {
+  name Premult2
+  xpos -40
+  ypos 763
+ }
+push $N46c65060
+ Keyer {
+  input alpha
+  operation "luminance key"
+  range {0 0 1 1}
+  name Keyer5
+  xpos 243
+  ypos 758
+ }
+ Blur {
+  size 32
+  name Blur6
+  xpos 243
+  ypos 817
+ }
+ Unpremult {
+  name Unpremult6
+  xpos 243
+  ypos 851
+ }
+ Keyer {
+  input alpha
+  operation "luminance key"
+  range {0 0 1 1}
+  name Keyer6
+  xpos 243
+  ypos 875
+ }
+ Merge2 {
+  inputs 6+1
+  name Merge1
+  xpos -342
+  ypos 996
+ }
+ Grain2 {
+  name Grain2_1
+  label "Kodak 5248"
+  xpos -342
+  ypos 1040
+  red_size 2
+  green_size 2.4
+  blue_size 2.1
+  red_m 0.28
+  green_m 0.295
+  blue_m 0.36
+  black {0 0 0}
+  minimum {0 0 0}
+ }
+ Merge2 {
+  inputs 2
+  name Merge2
+  xpos -342
+  ypos 1133
+ }
+ Output {
+  name Output1
+  xpos -342
+  ypos 1233
+ }
+end_group
+set N36e0d840 [stack 0]
+push $N36e0d840
+Viewer {
+ inputs 2
+ frame 1
+ input_process false
+ name Viewer1
+ xpos -1489
+ ypos 239
+}

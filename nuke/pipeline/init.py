@@ -8,6 +8,19 @@ import nukescripts.ViewerProcess
 import ConfigParser
 import shlex
 
+if sys.platform == 'win32':
+    print 'Windows detected. Adding C:/Python27/Lib/site-packages to PYTHONPATH'
+    sys.path.append('C:/Python27/Lib/site-packages')
+else:
+    sys.path.append('/Volumes/raid_vol01/shows/SHARED/lib/python')
+    sys.path.append('/Volumes/raid_vol01/shows/goosebumps2/SHARED/shotgun/install/core/python')
+    sys.path.append('/Library/Python/2.7/site-packages')
+    
+# if sys.platform == 'win32':
+#     nuke.pluginAddPath('Y:\\shows\\SHARED\\lib\\rvnuke')
+# else:
+#     nuke.pluginAddPath('/Volumes/raid_vol01/shows/SHARED/lib/rvnuke')
+    
 # makes a file path from a selected write node if it does not exist. bound to F8
 
 def make_dir_path():
@@ -60,6 +73,7 @@ def init_shot_env():
     str_show_code = None
     str_shot = None
     str_seq = None
+    
     try:
         str_show_code = os.environ['IH_SHOW_CODE']
     except KeyError:
@@ -91,8 +105,8 @@ def init_shot_env():
     config = ConfigParser.ConfigParser()
     config.read(str_show_cfg_path)
     cfg_shot_dir = config.get(str_show_code, 'shot_dir')
-    cfg_shot_regexp = config.get(g_ih_show_code, 'shot_regexp')
-    cfg_seq_regexp = config.get(g_ih_show_code, 'sequence_regexp')
+    cfg_shot_regexp = config.get(str_show_code, 'shot_regexp')
+    cfg_seq_regexp = config.get(str_show_code, 'sequence_regexp')
     
     # were we called from within shotgun?
     b_shotgun = False
@@ -102,13 +116,13 @@ def init_shot_env():
     entity = None
     
     try:
-        project_config = os.environ['TANK_CURRENT_PC']
+        toolkit_engine = os.environ['TANK_ENGINE']
         b_shotgun = True
     except:
         pass
 
     if not script_path.startswith(str_show_root):
-        print "WARNING: Unable to match show root directory with Nuke script path. Skipping init_shot_env()."
+        print "WARNING: Unable to match show root directory with Nuke script path."
         b_shotgun_res = True
 
     matchobject = re.search(cfg_shot_regexp, script_path)
@@ -122,26 +136,34 @@ def init_shot_env():
 
     if b_shotgun:        
         print "INFO: Nuke executed from within Shotgun Desktop Integration."
-        import sgtk
-        engine = sgtk.platform.current_engine()
-        if engine == None:
-            print "WARNING: Nuke executed within Shotgun, but the engine associated with the sgtk.platform API is None."
+        ctx = None
+        try:
+            import sgtk
+            ctx = sgtk.Context.deserialize(os.environ['TANK_CONTEXT'])
+        except KeyError:
+            print "ERROR: Envionrment variable TANK_CONTEXT not found."
+        except ImportError:
+            print "ERROR: Unable to import sgtk."
+        if ctx == None:
+            print "WARNING: Nuke executed within Shotgun, but the context associated with the current engine is None."
         else:
-            ctx = engine.context
-            if ctx == None:
-                print "WARNING: Nuke executed within Shotgun, but the context associated with the current engine is None."
+            print "INFO: Shotgun Toolkit Context Object:"
+            print ctx
+            entity = ctx.entity
+            if entity == None:
+                print "WARNING: Nuke executed within Shotgun, but the entity associated with the current context is None."
             else:
-                entity = ctx.entity
-                if entity == None:
-                    print "WARNING: Nuke executed within Shotgun, but the entity associated with the current context is None."
+                if entity['type'] != 'Shot':
+                    print "WARNING: Nuke executed within Shotgun, but not in the context of a specific shot."
                 else:
-                    if entity['type'] != 'Shot':
-                        print "WARNING: Nuke executed within Shotgun, but not in the context of a specific shot."
-                    else:
-                        if b_shotgun_res:
-                            print "INFO: Nuke executed within Shotgun, but no active script available. Setting sequence and shot from current engine context."
+                    if b_shotgun_res:
+                        print "INFO: Nuke executed within Shotgun, but no active script available. Setting sequence and shot from current engine context."
+                        try:
                             str_shot = entity['name']
                             str_seq = re.search(cfg_seq_regexp, str_shot).group(0)
+                        except KeyError:
+                            print "ERROR: For some reason, context provided by Shotgun to Nuke is %s. Unable to proceed."%ctx
+                            str_shot = None
     
     if str_shot == None:
         print "WARNING: Could not determine current shot from script name, or from database. Exiting init_shot_env()."
@@ -259,15 +281,26 @@ nuke.load("formats.tcl")
 # attempt to populate environment variables
 
 if nuke.env['gui']:
+   init_shot_env()
    nuke.addOnScriptLoad(init_shot_env)
-# else:
-#     try:
-#         tmp = os.environ['TANK_CURRENT_PC']
-#         print "INFO: Nuke launched from Shotgun."
-#         nuke.addOnScriptLoad(init_shot_env)
-#     except KeyError:
-#         pass
-        
+else:
+    try:
+        tmp = os.environ['TANK_CONTEXT']
+        print "INFO: Nuke launched from Shotgun."
+        nuke.addOnScriptLoad(init_shot_env)
+    except KeyError:
+        pass
+
+   
+# print the environment to STDOUT
+# print "DEBUG: Inside init.py, printing current environment."
+# for env_key in sorted(os.environ.keys()):
+#    print "%s : %s"%(env_key, os.environ[env_key])
+
+# add support for RV
+if nuke.env['gui']:
+    import rvflipbook
+    
 if nuke.NUKE_VERSION_MAJOR > 8:
     nuke.knobDefault("Read.mov.mov64_decode_video_levels", "Video Range")
 

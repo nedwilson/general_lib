@@ -14,14 +14,19 @@ import re
 import threading
 import math
 import sys
-import pwd
+if not sys.platform == 'win32':
+    import pwd
+import socket
 import ConfigParser
 import tempfile
 import traceback
 from operator import itemgetter
 import time
 from stat import S_ISREG, S_ISDIR, ST_MTIME, ST_MODE
-
+if not sys.platform == 'win32':
+    import OpenEXR
+    import Imath
+    
 def quickLabel():
     sel = nuke.selectedNodes()[0]
     sel['label'].setValue(nuke.getInput('Enter Label Text'))
@@ -121,7 +126,19 @@ def makeSad():
 def user_full_name(str_host_name=None):
     rval = "IH Artist"
     try:
-        rval = pwd.getpwuid(os.getuid()).pw_gecos
+        if sys.platform == 'win32':
+            # windows hack, since no pwd
+            # pyad module doesn't work... seriously, fuck Windows
+            host = socket.gethostname()
+            if host == "SevenOfNine":
+                full_name = "Gabe Koerner"
+            return full_name
+        else:
+            rval = pwd.getpwuid(os.getuid()).pw_gecos
+    except ImportError:
+        print "Error: Looks like you're running Windows, and do not have pyad installed."
+        print "       To install, run pip install pyad"
+        raise
     except:
         pass
     return rval
@@ -140,6 +157,21 @@ def version_up_mkdir():
                 print "INFO: Making directory %s." % _dirname
                 os.makedirs(_dirname)
 
+def os_path_sub(m_source_path):
+    try:
+        config = ConfigParser.ConfigParser()
+        config.read(os.environ['IH_SHOW_CFG_PATH'])
+        cfg_sr_darwin = config.get('show_root', 'darwin')
+        cfg_sr_thishost = config.get('show_root', sys.platform)
+
+        newfile = ""
+
+        if sys.platform == 'win32':
+            newfile = m_source_path.replace(cfg_sr_darwin, cfg_sr_thishost)
+            m_source_path = newfile
+    except:
+        pass
+    return m_source_path
 
 # creates a read node from a write node.
 
@@ -151,6 +183,8 @@ def read_from_write():
     node = None
     xpos = 0
     ypos = 0
+    re_frame_txt = r'(\.|_| )(?P<frame>[0-9]+)\.'
+    re_frame = re.compile(re_frame_txt)
     try:
         sel = nuke.selectedNodes()
     except:
@@ -160,17 +194,54 @@ def read_from_write():
         if nd.Class() != "Write":
             continue
         file_path = nd.knob("file").value()
+        
+        # convert the show root if necessary for a specific platform
+        config = ConfigParser.ConfigParser()
+        config.read(os.environ['IH_SHOW_CFG_PATH'])
+        cfg_sr_darwin = config.get('show_root', 'darwin')
+        cfg_sr_thishost = config.get('show_root', sys.platform)
+    
+        newfile = ""
+    
+        if sys.platform == 'win32':
+            newfile = file_path.replace(cfg_sr_darwin, cfg_sr_thishost)
+            file_path = newfile
+
         file_type = nd.knob("file_type").value()
         read_node = nuke.createNode("Read", "file {" + file_path + "}", inpanel=True)
         if os.path.exists(os.path.dirname(file_path)):
             if not file_type == "mov":
                 image_ar = sorted(glob.glob(file_path.replace('%04d', '*')))
                 if (len(image_ar) == 0):
-                    start_frame = int(nuke.root().knob("first_frame").value())
-                    end_frame = int(nuke.root().knob("last_frame").value())
+                    match_obj = re_frame.search(file_path)
+                    start_file_path = file_path
+
+                    if match_obj:
+                        start_frame = int(match_obj.group('frame'))
+                        end_frame = int(match_obj.group('frame'))
+                    else:
+                        start_frame = 1
+                        end_frame = 1
                 else:
+                    start_file_path = image_ar[0]
                     start_frame = int(image_ar[0].split('.')[1])
                     end_frame = int(image_ar[-1].split('.')[1])
+
+            if not sys.platform == "win32":
+                start_file = OpenEXR.InputFile(start_file_path)
+                dwindow_header = start_file.header()['displayWindow']
+                width = dwindow_header.max.x - dwindow_header.min.x + 1
+                height = dwindow_header.max.y - dwindow_header.min.y + 1
+                format_obj = None
+                for fmt in nuke.formats():
+                    if int(width) == int(fmt.width()) and int(height) == int(fmt.height()):
+                        format_obj = fmt
+                if not format_obj:
+                    fstring = '%d %d Unknown Image Format'%(width, height)
+                    format_obj = nuke.addFormat(fstring)
+                
+                read_node.knob("format").setValue(format_obj)        
+
             read_node.knob("first").setValue(start_frame)
             read_node.knob("origfirst").setValue(start_frame)
             read_node.knob("last").setValue(end_frame)
@@ -181,6 +252,8 @@ def read_from_write():
         ypos = nd.knob("ypos").value()
         read_node.knob("xpos").setValue(xpos)
         read_node.knob("ypos").setValue(ypos + 100)
+        # make sure that the format actually reflects the resolution of the frames on disk
+        read_node.knob("reload").execute()
         return read_node
 
 
@@ -207,8 +280,24 @@ def make_dir_path():
             return
         except ValueError as ve:
             return
+    
+    
+    config = ConfigParser.ConfigParser()
+    config.read(os.environ['IH_SHOW_CFG_PATH'])
+    cfg_sr_darwin = config.get('show_root', 'darwin')
+    cfg_sr_thishost = config.get('show_root', sys.platform)
+    
+    newfile = ""
+    
+    if sys.platform == 'win32':
+        newfile = file.replace(cfg_sr_darwin, cfg_sr_thishost).replace('/', '\\')
+        file = newfile
+
     dir = os.path.dirname(file)
-    osdir = nuke.callbacks.filenameFilter(dir)
+    osdir = dir
+    
+    # does NOT work if we are called from the command line
+    # osdir = nuke.callbacks.filenameFilter(dir)
     if not os.path.exists(osdir):
         print "INFO: Creating directory at: %s" % osdir
         try:
@@ -610,8 +699,15 @@ def open_count_sheet():
         nuke.critical("Count sheet directory at %s does not exist!"%s_count_sheet_dir)
         return
         
-    # get all pdf files in the count sheet directory w/ modification times, sort by modification time descending
+    # get all pdf files in the count sheet directory w/ modification times
     l_countsheets = [os.path.join(s_count_sheet_dir, fn) for fn in os.listdir(s_count_sheet_dir) if fn.endswith('.pdf')]
+    
+    # no count sheets exist? warn the user and exit.
+    if len(l_countsheets) == 0:
+        nuke.critical("No count sheets exist on the filesystem in directory %s."%s_count_sheet_dir)
+        return
+        
+    # sort count sheets by modification time, descending
     l_counts_mtimes = [(os.stat(path)[ST_MTIME], path) for path in l_countsheets]
     l_counts_mtimes_sorted = sorted(l_counts_mtimes)
     
@@ -637,6 +733,10 @@ def open_count_sheet():
     
 def create_thumbnail(m_source_path):
 
+    if sys.platform == 'win32':
+        print "Platform is windows, outputting debugging information."
+        print 'm_source_path : %s'%m_source_path
+        
     if not os.path.exists(m_source_path):
         raise IOError("File not found: %s"%m_source_path)
     
@@ -692,7 +792,7 @@ def create_thumbnail(m_source_path):
     base = os.path.basename(head)
     dest_path_format = "%s{pathsep}%s{pathsep}%s_thumb.{framepad}.png"%(shot_dir_format, thumb_dir, base)
     format_dict = { 'pathsep' : os.path.sep, 'show_root' : show_root, 'sequence' : seq, 'shot' : shot, 'framepad' : write_frame_format  }
-    dest_path = dest_path_format.format(**format_dict)
+    dest_path = dest_path_format.format(**format_dict).replace('\\', '/')
     
     format_dict['framepad'] = "%04d"%int(frame)
     dest_path_frame = dest_path_format.format(**format_dict)
@@ -716,13 +816,15 @@ def create_thumbnail(m_source_path):
             print "WARNING: Unable to locate CDL file at: %s"%s_cdl_src
             b_deliver_cdl = False
 
+    s_cccid = None
     if b_deliver_cdl:    
         # open up the cdl and extract the cccid
         cdltext = open(s_cdl_src, 'r').read()
         cccid_re_str = r'<ColorCorrection id="([A-Za-z0-9-_]+)">'
         cccid_re = re.compile(cccid_re_str)
         cccid_match = cccid_re.search(cdltext)
-        s_cccid = cccid_match.group(1)
+        if cccid_match:
+            s_cccid = cccid_match.group(1)
     
         # slope
         slope_re_str = r'<Slope>([0-9.-]+) ([0-9.-]+) ([0-9.-]+)</Slope>'
@@ -765,7 +867,7 @@ def create_thumbnail(m_source_path):
     os.write(fh_nukepy, "import sys\n")
     os.write(fh_nukepy, "import traceback\n")
     os.write(fh_nukepy, "\n")
-    os.write(fh_nukepy, "nuke.scriptOpen(\"%s\")\n"%thumb_template)
+    os.write(fh_nukepy, "nuke.scriptOpen(\"%s\")\n"%thumb_template.replace('\\', '/'))
     os.write(fh_nukepy, "nd_root = root = nuke.root()\n")
     os.write(fh_nukepy, "\n")
     os.write(fh_nukepy, "# set root frame range\n")
@@ -779,8 +881,9 @@ def create_thumbnail(m_source_path):
     if not b_deliver_cdl:
         os.write(fh_nukepy, "nuke.toNode('OCIOCDLTransform1').knob('disable').setValue(True)\n")
     else:
-        os.write(fh_nukepy, "nuke.toNode('OCIOCDLTransform1').knob('file').setValue(\"%s\")\n"%s_cdl_src)
-        os.write(fh_nukepy, "nuke.toNode('OCIOCDLTransform1').knob('cccid').setValue(\"%s\")\n"%s_cccid)
+        os.write(fh_nukepy, "nuke.toNode('OCIOCDLTransform1').knob('file').setValue(\"%s\")\n"%s_cdl_src.replace('\\', '/'))
+        if s_cccid:
+            os.write(fh_nukepy, "nuke.toNode('OCIOCDLTransform1').knob('cccid').setValue(\"%s\")\n"%s_cccid)
         os.write(fh_nukepy, "nuke.toNode('OCIOCDLTransform1').knob('read_from_file').setValue(False)\n")
         os.write(fh_nukepy, "nuke.toNode('OCIOCDLTransform1').knob('slope').setValue([%s, %s, %s])\n"%(slope_r, slope_g, slope_b))
         os.write(fh_nukepy, "nuke.toNode('OCIOCDLTransform1').knob('offset').setValue([%s, %s, %s])\n"%(offset_r, offset_g, offset_b))
@@ -796,8 +899,15 @@ def create_thumbnail(m_source_path):
     os.close(fh_nukepy)
     
     s_pyscript = s_nukepy
+    s_windows_addl = ""
+    s_cmd = ""
+    if sys.platform == 'win32':
+        s_windows_addl = ' --remap "/Volumes/raid_vol01,Y:"'
+        s_cmd = "\"%s\" -i -V 2%s -c 2G -t %s" % (nuke_exe_path, s_windows_addl, s_pyscript)
+    else:
+        s_cmd = "%s -i -V 2 -c 2G -t %s" % (nuke_exe_path, s_pyscript)
 
-    s_cmd = "%s -i -V 2 -c 2G -t %s" % (nuke_exe_path, s_pyscript)
+    
     s_err_ar = []
     print "INFO: Thumbnail render command: %s" % s_cmd
     proc = subprocess.Popen(s_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
@@ -811,6 +921,8 @@ def create_thumbnail(m_source_path):
             print var
     if proc.returncode != 0:
         s_errmsg = ""
+        if sys.platform == 'win32':
+            s_err_ar = proc.stdout.read().split('\n')
         s_err = '\n'.join(s_err_ar)
         l_err_verbose = []
         for err_line in s_err_ar:

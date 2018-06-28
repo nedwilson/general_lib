@@ -1,0 +1,303 @@
+#! /Applications/Nuke11.1v4/Nuke11.1v4.app/Contents/MacOS//libnuke-11.1.4.dylib -nx
+version 11.1 v4
+Gizmo {
+}
+Input {
+inputs 0
+name Input1
+xpos 243
+ypos 128
+}
+Premult {
+name Premult1
+xpos 243
+ypos 168
+}
+set N5248b820 [stack 0]
+push $N5248b820
+Blur {
+size 1
+name Blur1
+xpos 243
+ypos 220
+}
+Unpremult {
+name Unpremult1
+xpos 243
+ypos 254
+}
+set N926d1940 [stack 0]
+Keyer {
+input alpha
+operation "luminance key"
+range {0 0.007733390571 1 1}
+name Keyer11
+xpos -520
+ypos 249
+}
+Premult {
+name Premult6
+xpos -520
+ypos 283
+}
+push $N926d1940
+Keyer {
+input alpha
+operation "luminance key"
+range {0 0 1 1}
+name Keyer1
+xpos 243
+ypos 278
+}
+Blur {
+size 2
+name Blur2
+xpos 243
+ypos 353
+}
+Unpremult {
+name Unpremult2
+xpos 243
+ypos 387
+}
+set N926e8b00 [stack 0]
+Keyer {
+input alpha
+operation "luminance key"
+range {0 0.007733390571 1 1}
+name Keyer10
+xpos -404
+ypos 382
+}
+Premult {
+name Premult5
+xpos -404
+ypos 416
+}
+push $N926e8b00
+Keyer {
+input alpha
+operation "luminance key"
+range {0 0 1 1}
+name Keyer2
+xpos 243
+ypos 411
+}
+Blur {
+size 4
+name Blur3
+xpos 243
+ypos 464
+}
+Unpremult {
+name Unpremult3
+xpos 243
+ypos 498
+}
+set N926b8900 [stack 0]
+Keyer {
+input alpha
+operation "luminance key"
+range {0 0.007733390571 1 1}
+name Keyer9
+xpos -296
+ypos 493
+}
+Premult {
+name Premult4
+xpos -296
+ypos 527
+}
+push $N926b8900
+Keyer {
+input alpha
+operation "luminance key"
+range {0 0 1 1}
+name Keyer3
+xpos 243
+ypos 522
+}
+Blur {
+size 8
+name Blur4
+xpos 243
+ypos 582
+}
+Unpremult {
+name Unpremult4
+xpos 243
+ypos 616
+}
+set N92648a60 [stack 0]
+Keyer {
+input alpha
+operation "luminance key"
+range {0 0.007733390571 1 1}
+name Keyer8
+xpos -209
+ypos 611
+}
+Premult {
+name Premult3
+xpos -209
+ypos 645
+}
+push $N92648a60
+Keyer {
+input alpha
+operation "luminance key"
+range {0 0 1 1}
+name Keyer4
+xpos 243
+ypos 640
+}
+Blur {
+size 16
+name Blur5
+xpos 243
+ypos 700
+}
+Unpremult {
+name Unpremult5
+xpos 243
+ypos 734
+}
+set N926d7130 [stack 0]
+Keyer {
+input alpha
+operation "luminance key"
+range {0 0.007733390571 1 1}
+name Keyer7
+xpos -40
+ypos 729
+}
+Premult {
+name Premult2
+xpos -40
+ypos 763
+}
+push $N926d7130
+Keyer {
+input alpha
+operation "luminance key"
+range {0 0 1 1}
+name Keyer5
+xpos 243
+ypos 758
+}
+Blur {
+size 32
+name Blur6
+xpos 243
+ypos 819
+}
+Unpremult {
+name Unpremult6
+xpos 243
+ypos 851
+}
+set Nd5c7ed90 [stack 0]
+Keyer {
+input alpha
+operation "luminance key"
+range {0 0.007733390571 1 1}
+name Keyer15
+xpos -1
+ypos 847
+}
+Premult {
+name Premult8
+xpos -1
+ypos 881
+}
+push 0
+push $Nd5c7ed90
+Keyer {
+input alpha
+operation "luminance key"
+range {0 0 1 1}
+name Keyer6
+xpos 243
+ypos 875
+}
+Blur {
+size 64
+name Blur7
+xpos 243
+ypos 960
+}
+Unpremult {
+name Unpremult7
+xpos 243
+ypos 992
+}
+set Nec6a79f0 [stack 0]
+Keyer {
+input alpha
+operation "luminance key"
+range {0 0.007733390571 1 1}
+name Keyer14
+xpos 56
+ypos 988
+}
+Premult {
+name Premult7
+xpos 56
+ypos 1022
+}
+push $Nec6a79f0
+Keyer {
+input alpha
+operation "luminance key"
+range {0 0 1 1}
+name Keyer12
+xpos 243
+ypos 1016
+}
+Blur {
+size 128
+name Blur8
+xpos 243
+ypos 1114
+}
+Unpremult {
+name Unpremult8
+xpos 243
+ypos 1146
+}
+Keyer {
+input alpha
+operation "luminance key"
+range {0 0 1 1}
+name Keyer13
+xpos 243
+ypos 1170
+}
+Merge2 {
+inputs 8+1
+name Merge1
+xpos -342
+ypos 1052
+}
+Merge2 {
+inputs 2
+name Merge2
+xpos -342
+ypos 1133
+}
+set Nec6c75e0 [stack 0]
+Output {
+name Output1
+xpos -342
+ypos 1233
+}
+push $Nec6c75e0
+Viewer {
+frame_range 1001-1158
+fps 23.97602463
+name Viewer1
+selected true
+xpos -710
+ypos 1146
+}
+end_group

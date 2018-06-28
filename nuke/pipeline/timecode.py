@@ -32,7 +32,7 @@ class TimeCode():
             elif len(input_list) == 4:
                 if int(input_list[3]) >= self.fps or int(input_list[3]) < 0:
                     raise ValueError(
-                        "TimeCode: Error: Frames provided must not be greater than FPS rate of %d or less than zero." % self.fps)
+                        "TimeCode: Error: Frames provided must not be greater than FPS rate of %.2f or less than zero." % self.fps)
                 if int(input_list[2]) > 59 or int(input_list[2]) < 0:
                     raise ValueError("TimeCode: Error: Seconds provided must not be greater than 59 or less than zero.")
                 if int(input_list[1]) > 59 or int(input_list[1]) < 0:
@@ -46,7 +46,7 @@ class TimeCode():
             elif len(input_list) == 3:
                 if int(input_list[2]) >= self.fps or int(input_list[2]) < 0:
                     raise ValueError(
-                        "TimeCode: Error: Frames provided must not be greater than FPS rate of %d or less than zero." % self.fps)
+                        "TimeCode: Error: Frames provided must not be greater than FPS rate of %.2f or less than zero." % self.fps)
                 if int(input_list[1]) > 59 or int(input_list[1]) < 0:
                     raise ValueError("TimeCode: Error: Seconds provided must not be greater than 59 or less than zero.")
                 if int(input_list[0]) > 59 or int(input_list[0]) < 0:
@@ -57,7 +57,7 @@ class TimeCode():
             elif len(input_list) == 2:
                 if int(input_list[1]) >= self.fps or int(input_list[1]) < 0:
                     raise ValueError(
-                        "TimeCode: Error: Frames provided must not be greater than FPS rate of %d or less than zero." % self.fps)
+                        "TimeCode: Error: Frames provided must not be greater than FPS rate of %.2f or less than zero." % self.fps)
                 if int(input_list[0]) > 59 or int(input_list[0]) < 0:
                     raise ValueError("TimeCode: Error: Seconds provided must not be greater than 59 or less than zero.")
                 self.seconds = int(input_list[0])
@@ -65,7 +65,7 @@ class TimeCode():
             elif len(input_list) == 1:
                 if int(input_list[0]) >= self.fps or int(input_list[0]) < 0:
                     raise ValueError(
-                        "TimeCode: Error: Frames provided must not be greater than FPS rate of %d or less than zero." % self.fps)
+                        "TimeCode: Error: Frames provided must not be greater than FPS rate of %.2f or less than zero." % self.fps)
                 self.frames = int(input_list[0])
             self.frameno = (self.hours * 3600 * self.fps) + (self.minutes * 60 * self.fps) + (
             self.seconds * self.fps) + self.frames
