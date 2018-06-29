@@ -71,6 +71,7 @@ n.addCommand("Quick Label", "quickLabel()", "ctrl+alt+N")
 n.addCommand("OpticalFlare Auto Multitrack", "vclf_multi_autotrack()")
 n.addCommand("Build CC Nodes", "build_cc_nodes()", "alt+c")
 n.addCommand("Open Count Sheet", "open_count_sheet()")
+n.addCommand("Precomp Write", "precomp_write()", "alt+p")
 
 # Swap out the default version up functionality with a method that makes the directory
 # stored in the Write node.
