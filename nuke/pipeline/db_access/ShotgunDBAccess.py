@@ -16,6 +16,7 @@ import Version
 import Task
 import Artist
 import Playlist
+import Note
 
 import DBAccessGlobals
 import DBAccess
@@ -56,7 +57,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
         if not sg_shot:
             return shot_ret
         else:
-            print "%s - inside fetch_shot(\'%s\')"%(threading.current_thread().getName(), m_shot_code)
+            # print "%s - inside fetch_shot(\'%s\')"%(threading.current_thread().getName(), m_shot_code)
             local_seq = None
             try:
                 local_seq = Sequence.Sequence(sg_shot['sg_sequence']['name'], DBAccessGlobals.DBAccessGlobals.get_path_for_sequence(sg_shot['sg_sequence']['name']), sg_shot['sg_sequence']['id'])
@@ -157,6 +158,19 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             artist_ret = Artist.Artist(sg_artist['firstname'], sg_artist['lastname'], sg_artist['login'], sg_artist['id'])
             return artist_ret
 
+    def fetch_artist_from_username(self, m_username):                
+        artist_ret = None
+        filters = [
+            ['login', 'is', m_username]
+        ]
+        fields = ['firstname', 'lastname', 'name', 'login', 'id']
+        sg_artist = self.g_sg.find_one("HumanUser", filters, fields)
+        if not sg_artist:
+            return artist_ret
+        else:
+            artist_ret = Artist.Artist(sg_artist['firstname'], sg_artist['lastname'], sg_artist['login'], sg_artist['id'])
+            return artist_ret
+
     def fetch_artist_from_id(self, m_artist_id):                
         artist_ret = None
         filters = [
@@ -167,8 +181,8 @@ class ShotgunDBAccess(DBAccess.DBAccess):
         if not sg_artist:
             return artist_ret
         else:
-            print threading.current_thread().getName()
-            print sg_artist
+            # print threading.current_thread().getName()
+            # print sg_artist
             artist_ret = Artist.Artist(sg_artist['firstname'], sg_artist['lastname'], sg_artist['login'], sg_artist['id'])
             return artist_ret
 
@@ -186,7 +200,10 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             for sg_task in sg_tasks:
                 artist = Artist.Artist('Alan', 'Smithee', 'asmithee', -1)
                 if len(sg_task['task_assignees']) > 0:
-                    artist = self.fetch_artist_from_id(sg_task['task_assignees'][0]['id'])
+                    try:
+                        artist = self.fetch_artist_from_id(sg_task['task_assignees'][0]['id'])
+                    except KeyError:
+                        print "WARNING: Task %s appears to have a blank assignees list. Using generic Artist object."
                 task_ret = Task.Task(sg_task['content'], artist, sg_task['sg_status_list'], m_shot_obj, sg_task['id'])
                 tasks_array.append(task_ret)
             return tasks_array
@@ -203,8 +220,8 @@ class ShotgunDBAccess(DBAccess.DBAccess):
         if not sg_task:
             return task_ret
         else:
-            print threading.current_thread().getName()
-            print sg_task
+            # print threading.current_thread().getName()
+            # print sg_task
             artist = None
             try:
                 artist = self.fetch_artist_from_id(sg_task['task_assignees'][0]['id'])
@@ -271,6 +288,36 @@ class ShotgunDBAccess(DBAccess.DBAccess):
                 
             playlist_ret = Playlist.Playlist(sg_playlist['code'], version_list, sg_playlist['id'])
             return playlist_ret
+
+    def fetch_notes_for_version(self, m_version_obj, b_populate_playlists=False):
+        notes_ret = []
+        fields = ['id', 'subject', 'addressings_to', 'user', 'content', 'sg_note_type', 'note_links']
+        filters = [
+            ['project', 'is', {'type' : 'Project', 'id' : int(self.g_shotgun_project_id)}],
+            ['note_links', 'is', {'type' : 'Version', 'id' : int(m_version_obj.g_dbid)}]
+        ]
+        sg_notes = self.g_sg.find("Note", filters, fields)
+        for sg_note in sg_notes:
+            t_id = sg_note['id']
+            t_body = sg_note['content']
+            t_from = self.fetch_artist_from_id(sg_note['user']['id'])
+            t_to = self.fetch_artist_from_id(sg_note['addressings_to'][0]['id'])
+            t_type = sg_note['sg_note_type']
+            t_subject = sg_note['subject']
+            t_links = []
+            for link in sg_note['note_links']:
+                if link['type'] == 'Shot':
+                    t_links.append(self.fetch_shot_from_id(link['id']))
+                elif link['type'] == 'Version':
+                    t_links.append(self.fetch_version_from_id(link['id']))
+                elif link['type'] == 'Playlist':
+                    if b_populate_playlists:
+                        t_links.append(self.fetch_playlist(link['name']))
+                    else:
+                        t_links.append(Playlist.Playlist(link['name'], [], link['id']))
+            t_note_obj = Note.Note(t_subject, t_to, t_from, t_links, t_body, t_type, t_id)
+            notes_ret.append(t_note_obj)
+        return notes_ret
 
     def create_playlist(self, m_playlist_obj):
         version_list = []
@@ -368,6 +415,27 @@ class ShotgunDBAccess(DBAccess.DBAccess):
         sg_plate = self.g_sg.create('CustomEntity01', data)
         m_plate_obj.g_dbid = sg_plate['id']
 
+    def create_note(self, m_note_obj):
+        links_ar = []
+        for link in m_note_obj.g_links:
+            if link.__class__.__name__ == "Version":
+                links_ar.append({'type':'Version', 'id':int(link.g_dbid)})
+            elif link.__class__.__name__ == "Shot":
+                links_ar.append({'type':'Shot', 'id':int(link.g_dbid)})
+            elif link.__class__.__name__ == "Playlist":
+                links_ar.append({'type':'Playlist', 'id':int(link.g_dbid)})
+        data = {
+            'project' : {'type' : 'Project', 'id' : int(self.g_shotgun_project_id)},
+            'subject' : m_note_obj.g_subject,
+            'addressings_to' : [{'type' : 'HumanUser', 'id' : int(m_note_obj.g_to.g_dbid)}],
+            'user' : {'type' : 'HumanUser', 'id' : int(m_note_obj.g_from.g_dbid)},
+            'note_links' : links_ar,
+            'content' : m_note_obj.g_body,
+            'sg_note_type' : m_note_obj.g_type
+        }
+        sg_note = self.g_sg.create('Note', data)
+        m_note_obj.g_dbid = sg_note['id']
+            
     # uploads a thumbnail for a given database object type.
     # currently, valid values are 'Shot', 'Plate', and 'Version'
     def upload_thumbnail(self, m_entity_type, m_entity, m_thumb_path, altid = -1):
