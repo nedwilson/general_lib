@@ -26,6 +26,30 @@ from stat import S_ISREG, S_ISDIR, ST_MTIME, ST_MODE
 if not sys.platform == 'win32':
     import OpenEXR
     import Imath
+
+# global config objects
+g_config = None
+
+# method that returns a config file object, or throws an exception if we are not launched in the In-House pipeline
+def get_config():
+    global g_config
+    if g_config == None:
+        g_config = ConfigParser.ConfigParser()
+        show_config_path = None
+        try:
+            show_config_path = os.environ['IH_SHOW_CFG_PATH']
+        except KeyError:
+            raise RuntimeError("This system does not have an IH_SHOW_CFG_PATH environment variable defined.")
+        if not os.path.exists(show_config_path):
+            raise RuntimeError("The IH_SHOW_CFG_PATH environment variable is defined on this system with value %s, but no file exists at that location."%show_config_path)
+        try:
+            g_config.read(show_config_path)
+        except:
+            raise
+        return g_config
+    else:
+        return g_config
+            
     
 def quickLabel():
     sel = nuke.selectedNodes()[0]
@@ -143,6 +167,98 @@ def user_full_name(str_host_name=None):
         pass
     return rval
 
+# class that defines a PrecompPanel
+class PrecompPanel(nukescripts.PythonPanel):
+    def __init__(self, m_existing_precomps):
+        nukescripts.PythonPanel.__init__(self, 'Create a Precomp')
+        self.existing_pc_knob = nuke.Enumeration_Knob('existing_pc', 'Use Existing Precomp?', m_existing_precomps)
+        self.new_pc_knob = nuke.String_Knob('new_pc', 'New Precomp Name:')
+        self.addKnob(self.existing_pc_knob)
+        self.addKnob(self.new_pc_knob)
+
+# makes a precomp write node. Prompts the user to either select from an existing precomp or make a new one 
+def precomp_write():
+    print "INFO: Entering utilities.py method precomp_write()."
+    m_precomp_dir = None
+    config = get_config()
+    m_shot_dir = None
+    m_version_sep = '_v'
+    m_version_start = 1
+    m_version_format = '%03d'
+    m_write_frame_format = '%04d'
+    m_write_extension = 'exr'
+    
+    # first, check to be sure that we have been launched inside a valid in-house shot:
+    try:
+        m_shot_dir = os.environ['SHOT_PATH']
+    except KeyError:
+        raise RuntimeError("Make Precomp Write must be executed with a valid, In-House Nuke script open.")
+    
+    # figure out the path to the precomp directory    
+    try:
+        d_format = { 'pathsep' : os.path.sep }
+        m_precomp_dir = os.path.join(m_shot_dir, config.get('shot_structure', 'precomp_dir').format(**d_format))
+    except:
+        print "WARNING: show-level config file at %s does not contain an entry for shot_structure : precomp_dir. Using default."%os.environ['IH_SHOW_CFG_PATH']
+        m_precomp_dir = os.path.join(m_shot_dir, 'pix', 'precomp')
+
+    try:
+        m_version_sep = config.get(os.environ['IH_SHOW_CODE'], 'version_separator')
+        m_version_start = int(config.get(os.environ['IH_SHOW_CODE'], 'version_start'))
+        m_version_format = config.get(os.environ['IH_SHOW_CODE'], 'version_format')
+        m_write_frame_format = config.get(os.environ['IH_SHOW_CODE'], 'write_frame_format')
+        m_write_extension = config.get(os.environ['IH_SHOW_CODE'], 'write_extension')
+    except:
+        pass
+    
+
+    # make directory, if necessary
+    if not os.path.exists(m_precomp_dir):
+        os.makedirs(m_precomp_dir)
+        
+    shot = os.environ['SHOT']
+    element_name_re = re.compile('%s(.*)%s([0-9]+)'%(shot, m_version_sep))
+    existing_precomps = {}
+    for pc_dir in glob.glob(os.path.join(m_precomp_dir, '*')):
+        dir_name = os.path.basename(pc_dir)
+        element_match = element_name_re.search(dir_name)
+        if element_match:
+            element_name = element_match.group(1).lstrip('_')
+            try:
+                version_list = existing_precomps[element_name]
+                version_list.append(element_match.group(2))
+            except:
+                existing_precomps[element_name] = [element_match.group(2)]
+                
+    # display the precomp creation panel
+    gui_list = existing_precomps.keys()
+    gui_list.insert(0, 'Create New')
+    precomp_panel = PrecompPanel(gui_list)
+    
+    new_dir = None
+    new_dir_format = '%s_%s%s' + m_version_format
+        
+    if precomp_panel.showModalDialog():
+        existing_pc = precomp_panel.existing_pc_knob.value()
+        new_pc = None
+        if existing_pc == 'Create New':
+            new_pc = precomp_panel.new_pc_knob.value()
+            if not new_pc:
+                nuke.message("If you wish to create a new precomp, please enter in a name for the element in the dialog box.")
+                return
+            else:
+                new_dir = new_dir_format%(shot, new_pc, m_version_sep, int(m_version_start))
+        else:
+            new_dir = new_dir_format%(shot, existing_pc, m_version_sep, int(sorted(existing_precomps[existing_pc])[-1]) + 1)
+    else:
+        print "INFO: User cancelled operation."
+        
+    os.makedirs(os.path.join(m_precomp_dir, new_dir))
+    full_precomp_path = os.path.join(m_precomp_dir, new_dir, '%s.%s.%s'%(new_dir, m_write_frame_format, m_write_extension))
+    write_node = nuke.createNode("Write", "file %s file_type %s channels all"%(full_precomp_path, m_write_extension), inpanel=False)
+    print "INFO: Successfully created Write node with file path: %s"%full_precomp_path
+    return
+    
 
 # overrides nukescripts.version_up(). will make a directory for versioned up write nodes
 # if one does not exist.
@@ -159,8 +275,7 @@ def version_up_mkdir():
 
 def os_path_sub(m_source_path):
     try:
-        config = ConfigParser.ConfigParser()
-        config.read(os.environ['IH_SHOW_CFG_PATH'])
+        config = get_config()
         cfg_sr_darwin = config.get('show_root', 'darwin')
         cfg_sr_thishost = config.get('show_root', sys.platform)
 
@@ -170,7 +285,7 @@ def os_path_sub(m_source_path):
             newfile = m_source_path.replace(cfg_sr_darwin, cfg_sr_thishost)
             m_source_path = newfile
     except:
-        pass
+        raise
     return m_source_path
 
 # creates a read node from a write node.
@@ -196,8 +311,7 @@ def read_from_write():
         file_path = nd.knob("file").value()
         
         # convert the show root if necessary for a specific platform
-        config = ConfigParser.ConfigParser()
-        config.read(os.environ['IH_SHOW_CFG_PATH'])
+        config = get_config()
         cfg_sr_darwin = config.get('show_root', 'darwin')
         cfg_sr_thishost = config.get('show_root', sys.platform)
     
@@ -282,8 +396,7 @@ def make_dir_path():
             return
     
     
-    config = ConfigParser.ConfigParser()
-    config.read(os.environ['IH_SHOW_CFG_PATH'])
+    config = get_config()
     cfg_sr_darwin = config.get('show_root', 'darwin')
     cfg_sr_thishost = config.get('show_root', sys.platform)
     
@@ -452,8 +565,7 @@ def shot_from_script():
 
 
 def shot_from_nuke_path(str_path):
-    config = ConfigParser.ConfigParser()
-    config.read(os.environ['IH_SHOW_CFG_PATH'])
+    config = get_config()
     cfg_shot_regexp = config.get(os.environ['IH_SHOW_CODE'], 'shot_regexp')
 
     rval = ""
@@ -467,8 +579,7 @@ def shot_from_nuke_path(str_path):
 
 
 def cdl_file_from_nuke_path(str_path):
-    config = ConfigParser.ConfigParser()
-    config.read(os.environ['IH_SHOW_CFG_PATH'])
+    config = get_config()
     cfg_shot_regexp = config.get(os.environ['IH_SHOW_CODE'], 'shot_regexp')
     rval = ""
     shot = shot_from_nuke_path(str_path)
@@ -487,8 +598,7 @@ def cdl_file_from_nuke_path(str_path):
 
 
 def get_show_lut(str_path):
-    config = ConfigParser.ConfigParser()
-    config.read(os.environ['IH_SHOW_CFG_PATH'])
+    config = get_config()
     cfg_lut = config.get(os.environ['IH_SHOW_CODE'], 'lut')
 
     rval = ""
@@ -622,8 +732,7 @@ def backdropColorOCD():
         
 def build_cc_nodes():
     show_root = os.environ['IH_SHOW_ROOT']
-    config = ConfigParser.ConfigParser()
-    config.read(os.environ['IH_SHOW_CFG_PATH'])
+    config = get_config()
     cfg_shot_regexp = config.get(os.environ['IH_SHOW_CODE'], 'shot_regexp')
     cfg_sequence_regexp = config.get(os.environ['IH_SHOW_CODE'], 'sequence_regexp')
     cfg_lut = config.get(os.environ['IH_SHOW_CODE'], 'lut')
@@ -743,24 +852,13 @@ def create_thumbnail(m_source_path):
     show_cfg_path = None
     show_root = None
     show_code = None
+
+    config = get_config()
     
-    try:    
-        show_cfg_path = os.environ['IH_SHOW_CFG_PATH']
-    except KeyError:
-        raise EnvironmentError("Required environment variable IH_SHOW_CFG_PATH is not defined.")
-
-    try:    
-        show_root = os.environ['IH_SHOW_ROOT']
-    except KeyError:
-        raise EnvironmentError("Required environment variable IH_SHOW_ROOT is not defined.")
-
-    try:    
-        show_code = os.environ['IH_SHOW_CODE']
-    except KeyError:
-        raise EnvironmentError("Required environment variable IH_SHOW_CODE is not defined.")
+    show_cfg_path = os.environ['IH_SHOW_CFG_PATH']
+    show_root = os.environ['IH_SHOW_ROOT']
+    show_code = os.environ['IH_SHOW_CODE']
         
-    config = ConfigParser.ConfigParser()
-    config.read(show_cfg_path)
     shot_regexp = config.get(show_code, 'shot_regexp')
     shot_dir_format = config.get(show_code, 'shot_dir_format')
     cdl_dir_format = config.get(show_code, 'cdl_dir_format')
