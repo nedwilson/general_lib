@@ -30,6 +30,10 @@ class DBAccess(object):
         """Returns an artist object from the database"""
 
     @abc.abstractmethod
+    def fetch_artist_from_username(self, m_username):                
+        """Returns an artist object from the database"""
+
+    @abc.abstractmethod
     def fetch_artist_from_id(self, m_artist_id):                
         """Returns an artist object from the database using the database ID as a search parameter"""
 
@@ -58,6 +62,12 @@ class DBAccess(object):
         """Returns a playlist object from the database"""
 
     @abc.abstractmethod
+    def fetch_notes_for_version(self, m_version_obj, b_populate_playlists=False):                
+        """Returns a list of Note objects linked to a particular version. By default, it will not attempt
+           to fill playlist objects with a database record for each version. However, setting b_populate_playlists 
+           to True will turn this on. Warning, it's slow."""
+
+    @abc.abstractmethod
     def create_playlist(self, m_playlist_obj):
         """Creates a playlist based on the object provided, and populates the object with the resulting database query
            If the object already exists, with a g_dbid value != -1, method will perform update instead of create."""
@@ -77,6 +87,10 @@ class DBAccess(object):
     @abc.abstractmethod
     def create_plate(self, m_plate_obj):
         """Creates a plate based on the object provided, and populates the object with the resulting database query"""
+
+    @abc.abstractmethod
+    def create_note(self, m_note_obj):
+        """Creates a note based on the object provided, and populates the object with the resulting database query"""
         
     @abc.abstractmethod
     def upload_thumbnail(self, m_entity_type, m_entity, m_thumb_path):
