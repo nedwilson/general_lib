@@ -14,21 +14,25 @@ import re
 import threading
 import math
 import sys
-if not sys.platform == 'win32':
-    import pwd
 import socket
 import ConfigParser
 import tempfile
 import traceback
-from operator import itemgetter
 import time
+import getpass
+from operator import itemgetter
 from stat import S_ISREG, S_ISDIR, ST_MTIME, ST_MODE
 if not sys.platform == 'win32':
+    import pwd
     import OpenEXR
     import Imath
 
+import db_access as DB
+import sgtk
+
 # global config objects
 g_config = None
+g_ihdb = None
 
 # method that returns a config file object, or throws an exception if we are not launched in the In-House pipeline
 def get_config():
@@ -49,19 +53,22 @@ def get_config():
         return g_config
     else:
         return g_config
-            
+
+# method checks to see if global DBAccess variable is None, and if so, create a new DBAccess object
+def get_ihdb():
+    global g_ihdb
+    if not g_ihdb:
+        g_ihdb = DB.DBAccessGlobals.get_db_access()            
     
 def quickLabel():
     sel = nuke.selectedNodes()[0]
     sel['label'].setValue(nuke.getInput('Enter Label Text'))
-
 
 def getPixDir():
     script_name = nuke.root().knob('name').value()
     script_dir = os.path.dirname(script_name)
     pix = os.path.join(os.path.dirname(script_dir), "pix", "plates")
     return (pix)
-
 
 def getRenderDir():
     script_name = nuke.root().knob('name').value()
@@ -94,7 +101,6 @@ def copyReadToShot():
                 shutil.copy(imgfile, dest)
             node['file'].setValue(os.path.join(dest, os.path.basename(file)))
 
-
 def copyRenderToShot():
     s = nuke.selectedNodes()
     for node in s:
@@ -117,11 +123,9 @@ def copyRenderToShot():
         else:
             nuke.message("Selected write nodes will copy to the delivery folder for the shot")
 
-
 def setup_luts():
     nuke.root()['defaultViewerLUT'].setValue("OCIO LUTs")
     nuke.root()['OCIO_config'].setValue("custom")
-
 
 def copyFiles(render_path, exr_dest_fulldir):
     task = nuke.ProgressTask("Copy Files")
@@ -150,13 +154,9 @@ def makeSad():
 def user_full_name(str_host_name=None):
     rval = "IH Artist"
     try:
+        # no windows support at this time
         if sys.platform == 'win32':
-            # windows hack, since no pwd
-            # pyad module doesn't work... seriously, fuck Windows
-            host = socket.gethostname()
-            if host == "SevenOfNine":
-                full_name = "Gabe Koerner"
-            return full_name
+            return rval
         else:
             rval = pwd.getpwuid(os.getuid()).pw_gecos
     except ImportError:
@@ -167,8 +167,16 @@ def user_full_name(str_host_name=None):
         pass
     return rval
 
+def get_login():
+    rval = 'ned'
+    try:
+        rval = getpass.getuser()
+    except:
+        pass
+    return rval
+
 # class that defines a PrecompPanel
-class PrecompPanel(nukescripts.PythonPanel):
+class PrecompPanel(nukescripts.panels.PythonPanel):
     def __init__(self, m_existing_precomps):
         nukescripts.PythonPanel.__init__(self, 'Create a Precomp')
         self.existing_pc_knob = nuke.Enumeration_Knob('existing_pc', 'Use Existing Precomp?', m_existing_precomps)
@@ -259,7 +267,6 @@ def precomp_write():
     print "INFO: Successfully created Write node with file path: %s"%full_precomp_path
     return
     
-
 # overrides nukescripts.version_up(). will make a directory for versioned up write nodes
 # if one does not exist.
 def version_up_mkdir():
@@ -370,7 +377,6 @@ def read_from_write():
         read_node.knob("reload").execute()
         return read_node
 
-
 # makes a file path from a selected write node if it does not exist. bound to F8
 
 def make_dir_path():
@@ -419,7 +425,6 @@ def make_dir_path():
             print "ERROR: os.makedirs() threw exception: %d" % e.errno
             print "ERROR: Filename: %s" % e.filename
             print "ERROR: Error String: %s" % e.strerror
-
 
 # reveals the currently selected read or write node in the finder
 # Tested and functional in Linux, 2016-10-01
@@ -556,13 +561,11 @@ class TimeCode():
         rettco = TimeCode(newframeno)
         return rettco
 
-
 def shot_from_script():
     script_name = nuke.root().knob('name').value()
     script_base = os.path.basename(script_name)
     shot = '_'.join(script_base.split('_')[0:2])
     return (shot)
-
 
 def shot_from_nuke_path(str_path):
     config = get_config()
@@ -576,7 +579,6 @@ def shot_from_nuke_path(str_path):
         if not mo == None:
             rval = path_component
     return rval
-
 
 def cdl_file_from_nuke_path(str_path):
     config = get_config()
@@ -595,7 +597,6 @@ def cdl_file_from_nuke_path(str_path):
     return_path_lst.extend(['data', 'cdl', '%s.cdl' % shot])
     rval = os.path.join(return_path_lst)
     return rval
-
 
 def get_show_lut(str_path):
     config = get_config()
@@ -653,13 +654,11 @@ def package_execute_threaded(s_nuke_script_path):
     else:
         print "INFO: Successfully completed script packaging."
 
-
 # add this one to menu.py
 def menu_package_script():
     nuke.scriptSave()
     s_script_name = "%s" % nuke.scriptName()
     threading.Thread(target=package_execute_threaded, args=[s_script_name]).start()
-
 
 def hsvToRGB(h, s, v):
     """Convert HSV color space to RGB color space
@@ -681,7 +680,6 @@ def hsvToRGB(h, s, v):
         4: (t, p, v),
         5: (v, p, q),
     }[hi]
-
 
 def rgbToHSV(r, g, b):
     """Convert RGB color space to HSV color space
@@ -712,7 +710,6 @@ def rgbToHSV(r, g, b):
     else:
         s = 1.0 - (minc / maxc)
     return (h, s, v)
-
 
 def backdropColorOCD():
     nd_ar = []
@@ -1036,3 +1033,748 @@ def create_thumbnail(m_source_path):
     
     return dest_path_frame
 
+#### REMOVING ALL SHOW-SPECIFIC CODE FROM DELIVERIES
+
+# class displays a GUI asking the user for deliverable type selection and slate notes
+class DeliveryNotesPanel(nukescripts.PythonPanel):
+    def __init__(self, review_notes='For Review'):
+        nukescripts.PythonPanel.__init__(self, 'In-House Review Submission')
+        self.cvn_knob = nuke.Multiline_Eval_String_Knob('cvn_', 'current version notes', review_notes)
+        self.addKnob(self.cvn_knob)
+        self.cc_knob = nuke.Boolean_Knob('cc_', 'CC', True)
+        self.cc_knob.setFlag(nuke.STARTLINE)
+        self.addKnob(self.cc_knob)
+        self.avidqt_knob = nuke.Boolean_Knob('avidqt_', 'Avid QT', True)
+        self.addKnob(self.avidqt_knob)
+        self.vfxqt_knob = nuke.Boolean_Knob('vfxqt_', 'VFX MP4', True)
+        self.addKnob(self.vfxqt_knob)
+        self.burnin_knob = nuke.Boolean_Knob('burnin_', 'QT Burnin', True)
+        self.addKnob(self.burnin_knob)
+        self.hires_knob = nuke.Boolean_Knob('hires_', 'Hi-Res', True)
+        self.hires_knob.setFlag(nuke.STARTLINE)
+        self.addKnob(self.dpx_knob)
+        self.matte_knob = nuke.Boolean_Knob('matte_', 'Matte', False)
+        self.addKnob(self.matte_knob)
+        self.export_knob = nuke.Boolean_Knob('export_', 'Export', False)
+        self.addKnob(self.export_knob)
+
+# render a delivery in the background
+def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame, end_frame, md_filelist):
+    global g_config, g_ihdb
+    get_config()
+    get_ihdb()
+    
+    progress_bar = nuke.ProgressTask("Building Delivery")
+    progress_bar.setMessage("Initializing...")
+    progress_bar.setProgress(0)
+
+    s_nuke_exe_path = g_config.get('nuke_exe_path', sys.platform)
+    s_pyscript = ms_python_script
+    s_windows_addl = ""
+    if sys.platform == 'win32':
+        s_windows_addl = ' --remap "/Volumes/raid_vol01,Y:"'
+    
+    s_cmd = "%s -i -V 2%s -c 2G -t %s" % (s_nuke_exe_path, s_windows_addl, s_pyscript)
+    s_cmd_ar = [s_nuke_exe_path, '-i', '-V', '2']
+    if sys.platform == 'win32':
+        s_cmd_ar.append('--remap')
+        s_cmd_ar.append('"/Volumes/raid_vol01,Y:"')
+
+    s_cmd_ar.append('-c')
+    s_cmd_ar.append('2G')
+    s_cmd_ar.append('-t')
+    s_cmd_ar.append(s_pyscript)
+            
+    s_err_ar = []
+    f_progress = 0.0
+    frame_match_txt = r'^Rendered frame (?P<frameno>[0-9]{1,}) of (?P<filebase>[a-zA-Z0-9-_]+)\.mov\.$'
+    frame_match_re = re.compile(frame_match_txt)
+    print "INFO: Beginning: %s" % s_cmd
+    proc = None
+
+    if sys.platform == 'win32':
+        print 'Windows detected. Passing array of command arguments and shell=False'
+        proc = subprocess.Popen(s_cmd_ar, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    else:
+        proc = subprocess.Popen(s_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    
+    progress_bar.setMessage("Beginning Render.")
+    b_kill = False
+    while proc.poll() is None:
+        if progress_bar.isCancelled():
+            b_kill = True
+            progress_bar.setMessage("Cancelling...")
+            break
+        try:
+            s_out = proc.stdout.readline()
+            s_err_ar.append(s_out.rstrip())
+            matchobject = frame_match_re.search(s_out)
+            if matchobject:
+                s_hires_frame = matchobject.groupdict()['frameno']
+                s_file_name = matchobject.groupdict()['filebase'].replace('_avid', '').replace('_vfx', '').replace('_export', '')
+                i_hires_frame = int(s_hires_frame)
+                f_duration = float(end_frame - start_frame + 1)
+                f_progress = (float(i_hires_frame) - float(start_frame) + 1.0)/f_duration
+                progress_bar.setMessage("Rendering frame %d of %s..."%(i_hires_frame,s_file_name))
+                progress_bar.setProgress(int(f_progress * 98))
+        except IOError:
+            print "ERROR: IOError Caught!"
+            var = traceback.format_exc()
+            print var
+    if b_kill:
+        proc.kill()
+        del progress_bar
+        print "WARNING: User cancelled render operation."
+        return
+        
+    if proc.returncode != 0:
+        s_errmsg = ""
+        s_err = '\n'.join(s_err_ar)
+        l_err_verbose = []
+        b_intrace = False
+        for err_line in s_err_ar:
+            if len(err_line) == 0:
+                b_intrace = False
+                continue
+            if err_line.find("Traceback") != -1:
+                b_intrace = True
+            if err_line.find("ERROR") != -1:
+                b_intrace = True
+            if b_intrace:
+                l_err_verbose.append(err_line)
+        if s_err.find("FOUNDRY LICENSE ERROR REPORT") != -1:
+            s_errmsg = "Unable to obtain a license for Nuke! Package execution fails, will not proceed!"
+        else:
+            s_errmsg = "Error(s) have occurred. Details:\n%s"%'\n'.join(l_err_verbose)
+        nuke.critical(s_errmsg)
+    else:
+        print "INFO: Successfully completed delivery render."
+
+    mov_file = d_db_thread_helper['mov_src']
+    thumb_file = d_db_thread_helper['exr_src'].replace('*', '%04d'%int(((int(end_frame) - int(start_frame))/2) + int(start_frame)))
+    src_imgseq_path = d_db_thread_helper['exr_src'].replace('*', '%04d')
+            
+    # copy the files
+    d_expanded_list = {}
+    for s_src in md_filelist:
+        if s_src.find('*') != -1:
+            src_imgseq_path = s_src.replace('*', '%04d')
+            l_imgseq = glob.glob(s_src)
+            for s_img in l_imgseq:
+                d_expanded_list[s_img] = os.path.join(md_filelist[s_src], os.path.basename(s_img))
+        else:
+            d_expanded_list[s_src] = md_filelist[s_src]
+            
+    i_len = len(d_expanded_list.keys())
+    # copy all of the files to the destination volume.
+    # alert the user if anything goes wrong.
+    try:
+        for i_count, source_file in enumerate(d_expanded_list.keys(), start=1):
+            progress_bar.setMessage("Copying: %s"%os.path.basename(source_file))
+            if not os.path.exists(os.path.dirname(d_expanded_list[source_file])):
+                os.makedirs(os.path.dirname(d_expanded_list[source_file]))
+            shutil.copy(source_file, d_expanded_list[source_file])
+            f_progress = float(i_count)/float(i_len)
+            progress_bar.setProgress(98 + int(f_progress * 98))
+    except:
+        nuke.critical(traceback.format_exc())
+    else:
+        # add a new version to the database
+        progress_bar.setProgress(99)
+        progress_bar.setMessage("Creating new Version record in the database...")
+        
+        # fetch the shot from the thread helper dictionary
+        dbshot = d_db_thread_helper['dbshot']
+        
+        # fetch the artist from the thread helper dictionary
+        dbartist = d_db_thread_helper['dbartist']
+        
+        # fetch a list of tasks for the shot
+        dbtasks = g_ihdb.fetch_tasks_for_shot(dbshot)
+        # If no tasks have been created for this shot, use a blank task
+        dbtask = DB.Task("Blank Task", dbartist, 'wtg', dbshot, -1)
+        if len(dbtasks) > 0:
+            dbtask = dbtasks[0]
+        
+        # create a thumbnail
+        thumb_file_gen = os_path_sub(create_thumbnail(thumb_file))
+        
+        # does the version already exist?
+        print "Thread: %s Fetching version for %s, for shot %s"%(threading.current_thread().getName(), os.path.basename(thumb_file).split('.')[0], d_db_thread_helper['shot'])
+        dbversion = g_ihdb.fetch_version(os.path.basename(thumb_file).split('.')[0], dbshot)
+        
+        # clean up notes
+        l_notes = d_db_thread_helper['notes']
+        clean_notes = []
+        for l_note in l_notes:
+            if len(l_note) > 0:
+                clean_notes.append(l_note)
+        if not dbversion:
+            print "Thread: %s Creating version for %s, for shot %s"%(threading.current_thread().getName(), os.path.basename(thumb_file).split('.')[0], d_db_thread_helper['shot'])
+            dbversion = DB.Version(os.path.basename(thumb_file).split('.')[0], 
+                                     -1, 
+                                     '\n'.join(clean_notes), 
+                                     int(start_frame), 
+                                     int(end_frame), 
+                                     int(end_frame) - int(start_frame) + 1, 
+                                     d_db_thread_helper['hires_dest'], 
+                                     d_db_thread_helper['mov_dest'],
+                                     dbshot,
+                                     dbartist,
+                                     dbtask)
+            dbversion.set_status(g_config.get('delivery', 'version_status_qt'))
+            g_ihdb.create_version(dbversion)
+            print "Successfully created version %s in database with DBID %d."%(dbversion.g_version_code, int(dbversion.g_dbid))
+        else:
+            dbversion_upd = DB.Version(os.path.basename(thumb_file).split('.')[0], 
+                                     dbversion.g_dbid, 
+                                     '\n'.join(clean_notes), 
+                                     int(start_frame), 
+                                     int(end_frame), 
+                                     int(end_frame) - int(start_frame) + 1, 
+                                     d_db_thread_helper['hires_dest'], 
+                                     d_db_thread_helper['mov_dest'],
+                                     dbshot,
+                                     dbartist,
+                                     dbtask)
+            dbversion_upd.set_status(g_config.get('delivery', 'version_status_qt'))
+            dbversion.set_status(g_config.get('delivery', 'version_status_qt'))
+            g_ihdb.update_version(dbversion_upd)
+            print "Successfully updated version %s in database with DBID %d."%(dbversion.g_version_code, int(dbversion.g_dbid))
+            
+        g_ihdb.upload_thumbnail('Version', dbversion, thumb_file_gen)
+        g_ihdb.upload_thumbnail('Shot', dbshot, thumb_file_gen)
+        dbtask.g_status = g_config.get('delivery', 'version_status_qt')
+        print "Thread: %s Setting task status for task %s, shot %s to %s"%(threading.current_thread().getName(), dbtask.g_task_name, d_db_thread_helper['shot'], dbtask.g_status)
+        g_ihdb.update_task_status(dbtask)
+        progress_bar.setMessage("Publishing Nuke Script and Hi-Res Frames to Shotgun...")
+        # set shotgun authentication
+        auth_user = sgtk.get_authenticated_user()
+        if auth_user == None:
+            sa = sgtk.authentication.ShotgunAuthenticator()
+            user = sa.create_script_user(api_script=g_config.get('database', 'shotgun_script_name'), api_key=g_config.get('database', 'shotgun_api_key'), host=g_config.get('database', 'shotgun_server_path'))
+            sgtk.set_authenticated_user(user)
+        
+        # retrieve Shotgun Toolkit object
+        tk = sgtk.sgtk_from_entity('Shot', int(dbshot.g_dbid))
+        # grab context for published version
+        context = tk.context_from_entity('Shot', int(dbshot.g_dbid))
+        sg_publish_name = os.path.basename(thumb_file).split('.')[0].split('_v')[0]
+        sg_publish_ver = int(os.path.basename(thumb_file).split('.')[0].split('_v')[1])
+        
+        # publish hi-res
+        dbpublishhires = None
+        if os.path.splitext(d_db_thread_helper['hires_dest'])[1] == '.dpx':
+            dbpublishhires = sgtk.util.register_publish(tk, context, d_db_thread_helper['hires_dest'], sg_publish_name, sg_publish_ver, comment = '\n'.join(clean_notes), published_file_type = 'DPX Image Sequence')
+        elif os.path.splitext(d_db_thread_helper['hires_dest'])[1] == '.exr':
+            dbpublishhires = sgtk.util.register_publish(tk, context, d_db_thread_helper['hires_dest'], sg_publish_name, sg_publish_ver, comment = '\n'.join(clean_notes), published_file_type = 'EXR Image Sequence')
+        g_ihdb.upload_thumbnail('PublishedFile', dbshot, thumb_file_gen, altid = dbpublishhires['id'])
+        
+        s_nuke_script_path = d_db_thread_helper['nuke_script_path']
+        if not s_nuke_script_path == 'UNKNOWN':
+            dbpublishnk = sgtk.util.register_publish(tk, context, s_nuke_script_path, sg_publish_name, sg_publish_ver, comment = '\n'.join(clean_notes), published_file_type = 'Nuke Script')
+            g_ihdb.upload_thumbnail('PublishedFile', dbshot, thumb_file_gen, altid = dbpublishnk['id'])
+        progress_bar.setProgress(100)
+        progress_bar.setMessage("Done!")
+
+    del progress_bar
+
+# send a shot for review
+def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b_method_vfxqt=True, b_method_burnin=True, b_method_hires=True, b_method_matte=False, b_method_artist=None):
+
+    global g_config, g_ihdb
+    if g_config == None:
+        get_config()
+    get_ihdb()
+    
+    oglist = []
+    vfxqt_delivery = b_method_vfxqt
+
+    s_show_root = os.environ['IH_SHOW_ROOT']
+    s_show = os.environ['IH_SHOW_CODE']
+    # win32 path replacement
+    tmp_path_repl = g_config.get(s_show, 'win32_netpath_transforms')
+    d_path_repl = { 'posixpath' : tmp_path_repl.split('|')[0], 'win32path' : tmp_path_repl.split('|')[1] }
+    
+    # use plate TimeCode?
+    b_use_platetc = True
+    if g_config.get(s_show, 'use_plate_timecode') in ['no', 'NO', 'No', 'N', 'n', 'False', 'FALSE', 'false']:
+        b_use_platetc = False
+
+    s_delivery_fileext = g_config.get('delivery', 'file_format')
+
+    for nd in nuke.selectedNodes():
+        nd.knob('selected').setValue(False)
+        oglist.append(nd)
+
+    start_frame = nuke.root().knob('first_frame').value()
+    end_frame = nuke.root().knob('last_frame').value()
+    
+    global_width = nuke.root().knob('format').value().width()
+    global_height = nuke.root().knob('format').value().height()
+
+    for und in oglist:
+        created_list = []
+        write_list = []
+        render_path = ""
+        md_host_name = None
+        first_frame_tc_str = ""
+        last_frame_tc_str = ""
+        first_frame_tc = None
+        last_frame_tc = None
+        slate_frame_tc = None
+
+        if und.Class() == "Read":
+            print "INFO: Located Read Node."
+            und.knob('selected').setValue(True)
+            render_path = und.knob('file').value()
+            start_frame = und.knob('first').value()
+            end_frame = und.knob('last').value()
+            global_width = und.knob('format').value().width()
+            global_height = und.knob('format').value().height()
+            startNode = und
+        elif und.Class() == "Write":
+            print "INFO: Located Write Node."
+            und.knob('selected').setValue(True)
+            global_width = und.knob('format').value().width()
+            global_height = und.knob('format').value().height()
+            new_read = read_from_write()
+            render_path = new_read.knob('file').value()
+            start_frame = new_read.knob('first').value()
+            end_frame = new_read.knob('last').value()
+            created_list.append(new_read)
+            startNode = new_read
+        else:
+            print "Please select either a Read or Write node"
+            break
+        if sys.platform == "win32":
+            render_path = render_path.replace(d_path_repl['posixpath'], d_path_repl['win32path'])
+        
+        first_frame_tc_str = None
+        last_frame_tc_str = None
+        if b_use_platetc:
+            # timecode from start frame (1001 = 00:00:41:17) and end frame
+            first_frame_tc_str = startNode.metadata("input/timecode", float(start_frame))
+            last_frame_tc_str = startNode.metadata("input/timecode", float(end_frame))
+        else:
+            # timecode from start frame (1001 = 00:00:41:17) and end frame
+            first_frame_tc_str = str(TimeCode(start_frame))
+            last_frame_tc_str = str(TimeCode(end_frame))
+            
+        if first_frame_tc_str == None:
+            first_frame_tc = TimeCode(start_frame)
+        else:
+            first_frame_tc = TimeCode(first_frame_tc_str)
+        slate_frame_tc = first_frame_tc - 1
+        if last_frame_tc_str == None:
+            last_frame_tc = TimeCode(end_frame) + 1
+        else:
+            last_frame_tc = TimeCode(last_frame_tc_str) + 1
+
+        # grab the shot from the filename and database
+        s_shot = None
+        s_sequence = None
+        
+        g_shot_regexp = g_config.get(s_show, 'shot_regexp')
+        matchobject = re.search(g_shot_regexp, render_path)
+        # make sure this file matches the shot pattern
+        if not matchobject:
+            print "ERROR: somehow render path %s doesn't actually contain a shot!"%render_path
+            continue
+        else:
+            s_shot = matchobject.groupdict()['shot']
+            s_sequence = matchobject.groupdict()['sequence']
+        
+        d_shot_path = { 'show_root' : s_show_root, 'sequence' : s_sequence, 'shot' : s_shot, 'pathsep' : os.path.sep }
+        s_shot_path = g_config.get(s_show, 'shot_dir_format').format(**d_shot_path)
+        s_seq_path = g_config.get(s_show, 'seq_dir_format').format(**d_shot_path)
+        # create the panel to ask for notes
+        def_note_text = "For review"
+        path_dir_name = os.path.dirname(render_path)
+        version_int = 0
+        try:
+            version_int = int(path_dir_name.split(g_config.get(s_show, 'version_separator'))[-1])
+        except ValueError:
+            pass
+        if version_int == int(g_config.get(s_show, 'version_start')) - 1:
+            def_note_text = "Scan Verification."
+
+        dbshot = g_ihdb.fetch_shot(s_shot)
+            
+        b_execute_overall = False
+        cc_delivery = False
+        burnin_delivery = False
+        export_delivery = False
+
+        if current_version_notes is not None:
+            cvn_txt = current_version_notes
+            avidqt_delivery = b_method_avidqt
+            burnin_delivery = b_method_burnin
+            hires_delivery = b_method_hires
+            matte_delivery = b_method_matte
+            cc_delivery = cc
+            b_execute_overall = True
+        else:
+            tmp_versions = g_ihdb.fetch_versions_for_shot(dbshot)
+            versions_list = tmp_versions.sort(key=attrgetter('g_version_code'))
+            if len(versions_list) > 0:
+                def_note_text = versions_list[-1].g_description
+                
+            pnl = DeliveryNotesPanel()
+            pnl.knobs()['cvn_'].setValue(def_note_text)
+            if pnl.showModalDialog():
+                cvn_txt = pnl.knobs()['cvn_'].value()
+                cc_delivery = pnl.knobs()['cc_'].value()
+                avidqt_delivery = pnl.knobs()['avidqt_'].value()
+                burnin_delivery = pnl.knobs()['burnin_'].value()
+                hires_delivery = pnl.knobs()['hires_'].value()
+                matte_delivery = pnl.knobs()['matte_'].value()
+                export_delivery = pnl.knobs()['export_'].value()
+                b_execute_overall = True
+
+        if b_execute_overall:
+        
+            # project FPS
+            s_project_fps = g_config.get(s_show, 'write_fps')
+            # delivery template
+            s_delivery_template = g_config.get('delivery', 'nuke_template_%s'%sys.platform)
+
+            s_filename = os.path.basename(render_path).split('.')[0]
+            s_cdl_file_ext = g_config.get(s_show, 'cdl_file_ext')
+            
+
+            # new delivery folder: $SHOT/delivery
+            s_delivery_folder = os.path.join(s_shot_path, g_config.get(s_show, 'shot_delivery_dir'), s_filename)
+            s_likely_nuke_script_path = os.path.join(s_shot_path, g_config.get(s_show, 'shot_scripts_dir'), '%s.nk'%s_filename)
+            s_nuke_script_path = 'UNKNOWN'
+            if os.path.exists(s_likely_nuke_script_path):
+                s_nuke_script_path = s_likely_nuke_script_path
+            
+            # allow version number to have arbitrary text after it, such as "_matte" or "_temp"
+            s_version = s_filename.split(g_config.get(s_show, 'version_separator'))[-1].split('_')[0]
+            s_artist_name = None
+            s_artist_login = get_login()
+            
+            if b_method_artist:
+                s_artist_login = b_method_artist
+                
+            dbartist = g_ihdb.fetch_artist_from_username(s_artist_login)
+            s_artist_name = dbartist.g_full_name
+            
+            # this will vary based on camera format, so, pull the default from the config file, and then try and get the right one from the read node
+            s_format = g_config.get(s_show, 'delivery_resolution')
+            tmp_width = startNode.knob('format').value().width()
+            tmp_height = startNode.knob('format').value().height()
+            s_format = "%sx%s"%(tmp_width, tmp_height)
+            
+            # notes
+            l_notes = ["", "", "", "", ""]
+            for idx, s_note in enumerate(cvn_txt.split('\n'), start=0):
+                if idx >= len(l_notes):
+                    break
+                l_notes[idx] = s_note
+                
+            b_deliver_cdl = True
+
+            # exr source: the rendered comp
+            s_exr_src = os.path.join(os.path.dirname(render_path), "%s.*.exr"%s_filename).replace('\\', '/')
+            s_delivery_package = 'NOPKG'
+            
+            # various destinations
+            s_avidqt_dest = os.path.join(s_delivery_folder, 'mov', '%s_avid.mov'%s_filename)
+            s_vfxqt_dest = os.path.join(s_delivery_folder, 'mov', '%s_vfx.mov'%s_filename)
+            s_exportqt_dest = os.path.join(s_delivery_folder, 'mov', '%s_export.mov'%s_filename)
+            s_dpx_dest = os.path.join(s_delivery_folder, 'dpx', "%s.*.dpx"%s_filename)
+            s_exr_dest = os.path.join(s_delivery_folder, 'exr', "%s.*.exr"%s_filename)
+            s_matte_dest = os.path.join(s_delivery_folder, 'tif', "%s_matte.*.tif"%s_filename)
+            s_xml_dest = os.path.join(s_delivery_folder, 'support_files', "%s.xml"%s_filename)
+            all_dests = [s_avidqt_dest, s_vfxqt_dest, s_exportqt_dest, s_xml_dest]
+            if hires_delivery:
+                if s_delivery_fileext == 'exr':
+                    all_dests.append(s_exr_dest)
+                elif s_delivery_fileext == 'dpx':
+                    all_dests.append(s_dpx_dest)
+            if matte_delivery:
+                all_dests.append(s_matte_dest)
+            for dest in all_dests:
+                dir = os.path.dirname(dest)
+                if not os.path.exists(dir):
+                    os.makedirs(dir)
+           
+            d_db_thread_helper = {}
+            d_db_thread_helper['exr_src'] = s_exr_src
+            d_db_thread_helper['mov_src'] = s_avidqt_dest
+            d_db_thread_helper['mov_dest'] = s_avidqt_dest
+            d_db_thread_helper['dbartist'] = dbartist
+            d_db_thread_helper['dbshot'] = dbshot
+            d_db_thread_helper['nuke_script_path'] = s_nuke_script_path
+ 
+            if s_delivery_fileext == 'dpx':
+                d_db_thread_helper['hires_dest'] = s_dpx_dest.replace('*', '%04d')
+            else:
+                d_db_thread_helper['hires_dest'] = s_exr_dest.replace('*', '%04d')
+            
+            d_db_thread_helper['shot'] = s_shot
+            d_db_thread_helper['notes'] = l_notes
+            
+            
+            d_files_to_copy = {}
+            
+            # copy CDL file into delivery folder
+            s_cdl_dir = g_config.get(s_show, 'cdl_dir_format').format(pathsep = os.path.sep)
+            s_cdl_src = os.path.join(s_shot_path, s_cdl_dir, "%s.%s"%(s_shot,s_cdl_file_ext))
+            s_cdl_dest = os.path.join(s_delivery_folder, 'support_files', "%s.%s"%(s_shot,s_cdl_file_ext))
+
+            if not os.path.exists(s_cdl_src):
+                print "WARNING: Unable to locate %s file at: %s"%(s_cdl_file_ext.upper(), s_cdl_src)
+                b_deliver_cdl = False
+                cc_delivery = False
+            else:
+                # open up the cdl and extract the cccid
+                cdltext = open(s_cdl_src, 'r').read()
+                cccid_re_str = r'<ColorCorrection id="([A-Za-z0-9-_]+)">'
+                cccid_re = re.compile(cccid_re_str)
+                cccid_match = cccid_re.search(cdltext)
+                if cccid_match:
+                    s_cccid = cccid_match.group(1)
+                else:
+                    s_cccid = s_shot
+            
+                # slope
+                slope_re_str = r'<Slope>([0-9.-]+) ([0-9.-]+) ([0-9.-]+)</Slope>'
+                slope_re = re.compile(slope_re_str)
+                slope_match = slope_re.search(cdltext)
+                if slope_match:
+                    slope_r = slope_match.group(1)
+                    slope_g = slope_match.group(2)
+                    slope_b = slope_match.group(3)
+                else:
+                    nuke.critical("Unable to locate <Slope> tag inside CDL.")
+                    return
+
+                # offset
+                offset_re_str = r'<Offset>([0-9.-]+e?[0-9-]*) ([0-9.-]+e?[0-9-]*) ([0-9.-]+e?[0-9-]*)</Offset>'
+                offset_re = re.compile(offset_re_str)
+                offset_match = offset_re.search(cdltext)
+                if offset_match:
+                    offset_r = offset_match.group(1)
+                    offset_g = offset_match.group(2)
+                    offset_b = offset_match.group(3)
+                else:
+                    nuke.critical("Unable to locate <Offset> tag inside CDL.")
+                    return
+            
+                # power
+                power_re_str = r'<Power>([0-9.-]+) ([0-9.-]+) ([0-9.-]+)</Power>'
+                power_re = re.compile(power_re_str)
+                power_match = power_re.search(cdltext)
+                if power_match:
+                    power_r = power_match.group(1)
+                    power_g = power_match.group(2)
+                    power_b = power_match.group(3)
+                else:
+                    nuke.critical("Unable to locate <Power> tag inside CDL.")
+                    return
+            
+                # saturation
+                saturation_re_str = r'<Saturation>([0-9.-]+)</Saturation>'
+                saturation_re = re.compile(saturation_re_str)
+                saturation_match = saturation_re.search(cdltext)
+                if saturation_match:
+                    saturation = saturation_match.group(1)
+                else:
+                    nuke.critical("Unable to locate <Saturation> tag inside CDL.")
+                    return
+            
+            # print out python script to a temp file
+            fh_nukepy, s_nukepy = tempfile.mkstemp(suffix='.py')
+            
+            os.write(fh_nukepy, "#!/usr/bin/python\n")
+            os.write(fh_nukepy, "\n")
+            os.write(fh_nukepy, "import nuke\n")
+            os.write(fh_nukepy, "import os\n")
+            os.write(fh_nukepy, "import sys\n")
+            os.write(fh_nukepy, "import traceback\n")
+            os.write(fh_nukepy, "\n")
+            if sys.platform == 'win32':
+                s_delivery_template = s_delivery_template.replace('\\', '\\\\')
+            os.write(fh_nukepy, "nuke.scriptOpen(\"%s\")\n"%s_delivery_template)
+            os.write(fh_nukepy, "nd_root = root = nuke.root()\n")
+            os.write(fh_nukepy, "\n")
+            os.write(fh_nukepy, "# set root frame range\n")
+            os.write(fh_nukepy, "nd_root.knob('first_frame').setValue(%d)\n"%start_frame)
+            os.write(fh_nukepy, "nd_root.knob('last_frame').setValue(%d)\n"%end_frame)
+            
+            # set the format in both the read node and the project settings
+            fstring = '%d %d Submission Format'%(tmp_width, tmp_height)
+            os.write(fh_nukepy, "fobj = nuke.addFormat('%s')\n"%fstring)
+            os.write(fh_nukepy, "nuke.root().knob('format').setValue(fobj)\n")
+            os.write(fh_nukepy, "nuke.root().knob('format').setValue(fobj)\n")
+
+            # allow user to disable color correction, usually for temps
+            if not cc_delivery:
+                os.write(fh_nukepy, "nd_root.knob('nocc').setValue(True)\n")
+            
+            os.write(fh_nukepy, "\n")
+            os.write(fh_nukepy, "nd_read = nuke.toNode('%s')\n"%g_config.get('delivery', 'exr_read_node'))
+            os.write(fh_nukepy, "nd_read.knob('file').setValue(\"%s\")\n"%render_path)
+            os.write(fh_nukepy, "nd_read.knob('first').setValue(%d)\n"%start_frame)
+            os.write(fh_nukepy, "nd_read.knob('last').setValue(%d)\n"%end_frame)
+            os.write(fh_nukepy, "nd_read.knob('format').setValue(fobj)\n")
+
+            os.write(fh_nukepy, "nd_root.knob('ti_ih_file_name').setValue(\"%s\")\n"%s_filename)
+            os.write(fh_nukepy, "nd_root.knob('ti_ih_sequence').setValue(\"%s\")\n"%s_sequence)
+            os.write(fh_nukepy, "nd_root.knob('ti_ih_shot').setValue(\"%s\")\n"%s_shot)
+            os.write(fh_nukepy, "nd_root.knob('ti_ih_version').setValue(\"%s\")\n"%s_version)
+            os.write(fh_nukepy, "nd_root.knob('ti_ih_vendor').setValue(\"%s\")\n"%s_artist_name)
+            os.write(fh_nukepy, "nd_root.knob('ti_ih_format').setValue(\"%s\")\n"%s_format)
+            os.write(fh_nukepy, "nd_root.knob('ti_ih_notes_1').setValue(\"%s\")\n"%l_notes[0].replace(r'"', r'\"'))
+            os.write(fh_nukepy, "nd_root.knob('ti_ih_notes_2').setValue(\"%s\")\n"%l_notes[1].replace(r'"', r'\"'))
+            os.write(fh_nukepy, "nd_root.knob('ti_ih_notes_3').setValue(\"%s\")\n"%l_notes[2].replace(r'"', r'\"'))
+            os.write(fh_nukepy, "nd_root.knob('ti_ih_notes_4').setValue(\"%s\")\n"%l_notes[3].replace(r'"', r'\"'))
+            os.write(fh_nukepy, "nd_root.knob('ti_ih_notes_5').setValue(\"%s\")\n"%l_notes[4].replace(r'"', r'\"'))
+            if sys.platform == 'win32':
+                s_delivery_folder = s_delivery_folder.replace('\\', '/')
+                s_show_root = s_show_root.replace('\\', '/')
+                s_seq_path = s_seq_path.replace('\\', '/')
+                s_shot_path = s_shot_path.replace('\\', '/')
+            os.write(fh_nukepy, "nd_root.knob('ti_ih_delivery_folder').setValue(\"%s\")\n"%s_delivery_folder)
+            os.write(fh_nukepy, "nd_root.knob('ti_ih_delivery_package').setValue(\"%s\")\n"%s_delivery_package)
+            os.write(fh_nukepy, "nd_root.knob('txt_ih_show').setValue(\"%s\")\n"%s_show)
+            os.write(fh_nukepy, "nd_root.knob('txt_ih_show_path').setValue(\"%s\")\n"%s_show_root)
+            os.write(fh_nukepy, "nd_root.knob('txt_ih_seq').setValue(\"%s\")\n"%s_sequence)
+            os.write(fh_nukepy, "nd_root.knob('txt_ih_seq_path').setValue(\"%s\")\n"%s_seq_path)
+            os.write(fh_nukepy, "nd_root.knob('txt_ih_shot').setValue(\"%s\")\n"%s_shot)
+            os.write(fh_nukepy, "nd_root.knob('txt_ih_shot_path').setValue(\"%s\")\n"%s_shot_path)
+            # encode with proper timecode
+            for tcnode in g_config.get('delivery', 'timecode_nodes').split(','):
+                os.write(fh_nukepy, "nuke.toNode('%s').knob('startcode').setValue(\"%s\")\n"%(tcnode, first_frame_tc_str))
+                os.write(fh_nukepy, "nuke.toNode('%s').knob('frame').setValue(%s)\n"%(tcnode, start_frame))
+                os.write(fh_nukepy, "nuke.toNode('%s').knob('fps').setValue(%s)\n"%(tcnode, s_project_fps))
+
+            if not burnin_delivery:
+                os.write(fh_nukepy, "nd_root.knob('noburnin').setValue(True)\n")
+
+            if export_delivery:
+                os.write(fh_nukepy, "nd_root.knob('exportburnin').setValue(True)\n")
+
+            if not cc_delivery:
+                for cdlnode in g_config.get('delivery', 'cdl_nodes').split(','):
+                    os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(True)\n"%cdlnode)
+                for lutnode in g_config.get('delivery', 'lut_nodes').split(','):
+                    os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(True)\n"%lutnode)
+            else:
+                # hard code cdl values
+                if sys.platform == 'win32':
+                    s_cdl_src = s_cdl_src.replace('\\', '/')
+                    tmp_lut = os.environ['IH_SHOW_CFG_LUT'].replace('\\', '/')
+                    for lutnode in g_config.get('delivery', 'lut_nodes').split(','):
+                        os.write(fh_nukepy, "nuke.toNode('%s').knob('vfield_file').setValue(\"%s\")\n"%(lutnode, tmp_lut))
+                for cdlnode in g_config.get('delivery', 'cdl_nodes').split(','):
+                    os.write(fh_nukepy, "nuke.toNode('%s').knob('file').setValue(\"%s\")\n"%(cdlnode, s_cdl_src))
+                    os.write(fh_nukepy, "nuke.toNode('%s').knob('cccid').setValue(\"%s\")\n"%(cdlnode, s_cccid))
+                    os.write(fh_nukepy, "nuke.toNode('%s').knob('read_from_file').setValue(False)\n"%(cdlnode))
+                    os.write(fh_nukepy, "nuke.toNode('%s').knob('slope').setValue([%s, %s, %s])\n"%(cdlnode, slope_r, slope_g, slope_b))
+                    os.write(fh_nukepy, "nuke.toNode('%s').knob('offset').setValue([%s, %s, %s])\n"%(cdlnode, offset_r, offset_g, offset_b))
+                    os.write(fh_nukepy, "nuke.toNode('%s').knob('power').setValue([%s, %s, %s])\n"%(cdlnode, power_r, power_g, power_b))
+                    os.write(fh_nukepy, "nuke.toNode('%s').knob('saturation').setValue(%s)\n"%(cdlnode, saturation))
+            
+            l_exec_nodes = []
+            s_hires_node = None
+            
+            if not avidqt_delivery:
+                os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(True)\n"%g_config.get('delivery', 'avid_write_node'))
+            else:
+                l_exec_nodes.append(g_config.get('delivery', 'avid_write_node'))
+            
+            if not vfxqt_delivery or sys.platform == 'win32':
+                os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(True)\n"%g_config.get('delivery', 'vfx_write_node'))
+            else:
+                l_exec_nodes.append(g_config.get('delivery', 'vfx_write_node'))
+
+            if not export_delivery:
+                os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(True)\n"%g_config.get('delivery', 'export_write_node'))
+            else:
+                l_exec_nodes.append(g_config.get('delivery', 'export_write_node'))
+            
+            if not hires_delivery:
+                os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(True)\n"%g_config.get('delivery', 'hires_write_node'))
+                b_deliver_cdl = False
+            else:
+                l_exec_nodes.append(g_config.get('delivery', 'hires_write_node'))
+
+            if not matte_delivery:
+                os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(True)\n"%g_config.get('delivery', 'matte_write_node'))
+            else:
+                l_exec_nodes.append(g_config.get('delivery', 'matte_write_node'))
+            
+            s_exec_nodes = (', '.join('nuke.toNode("' + write_node + '")' for write_node in l_exec_nodes))
+            os.write(fh_nukepy, "print \"INFO: About to execute render...\"\n")
+            os.write(fh_nukepy, "try:\n")
+            if len(l_exec_nodes) == 1:
+                os.write(fh_nukepy, "    nuke.execute(nuke.toNode(\"%s\"),%d,%d,1,)\n"%(l_exec_nodes[0], start_frame - 1, end_frame))
+            else:
+                os.write(fh_nukepy, "    nuke.executeMultiple((%s),((%d,%d,1),))\n"%(s_exec_nodes, start_frame - 1, end_frame))
+            os.write(fh_nukepy, "except:\n")
+            os.write(fh_nukepy, "    print \"ERROR: Exception caught!\\n%s\"%traceback.format_exc()\n")
+            os.close(fh_nukepy)
+
+            # generate the xml file
+            new_submission = etree.Element('DailiesSubmission')
+            sht_se = etree.SubElement(new_submission, 'Shot')
+            sht_se.text = s_shot
+
+            if avidqt_delivery:
+                fname_se = etree.SubElement(new_submission, 'AvidQTFileName')
+                fname_se.text = os.path.basename(s_avidqt_dest)
+            if vfxqt_delivery:
+                vfxname_se = etree.SubElement(new_submission, 'VFXQTFileName')
+                vfxname_se.text = os.path.basename(s_vfxqt_dest)
+            if export_delivery:
+                exportname_se = etree.SubElement(new_submission, 'ExportQTFileName')
+                exportname_se.text = os.path.basename(s_exportqt_dest)
+            if hires_delivery or matte_delivery:
+                hires_format_se = etree.SubElement(new_submission, 'HiResFormat')
+                hires_format_se.text = s_format
+            if hires_delivery:
+                if s_delivery_fileext == 'exr':
+                    hires_fname_se = etree.SubElement(new_submission, 'EXRFileName')
+                    hires_fname_se.text = os.path.basename(s_exr_dest)
+                if s_delivery_fileext == 'dpx':
+                    hires_fname_se = etree.SubElement(new_submission, 'DPXFileName')
+                    hires_fname_se.text = os.path.basename(s_dpx_dest)
+            if matte_delivery:
+                matte_fname_se = etree.SubElement(new_submission, 'MatteFileName')
+                matte_fname_se.text = os.path.basename(s_matte_src)
+            sframe_se = etree.SubElement(new_submission, 'StartFrame')
+            sframe_se.text = "%d" % (start_frame - 1)
+            eframe_se = etree.SubElement(new_submission, 'EndFrame')
+            eframe_se.text = "%d" % end_frame
+            stc_se = etree.SubElement(new_submission, 'StartTimeCode')
+            stc_se.text = "%s" % slate_frame_tc
+            etc_se = etree.SubElement(new_submission, 'EndTimeCode')
+            etc_se.text = "%s" % last_frame_tc
+            artist_se = etree.SubElement(new_submission, 'Artist')
+            artist_se.text = s_artist_name
+            notes_se = etree.SubElement(new_submission, 'SubmissionNotes')
+            notes_se.text = cvn_txt
+
+            # write out xml file to disk
+
+            prettyxml = minidom.parseString(etree.tostring(new_submission)).toprettyxml(indent="  ")
+            xml_ds = open(s_xml_dest, 'w')
+            xml_ds.write(prettyxml)
+            xml_ds.close()
+
+            # copy CDL file if we are delivering hi-res frames
+            if b_deliver_cdl:
+                d_files_to_copy[s_cdl_src] = s_cdl_dest
+
+            # render all frames - in a background thread
+            threading.Thread(target=render_delivery_background, args=[s_nukepy, d_db_thread_helper, start_frame, end_frame, d_files_to_copy]).start()
+
+        for all_nd in nuke.allNodes():
+            if all_nd in oglist:
+                all_nd.knob('selected').setValue(True)
+            else:
+                all_nd.knob('selected').setValue(False)
