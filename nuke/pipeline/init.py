@@ -15,6 +15,7 @@ else:
     sys.path.append('/Volumes/raid_vol01/shows/SHARED/lib/python')
     sys.path.append('/Volumes/raid_vol01/shows/goosebumps2/SHARED/shotgun/install/core/python')
     sys.path.append('/Library/Python/2.7/site-packages')
+    sys.path.append('/usr/local/lib/python2.7/site-packages')
     
 # if sys.platform == 'win32':
 #     nuke.pluginAddPath('Y:\\shows\\SHARED\\lib\\rvnuke')
