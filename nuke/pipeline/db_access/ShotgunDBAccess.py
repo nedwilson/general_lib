@@ -225,7 +225,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             artist = None
             try:
                 artist = self.fetch_artist_from_id(sg_task['task_assignees'][0]['id'])
-            except KeyError:
+            except:
                 print "ERROR: Task assignees for task %s is NULL!"%sg_task
                 artist = Artist.Artist('Alan', 'Smithee', 'asmithee', -1)
             task_ret = Task.Task(sg_task['content'], artist, sg_task['sg_status_list'], m_shot_obj, sg_task['id'])
@@ -236,6 +236,31 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             'sg_status_list' : m_task_obj.g_status,
         }
         self.g_sg.update('Task', m_task_obj.g_dbid, data)
+
+    def update_version(self, m_version_obj):
+        data = {
+            'description' : m_version_obj.g_description, 
+            'sg_first_frame' : m_version_obj.g_start_frame, 
+            'sg_last_frame' : m_version_obj.g_end_frame, 
+            'frame_count' : m_version_obj.g_duration, 
+            'sg_path_to_frames' : m_version_obj.g_path_to_frames, 
+            'sg_path_to_movie' : m_version_obj.g_path_to_movie, 
+            'user' : {'type' : 'HumanUser', 'id' : int(m_version_obj.g_artist.g_dbid)}, 
+            'sg_status_list' : m_version_obj.g_status
+        }
+        self.g_sg.update('Version', m_version_obj.g_dbid, data)
+
+    def update_version_status(self, m_version_obj):
+        data = {
+            'sg_status_list' : m_version_obj.g_status,
+        }
+        self.g_sg.update('Version', m_version_obj.g_dbid, data)
+
+    def update_shot_status(self, m_shot_obj):
+        data = {
+            'sg_status_list' : m_shot_obj.g_status,
+        }
+        self.g_sg.update('Version', m_shot_obj.g_dbid, data)
                         
     def fetch_version(self, m_version_name, m_shot_obj):
         ver_ret = None
@@ -269,6 +294,41 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             local_task = self.fetch_task_from_id(int(sg_ver['sg_task']['id']), local_shot)
             local_artist = self.fetch_artist_from_id(int(sg_ver['user']['id']))
             ver_ret = Version.Version(sg_ver['code'], sg_ver['id'], sg_ver['description'], sg_ver['sg_first_frame'], sg_ver['sg_last_frame'], sg_ver['frame_count'], sg_ver['sg_path_to_frames'], sg_ver['sg_path_to_movie'], local_shot, local_artist, local_task)
+            return ver_ret
+
+    def fetch_versions_with_status(self, m_status):
+        ver_ret = []
+        filters = [
+            ['project', 'is', {'type' : 'Project', 'id' : int(self.g_shotgun_project_id)}],
+            ['sg_status_list', 'is', m_status]
+        ]
+        fields = ['code', 'id', 'description', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user']
+        sg_vers = self.g_sg.find("Version", filters, fields)
+        if not sg_vers:
+            return ver_ret
+        else:
+            for sg_ver in sg_vers:
+                shot_obj = self.fetch_shot_from_id(sg_ver['entity']['id'])
+                local_artist = self.fetch_artist_from_id(int(sg_ver['user']['id']))
+                tmp_ver = Version.Version(sg_ver['code'], sg_ver['id'], sg_ver['description'], sg_ver['sg_first_frame'], sg_ver['sg_last_frame'], sg_ver['frame_count'], sg_ver['sg_path_to_frames'], sg_ver['sg_path_to_movie'], shot_obj, local_artist, None)
+                ver_ret.append(tmp_ver)
+            return ver_ret
+
+    def fetch_versions_for_shot(self, m_shot_obj):
+        ver_ret = []
+        filters = [
+            ['project', 'is', {'type' : 'Project', 'id' : int(self.g_shotgun_project_id)}],
+            ['entity', 'is', {'type' : 'Shot', 'id' : int(m_shot_obj.g_dbid)}]
+        ]
+        fields = ['code', 'id', 'description', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task']
+        sg_vers = self.g_sg.find("Version", filters, fields)
+        if not sg_vers:
+            return ver_ret
+        else:
+            for sg_ver in sg_vers:
+                local_artist = self.fetch_artist_from_id(int(sg_ver['user']['id']))
+                tmp_ret = Version.Version(sg_ver['code'], sg_ver['id'], sg_ver['description'], sg_ver['sg_first_frame'], sg_ver['sg_last_frame'], sg_ver['frame_count'], sg_ver['sg_path_to_frames'], sg_ver['sg_path_to_movie'], m_shot_obj, local_artist, None)
+                ver_ret.append(tmp_ret)
             return ver_ret
 
     def fetch_playlist(self, m_playlist_name):                
