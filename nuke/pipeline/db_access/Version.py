@@ -33,6 +33,9 @@ class Version():
         self.g_shot = m_shot
         self.g_artist = m_artist
         self.g_task = m_task
+        self.g_status = 'rev'
+    def set_status(self, m_status):
+        self.g_status = m_status
     def __str__(self):
         ret_str = """class Version():
     Version Name: {g_version_code} 
@@ -46,6 +49,7 @@ class Version():
     Shot: {g_shot}
     Artist: {g_artist}
     Task: {g_task}
+    Status: {g_status}
 """.format(g_version_code = self.g_version_code, 
            g_dbid = self.g_dbid,
            g_description = self.g_description,
@@ -56,6 +60,7 @@ class Version():
            g_path_to_movie = self.g_path_to_movie,
            g_shot = self.g_shot.g_shot_code,
            g_artist = self.g_artist.g_full_name,
-           g_task = self.g_task.g_task_name)
+           g_task = self.g_task.g_task_name,
+           g_status = self.g_status)
         return ret_str
 
