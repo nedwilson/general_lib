@@ -21,6 +21,10 @@ class Shot():
         self.g_cut_out = m_cut_out
         self.g_tail_out = m_tail_out
         self.g_cut_duration = m_cut_duration
+        self.g_status = 'ip'
+    def set_status(self, m_status):
+        self.g_status = m_status
+        
     def __str__(self):
         ret_str = """class Shot():
     Name: {g_shot_code}
@@ -33,6 +37,7 @@ class Shot():
     Cut Out: {g_cut_out}
     Tail Out: {g_tail_out}
     Cut Duration: {g_cut_duration}
+    Status: {g_status}
 """.format(g_shot_code = self.g_shot_code, 
            g_path = self.g_path, 
            g_dbid = self.g_dbid, 
@@ -42,6 +47,7 @@ class Shot():
            g_cut_in = self.g_cut_in, 
            g_cut_out = self.g_cut_out, 
            g_tail_out = self.g_tail_out, 
-           g_cut_duration = self.g_cut_duration)
+           g_cut_duration = self.g_cut_duration,
+           g_status = self.g_status)
         return ret_str
 
