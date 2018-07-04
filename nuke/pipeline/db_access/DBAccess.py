@@ -48,6 +48,14 @@ class DBAccess(object):
     @abc.abstractmethod
     def update_task_status(self, m_task_obj):
         """Sets a status on an existing task."""
+
+    @abc.abstractmethod
+    def update_version_status(self, m_version_obj):
+        """Sets a status on an existing version."""
+
+    @abc.abstractmethod
+    def update_shot_status(self, m_shot_obj):
+        """Sets a status on an existing shot."""
             
     @abc.abstractmethod
     def fetch_version(self, m_version_name, m_shot_obj):
@@ -56,6 +64,14 @@ class DBAccess(object):
     @abc.abstractmethod
     def fetch_version_from_id(self, m_version_id):
         """Returns a version object from the database using the database ID as a search parameter"""
+
+    @abc.abstractmethod
+    def fetch_versions_with_status(self, m_status):
+        """Returns a list of versions in the database matching the status provided"""
+
+    @abc.abstractmethod
+    def fetch_versions_for_shot(self, m_shot_obj):
+        """Returns a list of versions in the database that have been submitted for a particular shot"""
 
     @abc.abstractmethod
     def fetch_playlist(self, m_playlist_name):                
