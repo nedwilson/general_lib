@@ -21,6 +21,7 @@ import traceback
 import time
 import getpass
 from operator import itemgetter
+from operator import attrgetter
 from stat import S_ISREG, S_ISDIR, ST_MTIME, ST_MODE
 if not sys.platform == 'win32':
     import pwd
@@ -1035,6 +1036,21 @@ def create_thumbnail(m_source_path):
 
 #### REMOVING ALL SHOW-SPECIFIC CODE FROM DELIVERIES
 
+def get_client_version(db_version_name):
+    global g_config
+    show = os.environ['IH_SHOW_CODE']
+    vsep = g_config.get(show, 'version_separator')
+    cvformat = g_config.get('delivery', 'client_version_format')
+    ret_string = None
+    filename_re = re.compile(g_config.get(show, 'filename_regexp').replace('VERSION_SEPARATOR', vsep))
+    filename_match = filename_re.search(db_version_name)
+    if filename_match:
+        filename_gd = filename_match.groupdict()
+        ret_string = cvformat.format(shot = filename_gd['shot'], version_separator = vsep, version_number = filename_gd['version_number'], element_type = filename_gd['element_type'])
+        return ret_string
+    else:
+        raise ValueError("utilities: get_client_version(): db_version_name argument provided \'%s\' does not match show-level filename regular expression."%db_version_name)
+    
 # class displays a GUI asking the user for deliverable type selection and slate notes
 class DeliveryNotesPanel(nukescripts.PythonPanel):
     def __init__(self, review_notes='For Review'):
@@ -1052,7 +1068,7 @@ class DeliveryNotesPanel(nukescripts.PythonPanel):
         self.addKnob(self.burnin_knob)
         self.hires_knob = nuke.Boolean_Knob('hires_', 'Hi-Res', True)
         self.hires_knob.setFlag(nuke.STARTLINE)
-        self.addKnob(self.dpx_knob)
+        self.addKnob(self.hires_knob)
         self.matte_knob = nuke.Boolean_Knob('matte_', 'Matte', False)
         self.addKnob(self.matte_knob)
         self.export_knob = nuke.Boolean_Knob('export_', 'Export', False)
@@ -1200,8 +1216,9 @@ def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame
         thumb_file_gen = os_path_sub(create_thumbnail(thumb_file))
         
         # does the version already exist?
-        print "Thread: %s Fetching version for %s, for shot %s"%(threading.current_thread().getName(), os.path.basename(thumb_file).split('.')[0], d_db_thread_helper['shot'])
-        dbversion = g_ihdb.fetch_version(os.path.basename(thumb_file).split('.')[0], dbshot)
+        tmp_version_name = os.path.basename(thumb_file).split('.')[0]
+        print "Thread: %s Fetching version for %s, for shot %s"%(threading.current_thread().getName(), tmp_version_name, d_db_thread_helper['shot'])
+        dbversion = g_ihdb.fetch_version(tmp_version_name, dbshot)
         
         # clean up notes
         l_notes = d_db_thread_helper['notes']
@@ -1210,8 +1227,8 @@ def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame
             if len(l_note) > 0:
                 clean_notes.append(l_note)
         if not dbversion:
-            print "Thread: %s Creating version for %s, for shot %s"%(threading.current_thread().getName(), os.path.basename(thumb_file).split('.')[0], d_db_thread_helper['shot'])
-            dbversion = DB.Version(os.path.basename(thumb_file).split('.')[0], 
+            print "Thread: %s Creating version for %s, for shot %s"%(threading.current_thread().getName(), tmp_version_name, d_db_thread_helper['shot'])
+            dbversion = DB.Version(tmp_version_name, 
                                      -1, 
                                      '\n'.join(clean_notes), 
                                      int(start_frame), 
@@ -1223,10 +1240,12 @@ def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame
                                      dbartist,
                                      dbtask)
             dbversion.set_status(g_config.get('delivery', 'version_status_qt'))
+            dbversion.set_delivered(False)
+            dbversion.set_client_code(get_client_version(tmp_version_name))
             g_ihdb.create_version(dbversion)
             print "Successfully created version %s in database with DBID %d."%(dbversion.g_version_code, int(dbversion.g_dbid))
         else:
-            dbversion_upd = DB.Version(os.path.basename(thumb_file).split('.')[0], 
+            dbversion_upd = DB.Version(tmp_version_name, 
                                      dbversion.g_dbid, 
                                      '\n'.join(clean_notes), 
                                      int(start_frame), 
@@ -1238,7 +1257,11 @@ def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame
                                      dbartist,
                                      dbtask)
             dbversion_upd.set_status(g_config.get('delivery', 'version_status_qt'))
+            dbversion_upd.set_delivered(False)
+            dbversion_upd.set_client_code(get_client_version(tmp_version_name))
             dbversion.set_status(g_config.get('delivery', 'version_status_qt'))
+            dbversion.set_delivered(False)
+            dbversion.set_client_code(get_client_version(tmp_version_name))
             g_ihdb.update_version(dbversion_upd)
             print "Successfully updated version %s in database with DBID %d."%(dbversion.g_version_code, int(dbversion.g_dbid))
             
@@ -1405,6 +1428,10 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
         cc_delivery = False
         burnin_delivery = False
         export_delivery = False
+        tmp_versions = g_ihdb.fetch_versions_for_shot(dbshot)
+        versions_list = sorted(tmp_versions, key=attrgetter('g_version_code'))
+        if versions_list and len(versions_list) > 0:
+            def_note_text = versions_list[-1].g_description
 
         if current_version_notes is not None:
             cvn_txt = current_version_notes
@@ -1415,11 +1442,6 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
             cc_delivery = cc
             b_execute_overall = True
         else:
-            tmp_versions = g_ihdb.fetch_versions_for_shot(dbshot)
-            versions_list = tmp_versions.sort(key=attrgetter('g_version_code'))
-            if len(versions_list) > 0:
-                def_note_text = versions_list[-1].g_description
-                
             pnl = DeliveryNotesPanel()
             pnl.knobs()['cvn_'].setValue(def_note_text)
             if pnl.showModalDialog():
@@ -1440,6 +1462,14 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
             s_delivery_template = g_config.get('delivery', 'nuke_template_%s'%sys.platform)
 
             s_filename = os.path.basename(render_path).split('.')[0]
+            s_client_version = get_client_version(s_filename)
+            for tmp_dbv in versions_list:
+                tmp_cv = tmp_dbv.g_client_code
+                if not tmp_cv:
+                    tmp_cv = get_client_version(tmp_dbv.g_version_code)
+                if tmp_cv == s_client_version and tmp_dbv.g_delivered:
+                    nuke.critical("This version has already been delivered to production as %s! Please upversion your Nuke script, re-render, and resubmit."%s_client_version)
+                    return
             s_cdl_file_ext = g_config.get(s_show, 'cdl_file_ext')
             
 
