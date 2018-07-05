@@ -11,10 +11,10 @@ import db_access as DB
 
 sgdb = DB.DBAccessGlobals.get_db_access()
 
-seq = sgdb.fetch_sequence('HC019')
+seq = sgdb.fetch_sequence('sa')
 print seq
 
-shot = sgdb.fetch_shot('HC019_300')
+shot = sgdb.fetch_shot('sa3080')
 print shot
 
 # print "Sequence Create"
@@ -78,15 +78,15 @@ print shot
 # sgdb.create_plate(new_plate_obj)
 # print new_plate_obj
 
-tasks = sgdb.fetch_tasks_for_shot(shot)
-task = None
-for task_tmp in tasks:
-    if "final" in task_tmp.g_task_name.lower():
-        task = task_tmp
-print task
-    
-artist = sgdb.fetch_artist("Ned Wilson")
-print artist
+# tasks = sgdb.fetch_tasks_for_shot(shot)
+# task = None
+# for task_tmp in tasks:
+#     if "final" in task_tmp.g_task_name.lower():
+#         task = task_tmp
+# print task
+# 
+# artist = sgdb.fetch_artist("Ned Wilson")
+# print artist
 
 # print "Version Create"
 # new_version_obj = DB.Version('HC019_300_comp_v002', 
@@ -103,7 +103,7 @@ print artist
 # sgdb.create_version(new_version_obj)
 # print new_version_obj
 
-version = sgdb.fetch_version('HC019_300_comp_v002', shot)
+version = sgdb.fetch_version('sa3080_comp_v500001', shot)
 print version
 
 
