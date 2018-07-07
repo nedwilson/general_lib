@@ -87,7 +87,11 @@ class DBAccess(object):
     def create_playlist(self, m_playlist_obj):
         """Creates a playlist based on the object provided, and populates the object with the resulting database query
            If the object already exists, with a g_dbid value != -1, method will perform update instead of create."""
-    
+
+    @abc.abstractmethod
+    def delete_playlist(self, m_playlist_obj):
+        """Deletes a playlist with id matching m_playlist_obj.g_dbid"""
+        
     @abc.abstractmethod
     def create_sequence(self, m_seq_obj):
         """Creates a sequence based on the object provided, and populates the object with the resulting database query"""
