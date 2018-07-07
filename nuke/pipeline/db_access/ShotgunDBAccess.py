@@ -435,7 +435,10 @@ class ShotgunDBAccess(DBAccess.DBAccess):
         else:
             sg_playlist = self.g_sg.update('Playlist', m_playlist_obj.g_dbid, data)
         m_playlist_obj.g_dbid = sg_playlist['id']
-        
+
+    def delete_playlist(self, m_playlist_obj):
+        self.g_sg.delete("Playlist", m_playlist_obj.g_dbid)
+
     def create_sequence(self, m_seq_obj):
         data = {
             'project' : {'type' : 'Project', 'id' : int(self.g_shotgun_project_id)},
