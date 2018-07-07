@@ -9,6 +9,7 @@ import sys
 import os.path
 import nuke
 import nukescripts
+import subprocess
 
 import autoBackdrop
 from SetEnabledByName import *
@@ -16,8 +17,12 @@ from utilities import *
 from vclf_multi_autotrack import *
 import scaleDagNodes
 
-import delivery
-delivery.globals_from_config()
+def display_delivery_window(b_2k):
+    cmd = "/Volumes/raid_vol01/shows/SHARED/bin/publish_delivery.py --gui"
+    if b_2k:
+        cmd = "/Volumes/raid_vol01/shows/SHARED/bin/publish_delivery.py --gui --hires"
+    print "INFO: Forking process %s."%cmd
+    subprocess.Popen(cmd, shell=True)
 
 import trackLinker
 
@@ -43,8 +48,8 @@ n.addCommand("Lin2Log Wrapper", "nuke.createNode(\"LinLogWrapper.nk\")")
 
 n = m.addMenu("Delivery")
 n.addCommand("Send for Review", "send_for_review()")
-n.addCommand("Publish Delivery", "delivery.display_window(m_2k=False)")
-n.addCommand("Publish Hi-Res Delivery", "delivery.display_window(m_2k=True)")
+n.addCommand("Publish Delivery", "display_delivery_window(False)")
+n.addCommand("Publish Hi-Res Delivery", "display_delivery_window(True)")
 
 n = m.addMenu("&File")
 n.addCommand("Copy Read To Shot", "copyReadToShot()")
