@@ -46,6 +46,9 @@ class Version():
     def set_playlists(self, m_playlists):
         self.g_playlists = m_playlists
     def __str__(self):
+        task = 'NULL'
+        if self.g_task:
+            task = self.g_task.task_name
         ret_str = """class Version():
     Version Name: {g_version_code} 
     DBID: {g_dbid}
@@ -72,7 +75,43 @@ class Version():
            g_path_to_movie = self.g_path_to_movie,
            g_shot = self.g_shot.g_shot_code,
            g_artist = self.g_artist.g_full_name,
-           g_task = self.g_task.g_task_name,
+           g_task = task,
+           g_status = self.g_status,
+           g_delivered = self.g_delivered,
+           g_client_code = self.g_client_code,
+           g_playlists = ', '.join([pl.g_playlist_name for pl in self.g_playlists]))
+        return ret_str
+    def __repr__(self):
+        task = 'NULL'
+        if self.g_task:
+            task = self.g_task.task_name
+        ret_str = """class Version():
+    Version Name: {g_version_code} 
+    DBID: {g_dbid}
+    Description: {g_description}
+    Start Frame: {g_start_frame} 
+    End Frame: {g_end_frame}
+    Duration: {g_duration}
+    Path to Frames: {g_path_to_frames}
+    Path to Quicktime: {g_path_to_movie}
+    Shot: {g_shot}
+    Artist: {g_artist}
+    Task: {g_task}
+    Status: {g_status}
+    Delivered: {g_delivered}
+    Client Version Name: {g_client_code}
+    Playlist(s): {g_playlists}
+""".format(g_version_code = self.g_version_code, 
+           g_dbid = self.g_dbid,
+           g_description = self.g_description,
+           g_start_frame = self.g_start_frame, 
+           g_end_frame = self.g_end_frame,
+           g_duration = self.g_duration,
+           g_path_to_frames = self.g_path_to_frames,
+           g_path_to_movie = self.g_path_to_movie,
+           g_shot = self.g_shot.g_shot_code,
+           g_artist = self.g_artist.g_full_name,
+           g_task = task,
            g_status = self.g_status,
            g_delivered = self.g_delivered,
            g_client_code = self.g_client_code,
