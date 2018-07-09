@@ -23,7 +23,6 @@ import DBAccess
 
 from timecode import TimeCode
 
-
 # Shotgun-specific data source implementation
 
 class ShotgunDBAccess(DBAccess.DBAccess):
@@ -263,7 +262,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
         data = {
             'sg_status_list' : m_shot_obj.g_status,
         }
-        self.g_sg.update('Version', m_shot_obj.g_dbid, data)
+        self.g_sg.update('Shot', m_shot_obj.g_dbid, data)
                         
     def fetch_version(self, m_version_name, m_shot_obj):
         ver_ret = None
