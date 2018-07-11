@@ -1052,7 +1052,7 @@ def get_client_version(db_version_name):
         raise ValueError("utilities: get_client_version(): db_version_name argument provided \'%s\' does not match show-level filename regular expression."%db_version_name)
     
 # class displays a GUI asking the user for deliverable type selection and slate notes
-class DeliveryNotesPanel(nukescripts.PythonPanel):
+class DeliveryNotesPanel(nukescripts.panels.PythonPanel):
     def __init__(self, review_notes='For Review'):
         nukescripts.PythonPanel.__init__(self, 'In-House Review Submission')
         self.cvn_knob = nuke.Multiline_Eval_String_Knob('cvn_', 'current version notes', review_notes)
