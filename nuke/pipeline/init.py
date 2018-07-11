@@ -7,6 +7,7 @@ import sys
 import nukescripts.ViewerProcess
 import ConfigParser
 import shlex
+import logging
 
 if sys.platform == 'win32':
     print 'Windows detected. Adding C:/Python27/Lib/site-packages to PYTHONPATH'
@@ -68,6 +69,26 @@ def print_render_frame():
 # function attempts to determine show, sequence, and shot from the nuke script name.
 # does nothing if the path does not produce a match to the shot regular expression
 def init_shot_env():
+    homedir = os.path.expanduser('~')
+    logfile = ""
+    if sys.platform == 'win32':
+        logfile = os.path.join(homedir, 'AppData', 'Local', 'IHPipeline', 'nuke_launch.log')
+    elif sys.platform == 'darwin':
+        logfile = os.path.join(homedir, 'Library', 'Logs', 'IHPipeline', 'nuke_launch.log')
+    elif sys.platform == 'linux2':
+        logfile = os.path.join(homedir, 'Logs', 'IHPipeline', 'nuke_launch.log')
+    if not os.path.exists(os.path.dirname(logfile)):
+        os.makedirs(os.path.dirname(logfile))
+    logFormatter = logging.Formatter("%(asctime)s:[%(threadName)s]:[%(levelname)s]:%(message)s")
+    log = logging.getLogger()
+    log.setLevel(logging.DEBUG)
+    fileHandler = logging.FileHandler(logfile)
+    fileHandler.setFormatter(logFormatter)
+    log.addHandler(fileHandler)
+    consoleHandler = logging.StreamHandler()
+    consoleHandler.setFormatter(logFormatter)
+    log.addHandler(consoleHandler)    
+
     script_path = os.path.normpath(nuke.root().name())
     script_path_lst = script_path.split(os.path.sep)
     path_idx = 0
@@ -78,29 +99,29 @@ def init_shot_env():
     try:
         str_show_code = os.environ['IH_SHOW_CODE']
     except KeyError:
-        print "WARNING: IH_SHOW_CODE environment variable not defined. Proceeding without environment."
+        log.warning("IH_SHOW_CODE environment variable not defined. Proceeding without environment.")
         return
 
     str_show_root = None
     try:
         str_show_root = os.environ['IH_SHOW_ROOT']
     except KeyError:
-        print "WARNING: IH_SHOW_ROOT environment variable not defined. Proceeding without environment."
+        log.warning("IH_SHOW_ROOT environment variable not defined. Proceeding without environment.")
         return
     
     if not os.path.exists(str_show_root):
-        print "WARNING: Show root directory does not exist at %s."%str_show_root
+        log.warning("Show root directory does not exist at %s."%str_show_root)
         return
     
     str_show_cfg_path = None
     try:
         str_show_cfg_path = os.environ['IH_SHOW_CFG_PATH']
     except KeyError:
-        print "WARNING: IH_SHOW_CFG_PATH environment variable not defined. Proceeding without environment."
+        log.warning("IH_SHOW_CFG_PATH environment variable not defined. Proceeding without environment.")
         return
     
     if not os.path.exists(str_show_cfg_path):
-        print "WARNING: Show configuration file does not exist at %s."%str_show_cfg_path
+        log.warning("Show configuration file does not exist at %s."%str_show_cfg_path)
         return
         
     config = ConfigParser.ConfigParser()
@@ -115,59 +136,62 @@ def init_shot_env():
     engine = None
     ctx = None
     entity = None
-    
+    for envvar in os.environ.keys():
+        log.debug('ENVIRONMENT - %s: %s'%(envvar, os.environ[envvar]))
+        
     try:
         toolkit_engine = os.environ['TANK_ENGINE']
         b_shotgun = True
+        log.info('Setting b_shotgun to True, os.environ[\'TANK_ENGINE\'] exists.')
     except:
         pass
 
     if not script_path.startswith(str_show_root):
-        print "WARNING: Unable to match show root directory with Nuke script path."
+        log.warning("Unable to match show root directory with Nuke script path.")
         b_shotgun_res = True
 
     matchobject = re.search(cfg_shot_regexp, script_path)
     # make sure this file matches the shot pattern
     if not matchobject:
-        print "WARNING: This script name does not match the shot regular expression pattern for the show."
+        log.warning("This script name does not match the shot regular expression pattern for the show.")
         b_shotgun_res = True
     else:
         str_shot = matchobject.group(0)
         str_seq = re.search(cfg_seq_regexp, str_shot).group(0)
 
     if b_shotgun:        
-        print "INFO: Nuke executed from within Shotgun Desktop Integration."
+        log.info("Nuke executed from within Shotgun Desktop Integration.")
         ctx = None
         try:
             import sgtk
             ctx = sgtk.Context.deserialize(os.environ['TANK_CONTEXT'])
         except KeyError:
-            print "ERROR: Envionrment variable TANK_CONTEXT not found."
+            log.error("Envionrment variable TANK_CONTEXT not found.")
         except ImportError:
-            print "ERROR: Unable to import sgtk."
+            log.error("Unable to import sgtk.")
         if ctx == None:
-            print "WARNING: Nuke executed within Shotgun, but the context associated with the current engine is None."
+            log.warning("Nuke executed within Shotgun, but the context associated with the current engine is None.")
         else:
-            print "INFO: Shotgun Toolkit Context Object:"
-            print ctx
+            log.info("Shotgun Toolkit Context Object:")
+            log.info(ctx)
             entity = ctx.entity
             if entity == None:
-                print "WARNING: Nuke executed within Shotgun, but the entity associated with the current context is None."
+                log.warning("Nuke executed within Shotgun, but the entity associated with the current context is None.")
             else:
                 if entity['type'] != 'Shot':
-                    print "WARNING: Nuke executed within Shotgun, but not in the context of a specific shot."
+                    log.warning("Nuke executed within Shotgun, but not in the context of a specific shot.")
                 else:
                     if b_shotgun_res:
-                        print "INFO: Nuke executed within Shotgun, but no active script available. Setting sequence and shot from current engine context."
+                        log.info("Nuke executed within Shotgun, but no active script available. Setting sequence and shot from current engine context.")
                         try:
                             str_shot = entity['name']
                             str_seq = re.search(cfg_seq_regexp, str_shot).group(0)
                         except KeyError:
-                            print "ERROR: For some reason, context provided by Shotgun to Nuke is %s. Unable to proceed."%ctx
+                            log.error("For some reason, context provided by Shotgun to Nuke is %s. Unable to proceed."%ctx)
                             str_shot = None
     
     if str_shot == None:
-        print "WARNING: Could not determine current shot from script name, or from database. Exiting init_shot_env()."
+        log.warning("Could not determine current shot from script name, or from database. Exiting init_shot_env().")
         return
         
     str_seq_path = ""
@@ -182,9 +206,9 @@ def init_shot_env():
     	
     str_show = str_show_code
     
-    print "INFO: Located show %s, path %s"%(str_show, str_show_path)
-    print "INFO: Located sequence %s, path %s"%(str_seq, str_seq_path)
-    print "INFO: Located shot %s, path %s"%(str_shot, str_shot_path)
+    log.info("Located show %s, path %s"%(str_show, str_show_path))
+    log.info("Located sequence %s, path %s"%(str_seq, str_seq_path))
+    log.info("Located shot %s, path %s"%(str_shot, str_shot_path))
 
     os.environ['SHOW'] = str_show
     os.environ['SHOW_PATH'] = str_show_path
