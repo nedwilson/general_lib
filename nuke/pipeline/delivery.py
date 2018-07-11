@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import copy
 import csv
+import tempfile
 
 # gmail/oauth
 
@@ -101,26 +102,8 @@ def globals_from_config():
         g_delivery_folder = g_config.get('delivery', 'package_folder_%s'%sys.platform)
         g_fileop = g_config.get(g_ih_show_code, 'show_file_operation')
         g_delivery_res = g_config.get(g_ih_show_code, 'delivery_resolution')
-        
-        g_distro_list_to = g_config.get('email', 'distro_list_to')
-        g_distro_list_cc = g_config.get('email', 'distro_list_cc')
-        g_mail_from = g_config.get('email', 'mail_from')
         if g_config.get(g_ih_show_code, 'write_ale') == 'yes':
             g_write_ale = True
-    
-        g_shared_root = g_config.get('shared_root', sys.platform)
-        credentials_dir_dict = { 'pathsep' : os.path.sep, 'shared_root' : g_shared_root }
-        g_credentials_dir = g_config.get('email', 'credentials_dir').format(**credentials_dir_dict)
-        g_client_secret = g_config.get('email', 'client_secret')
-        g_gmail_creds = g_config.get('email', 'gmail_creds')
-        g_gmail_scopes = g_config.get('email', 'gmail_scopes')
-        g_application_name = g_config.get('email', 'application_name')
-        g_email_text = g_config.get('email', 'email_text')
-        g_rsync_enabled = True if g_config.get(g_ih_show_code, 'delivery_rsync_enabled') == 'yes' else False
-        g_rsync_filetypes = g_config.get(g_ih_show_code, 'delivery_rsync_filetypes').split(',')
-        g_rsync_dest = g_config.get(g_ih_show_code, 'delivery_rsync_dest')
-        
-        
         ihdb = DB.DBAccessGlobals.get_db_access()
         print "INFO: globals initiliazed from config %s."%g_ih_show_cfg_path
     except KeyError:
@@ -137,119 +120,17 @@ def globals_from_config():
         e = sys.exc_info()
         print e[1]
 
-def handle_rsync(m_source_folder):
-    global g_rsync_filetypes, g_rsync_dest
-    rsync_cmd = ['rsync',
-                 '-auv',
-                 '--prune-empty-dirs',
-                 '--include="*/"']
-    for valid_ext in g_rsync_filetypes:
-        rsync_cmd.append('--include="*.%s"'%valid_ext)
-    rsync_cmd.append('--exclude="*"')    
-    rsync_cmd.append(m_source_folder.rstrip('/'))
-    rsync_cmd.append(g_rsync_dest)
-    print "INFO: Executing command: %s"%" ".join(rsync_cmd)
-    subprocess.Popen(" ".join(rsync_cmd), shell=True)
-            
-def get_credentials():
-    global g_credentials_dir, g_gmail_greds, g_application_name, g_client_secret, g_gmail_scopes
-    if not os.path.exists(g_credentials_dir):
-        print "WARNING: Credentials directory in config file %s does not exist. Creating."%g_credentials_dir
-        os.makedirs(g_credentials_dir)
-    credential_path = os.path.join(g_credentials_dir, g_gmail_creds)
-    print "INFO: Searching for credential: %s"%credential_path
-    store = oauth2client.file.Storage(credential_path)
-    credentials = store.get()
-    if not credentials or credentials.invalid:
-        flow = client.flow_from_clientsecrets(g_client_secret, g_gmail_scopes)
-        flow.user_agent = g_application_name
-        credentials = tools.run_flow(flow, store)
-        print('INFO: Storing credentials to ' + credential_path)
-    return credentials
-
-def SendMessage(sender, to, cc, subject, msgHtml, msgPlain, attachmentFile=None):
-    credentials = get_credentials()
-    http = credentials.authorize(httplib2.Http())
-    service = discovery.build('gmail', 'v1', http=http)
-    if attachmentFile:
-        message1 = createMessageWithAttachment(sender, to, cc, subject, msgHtml, msgPlain, attachmentFile)
-    else: 
-        message1 = CreateMessageHtml(sender, to, cc, subject, msgHtml, msgPlain)
-    result = SendMessageInternal(service, "me", message1)
-    return result
-
-def SendMessageInternal(service, user_id, message):
-    try:
-        message = (service.users().messages().send(userId=user_id, body=message).execute())
-        print('INFO: Message send complete, message ID: %s' % message['id'])
-        return message
-    except errors.HttpError as error:
-        print('ERROR: Caught HttpError: %s' % error)
-        return "Error"
-    return "OK"
-
-def CreateMessageHtml(sender, to, cc, subject, msgHtml, msgPlain):
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = subject
-    msg['From'] = sender
-    msg['To'] = to
-    msg['Cc'] = cc
-    msg.attach(MIMEText(msgPlain, 'plain'))
-    msg.attach(MIMEText(msgHtml, 'html'))
-    return {'raw': base64.urlsafe_b64encode(msg.as_string())}
-
-def createMessageWithAttachment(
-    sender, to, cc, subject, msgHtml, msgPlain, attachmentFile):
-    """Create a message for an email.
-
-    Args:
-      sender: Email address of the sender.
-      to: Email address of the receiver.
-      subject: The subject of the email message.
-      msgHtml: Html message to be sent
-      msgPlain: Alternative plain text message for older email clients          
-      attachmentFile: The path to the file to be attached.
-
-    Returns:
-      An object containing a base64url encoded email object.
-    """
-    message = MIMEMultipart()
-    message['to'] = to
-    message['cc'] = cc
-    message['from'] = sender
-    message['subject'] = subject
-
-    print "Email Message: %s"%msgPlain
-    message.attach(MIMEText(msgPlain))
-
-    print("create_message_with_attachment: file: %s" % attachmentFile)
-    content_type, encoding = mimetypes.guess_type(attachmentFile)
-
-    if content_type is None or encoding is not None:
-        content_type = 'application/octet-stream'
-    main_type, sub_type = content_type.split('/', 1)
-    if main_type == 'text':
-        fp = open(attachmentFile, 'rb')
-        msg = MIMEText(fp.read(), _subtype=sub_type)
-        fp.close()
-    elif main_type == 'image':
-        fp = open(attachmentFile, 'rb')
-        msg = MIMEImage(fp.read(), _subtype=sub_type)
-        fp.close()
-    elif main_type == 'audio':
-        fp = open(attachmentFile, 'rb')
-        msg = MIMEAudio(fp.read(), _subtype=sub_type)
-        fp.close()
-    else:
-        fp = open(attachmentFile, 'rb')
-        msg = MIMEBase(main_type, sub_type)
-        msg.set_payload(fp.read())
-        fp.close()
-    filename = os.path.basename(attachmentFile)
-    msg.add_header('Content-Disposition', 'attachment', filename=filename)
-    message.attach(msg)
-
-    return {'raw': base64.urlsafe_b64encode(message.as_string())}
+def handle_sync_and_send_email(m_source_folder, file_list):
+    global g_config
+    fh_tmpcfg, s_tmpcfg = tempfile.mkstemp(suffix='.cfg')
+    os.write(fh_tmpcfg, '[delivery]\n')
+    os.write(fh_tmpcfg, 'source_folder=%s\n'%m_source_folder)
+    os.write(fh_tmpcfg, 'file_list=%s\n'%','.join(file_list))
+    os.close(fh_tmpcfg)
+    send_sync_bin = g_config.get('delivery', 'sync_email_cmd_%s'%sys.platform)
+    sync_cmd = [send_sync_bin, s_tmpcfg]
+    print "INFO: Executing command: %s"%" ".join(sync_cmd)
+    subprocess.Popen(" ".join(sync_cmd), shell=True)
 
 class ALEWriter():
 
@@ -298,27 +179,6 @@ Data
             self.ale_fh.write('\t'.join(row_match_list))
             self.ale_fh.write('\n')
         return
-
-# builds the body of the email message
-def send_email(delivery_directory, file_list, shot_count):
-
-    global g_rsync_dest, g_email_text, g_mail_from, g_distro_list_to, g_distro_list_cc, g_config
-    formatted_list= "\n".join(file_list)
-
-    final_destination_dir = os.path.join(g_rsync_dest, os.path.split(delivery_directory)[-1])
-    	
-    d_email_text = {'shot_count' : shot_count, 'delivery_folder' : final_destination_dir, 'shot_list' : formatted_list}
-    msg = g_email_text.format(**d_email_text).replace('\\r', '\r')
-    csvfiles = glob.glob(os.path.join(delivery_directory, '*.csv'))
-    d_email_subject = {'package' : os.path.split(delivery_directory)[-1]}
-    s_subject = g_config.get('email', 'subject').format(**d_email_subject)
-    
-    if len(csvfiles) > 0:
-        SendMessage(g_mail_from, g_distro_list_to, g_distro_list_cc, s_subject, msg, msg, csvfiles[0])
-    else:
-        SendMessage(g_mail_from, g_distro_list_to, g_distro_list_cc, s_subject, msg, msg)
-        
-    return msg
 
 def get_delivery_directory():
     global g_version_status, g_version_status_qt, g_version_status_2k, g_ih_show_code, g_project_code, g_vendor_code, g_vendor_name, g_package_dir, g_batch_id, g_delivery_folder, g_delivery_package
@@ -370,6 +230,7 @@ def vd_list_from_versions():
     subform_date_format = g_config.get('delivery', 'subform_date_format')
     client_filename_format = g_config.get('delivery', 'client_filename')
     for dbversion in g_version_list:
+        print "INFO: Attempting to build a delivery for version %s."%dbversion.g_version_code
         vd_tmp = VersionDelivery(dbversion)
         vd_tmp.set_version_separator(version_separator)
         vd_tmp.set_vendor_code(g_vendor_code)
@@ -683,28 +544,37 @@ def execute_shell(m_interactive=False, m_2k=False):
         g_version_list = new_version_list
 
     file_list = []    
-    get_delivery_directory()
-    print "INFO: Delivery package initialized to %s."%g_package_dir
-    vd_list_from_versions()
-    print "INFO: Retrieved all information from database."
-    for tmp_vd in g_vdlist:
-        print "INFO: Copying files for version %s to package."%tmp_vd.version_data['dbversion'].g_version_code
-        file_list.append(tmp_vd.version_data['client_filename'])
-        copy_files(tmp_vd)
+    try:
+        vd_list_from_versions()
+        if len(g_vdlist) == 0:
+            raise RuntimeError("There are no versions available to send to production! Please select at least one in order to proceed.")
+        else:
+            print "INFO: Retrieved all information from database."
+        get_delivery_directory()
+        print "INFO: Delivery package initialized to %s."%g_package_dir
+        for tmp_vd in g_vdlist:
+            print "INFO: Copying files for version %s to package."%tmp_vd.version_data['dbversion'].g_version_code
+            file_list.append(tmp_vd.version_data['client_filename'])
+            copy_files(tmp_vd)
         
-    print "INFO: Building Submission Form and ALE Files."
-    print "INFO: CSV Location: %s.csv"%os.path.join(g_package_dir, g_delivery_package)
-    print "INFO: ALE Location: %s.ale"%os.path.join(g_package_dir, g_delivery_package)
-    build_subform()
-    print "INFO: Setting status of all versions in submission to Delivered."
-    set_version_delivered()
-    print "INFO: Building a playlist in the database."
-    build_playlist()
-    print "INFO: Spawning a rsync child processs to copy files to production."
-    handle_rsync(os.path.join(g_delivery_folder, g_package_dir))
-    print "INFO: Sending email indicating that the process is complete."
-    send_email(os.path.join(g_delivery_folder, g_package_dir), file_list, len(file_list))
-    print "INFO: Delivery is complete."
+        print "INFO: Building Submission Form and ALE Files."
+        print "INFO: CSV Location: %s.csv"%os.path.join(g_package_dir, g_delivery_package)
+        print "INFO: ALE Location: %s.ale"%os.path.join(g_package_dir, g_delivery_package)
+        build_subform()
+        print "INFO: Setting status of all versions in submission to Delivered."
+        set_version_delivered()
+        print "INFO: Building a playlist in the database."
+        build_playlist()
+        print "INFO: Spawning a sync child processs to copy files to production. Email notification will be sent upon completion."
+        handle_sync_and_send_email(os.path.join(g_delivery_folder, g_package_dir), file_list)
+        print "INFO: Delivery is complete."
+    except:
+        e = sys.exc_info()
+        etype = e[0].__name__
+        emsg = e[1]
+        print "ERROR: Caught exception of type %s!"%etype
+        print "  MSG: %s"%emsg
+
     
 class CheckBoxDelegate(QItemDelegate):
     """
@@ -814,36 +684,44 @@ class PublishDeliveryWindow(QMainWindow):
         file_list = []
         self.hide()
         self.results_window.show()
-        get_delivery_directory()
-        self.results_window.delivery_results.appendPlainText("INFO: Delivery package initialized to %s."%g_package_dir)
-        QApplication.processEvents()
-        vd_list_from_versions()
-        self.results_window.delivery_results.appendPlainText("INFO: Retrieved all information from database.")
-        QApplication.processEvents()
-        for tmp_vd in g_vdlist:
-            self.results_window.delivery_results.appendPlainText("INFO: Copying files for version %s to package."%tmp_vd.version_data['dbversion'].g_version_code)
-            file_list.append(tmp_vd.version_data['client_filename'])
+        try:
+            vd_list_from_versions()
+            if len(g_vdlist) == 0:
+                raise RuntimeError("There are no versions selected to send to production! Please select at least one in order to proceed.")
+            else:
+                self.results_window.delivery_results.appendPlainText("INFO: Retrieved all information from database.")
             QApplication.processEvents()
-            copy_files(tmp_vd)
-        self.results_window.delivery_results.appendPlainText("INFO: Building Submission Form and ALE Files.")
-        self.results_window.delivery_results.appendPlainText("INFO: CSV Location: %s.csv"%os.path.join(g_package_dir, g_delivery_package))
-        self.results_window.delivery_results.appendPlainText("INFO: ALE Location: %s.ale"%os.path.join(g_package_dir, g_delivery_package))
-        QApplication.processEvents()
-        build_subform()
-        self.results_window.delivery_results.appendPlainText("INFO: Setting status of all versions in submission to Delivered.")
-        QApplication.processEvents()
-        set_version_delivered()
-        QApplication.processEvents()
-        self.results_window.delivery_results.appendPlainText("INFO: Building playlist %s in the database."%g_package_dir)
-        build_playlist()
-        self.results_window.delivery_results.appendPlainText("INFO: Spawning a rsync child processs to copy files to production.")
-        QApplication.processEvents()
-        handle_rsync(os.path.join(g_delivery_folder, g_package_dir))
-        self.results_window.delivery_results.appendPlainText("INFO: Sending email indicating that the process is complete.")
-        QApplication.processEvents()
-        send_email(os.path.join(g_delivery_folder, g_package_dir), file_list, len(file_list))
-        self.results_window.delivery_results.appendPlainText("INFO: Delivery is complete.")
-        QApplication.processEvents()
+            get_delivery_directory()
+            self.results_window.delivery_results.appendPlainText("INFO: Delivery package initialized to %s."%g_package_dir)
+            QApplication.processEvents()
+            for tmp_vd in g_vdlist:
+                self.results_window.delivery_results.appendPlainText("INFO: Copying files for version %s to package."%tmp_vd.version_data['dbversion'].g_version_code)
+                file_list.append(tmp_vd.version_data['client_filename'])
+                QApplication.processEvents()
+                copy_files(tmp_vd)
+            self.results_window.delivery_results.appendPlainText("INFO: Building Submission Form and ALE Files.")
+            self.results_window.delivery_results.appendPlainText("INFO: CSV Location: %s.csv"%os.path.join(g_package_dir, g_delivery_package))
+            self.results_window.delivery_results.appendPlainText("INFO: ALE Location: %s.ale"%os.path.join(g_package_dir, g_delivery_package))
+            QApplication.processEvents()
+            build_subform()
+            self.results_window.delivery_results.appendPlainText("INFO: Setting status of all versions in submission to Delivered.")
+            QApplication.processEvents()
+            set_version_delivered()
+            QApplication.processEvents()
+            self.results_window.delivery_results.appendPlainText("INFO: Building playlist %s in the database."%g_package_dir)
+            build_playlist()
+            self.results_window.delivery_results.appendPlainText("INFO: Spawning a sync child processs to copy files to production. Email notification will be sent upon completion.")
+            QApplication.processEvents()
+            handle_sync_and_send_email(os.path.join(g_delivery_folder, g_package_dir), file_list)
+            self.results_window.delivery_results.appendPlainText("INFO: Delivery is complete.")
+            QApplication.processEvents()
+        except:
+            e = sys.exc_info()
+            etype = e[0].__name__
+            emsg = e[1]
+            self.results_window.delivery_results.appendPlainText("ERROR: Caught exception of type %s!"%etype)
+            self.results_window.delivery_results.appendPlainText("  MSG: %s"%emsg)
+            QApplication.processEvents()
         self.results_window.close_button.setEnabled(True)
     
     def accept(self):
