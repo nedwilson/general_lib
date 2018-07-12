@@ -482,7 +482,7 @@ def build_playlist():
     ihdb.create_playlist(dbplaylist)
     print "INFO: Created playlist %s in database."%(g_package_dir)
         
-def execute_shell(m_interactive=False, m_2k=False):
+def execute_shell(m_interactive=False, m_2k=False, send_email=True):
     global g_version_list, g_version_status, g_package_dir, g_vdlist, g_delivery_folder, g_delivery_package
 
     if m_2k:
@@ -545,13 +545,13 @@ def execute_shell(m_interactive=False, m_2k=False):
 
     file_list = []    
     try:
+        get_delivery_directory()
+        print "INFO: Delivery package initialized to %s."%g_package_dir
         vd_list_from_versions()
         if len(g_vdlist) == 0:
             raise RuntimeError("There are no versions available to send to production! Please select at least one in order to proceed.")
         else:
             print "INFO: Retrieved all information from database."
-        get_delivery_directory()
-        print "INFO: Delivery package initialized to %s."%g_package_dir
         for tmp_vd in g_vdlist:
             print "INFO: Copying files for version %s to package."%tmp_vd.version_data['dbversion'].g_version_code
             file_list.append(tmp_vd.version_data['client_filename'])
@@ -565,8 +565,9 @@ def execute_shell(m_interactive=False, m_2k=False):
         set_version_delivered()
         print "INFO: Building a playlist in the database."
         build_playlist()
-        print "INFO: Spawning a sync child processs to copy files to production. Email notification will be sent upon completion."
-        handle_sync_and_send_email(os.path.join(g_delivery_folder, g_package_dir), file_list)
+        if send_email:
+            print "INFO: Spawning a sync child processs to copy files to production. Email notification will be sent upon completion."
+            handle_sync_and_send_email(os.path.join(g_delivery_folder, g_package_dir), file_list)
         print "INFO: Delivery is complete."
     except:
         e = sys.exc_info()
@@ -619,8 +620,9 @@ class CheckBoxDelegate(QItemDelegate):
         model.setData(index, True if int(index.data()) == 0 else False, Qt.EditRole)
 
 class PublishDeliveryWindow(QMainWindow):
-    def __init__(self, m_2k=False):
+    def __init__(self, m_2k=False, send_email=True):
         super(PublishDeliveryWindow, self).__init__()
+        self.b_send_email = send_email
         self.setWindowTitle('Publish Delivery')
         self.setMinimumSize(640,480)
     
@@ -685,14 +687,16 @@ class PublishDeliveryWindow(QMainWindow):
         self.hide()
         self.results_window.show()
         try:
+            # first, get delivery directory
+            get_delivery_directory()
+            self.results_window.delivery_results.appendPlainText("INFO: Delivery package initialized to %s."%g_package_dir)
+            QApplication.processEvents()
+            # get detailed version delivery list from list of database versions
             vd_list_from_versions()
             if len(g_vdlist) == 0:
                 raise RuntimeError("There are no versions selected to send to production! Please select at least one in order to proceed.")
             else:
                 self.results_window.delivery_results.appendPlainText("INFO: Retrieved all information from database.")
-            QApplication.processEvents()
-            get_delivery_directory()
-            self.results_window.delivery_results.appendPlainText("INFO: Delivery package initialized to %s."%g_package_dir)
             QApplication.processEvents()
             for tmp_vd in g_vdlist:
                 self.results_window.delivery_results.appendPlainText("INFO: Copying files for version %s to package."%tmp_vd.version_data['dbversion'].g_version_code)
@@ -710,9 +714,10 @@ class PublishDeliveryWindow(QMainWindow):
             QApplication.processEvents()
             self.results_window.delivery_results.appendPlainText("INFO: Building playlist %s in the database."%g_package_dir)
             build_playlist()
-            self.results_window.delivery_results.appendPlainText("INFO: Spawning a sync child processs to copy files to production. Email notification will be sent upon completion.")
-            QApplication.processEvents()
-            handle_sync_and_send_email(os.path.join(g_delivery_folder, g_package_dir), file_list)
+            if self.b_send_email:
+                self.results_window.delivery_results.appendPlainText("INFO: Spawning a sync child processs to copy files to production. Email notification will be sent upon completion.")
+                QApplication.processEvents()
+                handle_sync_and_send_email(os.path.join(g_delivery_folder, g_package_dir), file_list)
             self.results_window.delivery_results.appendPlainText("INFO: Delivery is complete.")
             QApplication.processEvents()
         except:
