@@ -834,7 +834,7 @@ class PublishDeliveryResultsWindow(QMainWindow):
     def window_close(self):
         QCoreApplication.instance().quit()
 
-def display_window(m_2k=False):
+def display_window(m_2k=False, send_email=True):
     global g_version_list, g_version_status, g_vdlist
     if m_2k:
         g_version_status = g_version_status_2k
@@ -847,7 +847,7 @@ def display_window(m_2k=False):
     app = QApplication(sys.argv)
  
     # Our main window will be a QListView
-    window = PublishDeliveryWindow(m_2k)
+    window = PublishDeliveryWindow(m_2k, send_email)
     window.show()
     app.exec_()
     
