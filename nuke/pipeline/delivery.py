@@ -13,6 +13,7 @@ import subprocess
 import copy
 import csv
 import tempfile
+import traceback
 
 # gmail/oauth
 
@@ -575,6 +576,8 @@ def execute_shell(m_interactive=False, m_2k=False, send_email=True):
         emsg = e[1]
         print "ERROR: Caught exception of type %s!"%etype
         print "  MSG: %s"%emsg
+        print traceback.format_exc(e[2])
+        
 
     
 class CheckBoxDelegate(QItemDelegate):
@@ -726,6 +729,7 @@ class PublishDeliveryWindow(QMainWindow):
             emsg = e[1]
             self.results_window.delivery_results.appendPlainText("ERROR: Caught exception of type %s!"%etype)
             self.results_window.delivery_results.appendPlainText("  MSG: %s"%emsg)
+            self.results_window.delivery_results.appendPlainText(traceback.format_exc(e[2]))
             QApplication.processEvents()
         self.results_window.close_button.setEnabled(True)
     
