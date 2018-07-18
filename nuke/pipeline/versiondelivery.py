@@ -134,10 +134,18 @@ class VersionDelivery():
             self.version_data['b_exportqt'] = True
         except KeyError:
             pass
-        self.version_data['hires_format'] = dsub_dict['HiResFormat']
-        self.version_data['hires'] = hires_path.replace('%04d', '*')
-        self.version_data['hires_ext'] = os.path.splitext(hires_path)[1].replace('.', '')
-        self.version_data['b_hires'] = True
+        self.version_data['b_hires'] = False
+        try:
+            self.version_data['hires_format'] = dsub_dict['HiResFormat']
+            self.version_data['hires'] = hires_path.replace('%04d', '*')
+            self.version_data['hires_ext'] = os.path.splitext(hires_path)[1].replace('.', '')
+            self.version_data['b_hires'] = True
+        except KeyError:
+            self.version_data['hires_format'] = '1920x1080'
+            self.version_data['hires'] = 'NO_HIRES_FRAMES'
+            self.version_data['hires_ext'] = 'NO_HIRES'
+            self.version_data['b_hires'] = False
+
         try:
             self.version_data['matte'] = os.path.join(delivery_root, 'mov', dsub_dict['MatteFileName'])
             self.version_data['b_matte'] = True
@@ -161,6 +169,11 @@ class VersionDelivery():
         if len(ccfiles) > 0:
             self.version_data['ccfile'] = ccfiles[0]
             self.version_data['ccdata'] = CCData(ccfiles[0])
+        else:
+            __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+            print os.path.join(__location__, 'default.cc')
+            self.version_data['ccfile'] = os.path.join(__location__, 'default.cc')
+            self.version_data['ccdata'] = CCData(os.path.join(__location__, 'default.cc'))
             
     def __repr__(self):
         return str(self.version_data)
