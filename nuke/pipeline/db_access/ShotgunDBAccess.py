@@ -446,6 +446,19 @@ class ShotgunDBAccess(DBAccess.DBAccess):
         }
         sg_seq = self.g_sg.create('Sequence', data)
         m_seq_obj.g_dbid = sg_seq['id']
+
+    def create_task(self, m_task_obj):
+        data = {
+            'project' : {'type' : 'Project', 'id' : int(self.g_shotgun_project_id)},
+            'entity' : {'type' : 'Shot', 'id' : int(m_task_obj.g_shot.g_dbid)},
+            'content' : m_task_obj.g_task_name,
+            'sg_status_list' : 'wtg'
+        }
+        if m_task_obj.g_pipeline_step_id != -1:
+            data['step'] = {'type' : 'Step', 'id' : int(m_task_obj.g_pipeline_step_id) }
+
+        sg_task = self.g_sg.create('Task', data)
+        m_task_obj.g_dbid = sg_task['id']
         
     def create_shot(self, m_shot_obj):
         data = {
