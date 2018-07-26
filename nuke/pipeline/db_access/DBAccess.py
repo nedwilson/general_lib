@@ -97,6 +97,10 @@ class DBAccess(object):
         """Creates a sequence based on the object provided, and populates the object with the resulting database query"""
 
     @abc.abstractmethod
+    def create_task(self, m_task_obj):
+        """Creates a task based on the object provided, and populates the object with the resulting database query"""
+
+    @abc.abstractmethod
     def create_shot(self, m_shot_obj):
         """Creates a shot based on the object provided, and populates the object with the resulting database query"""
 
