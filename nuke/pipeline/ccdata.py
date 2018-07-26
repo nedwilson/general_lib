@@ -103,3 +103,14 @@ class CCData():
         xmldata_fh.write(self.cdlelement_text)
         xmldata_fh.close()
         
+    # returns the proper writer function based on file extension
+    def get_write_function(self, file_extension):
+        if file_extension == 'cc':
+            return self.write_cc_file
+        elif file_extension == 'ccc':
+            return self.write_ccc_file
+        elif file_extension == 'cdl':
+            return self.write_cdl_file
+        else:
+            return self.write_cc_file
+        
