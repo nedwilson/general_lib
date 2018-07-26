@@ -1034,6 +1034,130 @@ def create_thumbnail(m_source_path):
     
     return dest_path_frame
 
+def create_thumbnail_from_movie(m_source_path, m_frame_number):
+
+    if not os.path.exists(m_source_path):
+        raise IOError("File not found: %s"%m_source_path)
+    
+    show_cfg_path = None
+    show_root = None
+    show_code = None
+
+    config = get_config()
+    
+    show_cfg_path = os.environ['IH_SHOW_CFG_PATH']
+    show_root = os.environ['IH_SHOW_ROOT']
+    show_code = os.environ['IH_SHOW_CODE']
+        
+    shot_regexp = config.get(show_code, 'shot_regexp')
+    shot_dir_format = config.get(show_code, 'shot_dir_format')
+    cdl_dir_format = config.get(show_code, 'cdl_dir_format')
+    write_frame_format = config.get(show_code, 'write_frame_format')
+    cdl_ext = config.get(show_code, 'cdl_file_ext')
+    thumb_template = config.get('thumbnails', 'template_movie_%s'%sys.platform)
+    thumb_dir = config.get('thumbnails', 'shot_thumb_dir')
+    nuke_exe_path = config.get('nuke_exe_path', sys.platform)
+    
+    filename_re = re.compile(r'(?P<head>[\\\/A-Za-z \._\-0-9]+)\.(?P<ext>[a-zA-Z0-9]+)$')
+    shot_re = re.compile(shot_regexp)
+    
+    match_obj = filename_re.search(m_source_path)
+    head = match_obj.group('head')
+    frame = m_frame_number
+    ext = match_obj.group('ext')
+    
+    if not head or not frame or not ext:
+        raise ValueError("Movie path provided to create_thumbnail, %s, appears to be invalid."%m_source_path)
+        
+    match_obj = shot_re.search(head)
+    
+    shot = match_obj.group('shot')
+    seq = match_obj.group('sequence')
+    
+    if not shot or not seq:
+        raise ValueError("Movie path provided to create_thumbnail, %s, does not match the shot naming convention for show %s."%(m_source_path, show_code))
+    
+    base = os.path.basename(head)
+    dest_path_format = "%s{pathsep}%s{pathsep}%s_movie_thumb.{framepad}.png"%(shot_dir_format, thumb_dir, base)
+    format_dict = { 'pathsep' : os.path.sep, 'show_root' : show_root, 'sequence' : seq, 'shot' : shot, 'framepad' : write_frame_format  }
+    dest_path = dest_path_format.format(**format_dict).replace('\\', '/')
+    
+    format_dict['framepad'] = "%04d"%int(frame)
+    dest_path_frame = dest_path_format.format(**format_dict)
+    
+    print "INFO: Thumbnail path: %s"%dest_path
+    
+    # try to locate the CDL for the shot, if it exists
+    
+    fh_nukepy, s_nukepy = tempfile.mkstemp(suffix='.py')
+    
+    print "INFO: Temporary Python script: %s"%s_nukepy
+    os.write(fh_nukepy, "#!/usr/bin/python\n")
+    os.write(fh_nukepy, "\n")
+    os.write(fh_nukepy, "import nuke\n")
+    os.write(fh_nukepy, "import os\n")
+    os.write(fh_nukepy, "import sys\n")
+    os.write(fh_nukepy, "import traceback\n")
+    os.write(fh_nukepy, "\n")
+    os.write(fh_nukepy, "nuke.scriptOpen(\"%s\")\n"%thumb_template.replace('\\', '/'))
+    os.write(fh_nukepy, "nd_root = root = nuke.root()\n")
+    os.write(fh_nukepy, "\n")
+    os.write(fh_nukepy, "# set root frame range\n")
+    os.write(fh_nukepy, "nd_root.knob('first_frame').setValue(%d)\n"%int(frame))
+    os.write(fh_nukepy, "nd_root.knob('last_frame').setValue(%d)\n"%int(frame))
+    os.write(fh_nukepy, "nd_read = nuke.toNode('SRC_READ')\n")
+    os.write(fh_nukepy, "nd_read.knob('file').setValue(\"%s\")\n"%m_source_path)
+    # os.write(fh_nukepy, "nd_read.knob('first').setValue(%d)\n"%int(frame))
+    # os.write(fh_nukepy, "nd_read.knob('last').setValue(%d)\n"%int(frame))
+
+    os.write(fh_nukepy, "nuke.toNode('THUMB_WRITE').knob('file').setValue('%s')\n"%dest_path)            
+    os.write(fh_nukepy, "print \"INFO: About to execute render...\"\n")
+    os.write(fh_nukepy, "try:\n")
+    os.write(fh_nukepy, "    nuke.execute(nuke.toNode(\"%s\"),%d,%d,1,)\n"%('THUMB_WRITE', int(frame), int(frame)))
+    os.write(fh_nukepy, "except:\n")
+    os.write(fh_nukepy, "    print \"ERROR: Exception caught!\\n%s\"%traceback.format_exc()\n")
+    os.close(fh_nukepy)
+    
+    s_pyscript = s_nukepy
+    s_windows_addl = ""
+    s_cmd = ""
+    if sys.platform == 'win32':
+        s_windows_addl = ' --remap "/Volumes/raid_vol01,Y:"'
+        s_cmd = "\"%s\" -i -V 2%s -c 2G -t %s" % (nuke_exe_path, s_windows_addl, s_pyscript)
+    else:
+        s_cmd = "%s -i -V 2 -c 2G -t %s" % (nuke_exe_path, s_pyscript)
+
+    
+    s_err_ar = []
+    print "INFO: Thumbnail render command: %s" % s_cmd
+    proc = subprocess.Popen(s_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    while proc.poll() is None:
+        try:
+            s_out = proc.stdout.readline()
+            s_err_ar.append(s_out.rstrip())
+        except IOError:
+            print "ERROR: IOError Caught!"
+            var = traceback.format_exc()
+            print var
+    if proc.returncode != 0:
+        s_errmsg = ""
+        if sys.platform == 'win32':
+            s_err_ar = proc.stdout.read().split('\n')
+        s_err = '\n'.join(s_err_ar)
+        l_err_verbose = []
+        for err_line in s_err_ar:
+            if err_line.find("ERROR") != -1:
+                l_err_verbose.append(err_line)
+        if s_err.find("FOUNDRY LICENSE ERROR REPORT") != -1:
+            s_errmsg = "Unable to obtain a license for Nuke! Package execution fails, will not proceed!"
+        else:
+            s_errmsg = "Error(s) have occurred. Details:\n%s"%'\n'.join(l_err_verbose)
+        print s_errmsg
+    else:
+        print "INFO: Successfully completed thumbnail render."
+    
+    return dest_path_frame
+
 #### REMOVING ALL SHOW-SPECIFIC CODE FROM DELIVERIES
 
 def get_client_version(db_version_name):
