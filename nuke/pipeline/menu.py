@@ -48,6 +48,7 @@ n.addCommand("Lin2Log Wrapper", "nuke.createNode(\"LinLogWrapper.nk\")")
 
 n = m.addMenu("Delivery")
 n.addCommand("Send for Review", "send_for_review()")
+n.addCommand("Send for Review - Temp", "send_for_review(cc=False, b_method_hires=False)")
 n.addCommand("Publish Delivery", "display_delivery_window(False)")
 n.addCommand("Publish Hi-Res Delivery", "display_delivery_window(True)")
 
