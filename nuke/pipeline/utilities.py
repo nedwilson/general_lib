@@ -1482,6 +1482,27 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
             startNode = und
         elif und.Class() == "Write":
             print "INFO: Located Write Node."
+            # make sure this Write node has been rendered
+            write_file_path = und.knob('file').value()
+            write_path_list = write_file_path.split('.')
+            norender = False
+            if not os.path.exists(os.path.dirname(write_file_path)):
+                norender = True
+            if len(write_path_list) > 2:
+                frame_num = write_path_list[-2]
+                glob_path = write_file_path.replace(frame_num, '*')
+                write_frames = glob.glob(glob_path)
+                if len(write_frames) == 0:
+                    norender = True
+            else:
+                if not os.path.exists(write_file_path):
+                    norender = True
+
+            if norender:
+                nuke.critical('The Write node you selected has not been rendered yet.')
+                return
+                
+                
             und.knob('selected').setValue(True)
             global_width = und.knob('format').value().width()
             global_height = und.knob('format').value().height()
@@ -1560,6 +1581,7 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
         if current_version_notes is not None:
             cvn_txt = current_version_notes
             avidqt_delivery = b_method_avidqt
+            vfxqt_delivery = b_method_vfxqt
             burnin_delivery = b_method_burnin
             hires_delivery = b_method_hires
             matte_delivery = b_method_matte
@@ -1568,6 +1590,13 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
         else:
             pnl = DeliveryNotesPanel()
             pnl.knobs()['cvn_'].setValue(def_note_text)
+            pnl.knobs()['cc_'].setValue(cc)
+            pnl.knobs()['avidqt_'].setValue(b_method_avidqt)
+            pnl.knobs()['vfxqt_'].setValue(b_method_vfxqt)
+            pnl.knobs()['burnin_'].setValue(b_method_burnin)
+            pnl.knobs()['hires_'].setValue(b_method_hires)
+            pnl.knobs()['matte_'].setValue(b_method_matte)
+            
             if pnl.showModalDialog():
                 cvn_txt = pnl.knobs()['cvn_'].value()
                 cc_delivery = pnl.knobs()['cc_'].value()
