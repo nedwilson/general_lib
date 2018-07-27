@@ -1357,9 +1357,6 @@ def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame
             if finaltask:
                 dbtask = finaltask
 
-        if len(dbtasks) > 0:
-            dbtask = dbtasks[0]
-        
         # create a thumbnail
         thumb_file_gen = os_path_sub(create_thumbnail(thumb_file))
         
