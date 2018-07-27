@@ -1328,11 +1328,35 @@ def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame
         
         # fetch the artist from the thread helper dictionary
         dbartist = d_db_thread_helper['dbartist']
-        
+
+        # get a name for the version, will use this to find the right comp task
+        tmp_version_name = os.path.basename(thumb_file).split('.')[0]
+
+        # is this a temp version?
+        tmp_re = re.compile(r'[Tt][Ee][Mm][Pp]')
+        b_istemp = False
+        if tmp_re.search(tmp_version_name):
+            b_istemp = True
+
         # fetch a list of tasks for the shot
         dbtasks = g_ihdb.fetch_tasks_for_shot(dbshot)
         # If no tasks have been created for this shot, use a blank task
         dbtask = DB.Task("Blank Task", dbartist, 'wtg', dbshot, -1)
+        tmptask = None
+        finaltask = None
+        for tmp_dbtask in dbtasks:
+            if tmp_re.search(dbtask.g_task_name):
+                tmptask = tmp_dbtask
+            else:
+                finaltask = tmp_dbtask
+
+        if b_istemp:
+            if tmptask:
+                dbtask = tmptask
+        else:
+            if finaltask:
+                dbtask = finaltask
+
         if len(dbtasks) > 0:
             dbtask = dbtasks[0]
         
@@ -1340,7 +1364,6 @@ def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame
         thumb_file_gen = os_path_sub(create_thumbnail(thumb_file))
         
         # does the version already exist?
-        tmp_version_name = os.path.basename(thumb_file).split('.')[0]
         print "Thread: %s Fetching version for %s, for shot %s"%(threading.current_thread().getName(), tmp_version_name, d_db_thread_helper['shot'])
         dbversion = g_ihdb.fetch_version(tmp_version_name, dbshot)
         
