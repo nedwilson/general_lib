@@ -1345,16 +1345,19 @@ def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame
         tmptask = None
         finaltask = None
         for tmp_dbtask in dbtasks:
-            if tmp_re.search(dbtask.g_task_name):
+            print "DEBUG: Got task for shot: %s"%tmp_dbtask.g_task_name
+            if tmp_re.search(tmp_dbtask.g_task_name):
                 tmptask = tmp_dbtask
             else:
                 finaltask = tmp_dbtask
 
         if b_istemp:
             if tmptask:
+                print "DEBUG: Assigning task for version: %s"%tmptask.g_task_name
                 dbtask = tmptask
         else:
             if finaltask:
+                print "DEBUG: Assigning task for version: %s"%finaltask.g_task_name
                 dbtask = finaltask
 
         # create a thumbnail
@@ -1629,6 +1632,17 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
 
         if b_execute_overall:
         
+            # submission reason
+            submission_reason = "For Review"
+            if hires_delivery:
+                submission_reason = g_config.get('delivery', 'hires_subreason')
+            else:
+                if avidqt_delivery:
+                    submission_reason = g_config.get('delivery', 'lores_subreason')
+                else:
+                    if matte_delivery:
+                        submission_reason = g_config.get('delivery', 'matte_subreason')
+                        
             # project FPS
             s_project_fps = g_config.get(s_show, 'write_fps')
             # delivery template
@@ -1831,6 +1845,7 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
             os.write(fh_nukepy, "nd_root.knob('ti_ih_version').setValue(\"%s\")\n"%s_version)
             os.write(fh_nukepy, "nd_root.knob('ti_ih_vendor').setValue(\"%s\")\n"%s_artist_name)
             os.write(fh_nukepy, "nd_root.knob('ti_ih_format').setValue(\"%s\")\n"%s_format)
+            os.write(fh_nukepy, "nd_root.knob('ti_submission_reason').setValue(\"%s\")\n"%submission_reason)
             os.write(fh_nukepy, "nd_root.knob('ti_ih_notes_1').setValue(\"%s\")\n"%l_notes[0].replace(r'"', r'\"'))
             os.write(fh_nukepy, "nd_root.knob('ti_ih_notes_2').setValue(\"%s\")\n"%l_notes[1].replace(r'"', r'\"'))
             os.write(fh_nukepy, "nd_root.knob('ti_ih_notes_3').setValue(\"%s\")\n"%l_notes[2].replace(r'"', r'\"'))
