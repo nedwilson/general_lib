@@ -115,6 +115,7 @@ def create_thumbnail(m_source_path):
     s_cccid = None
     if b_deliver_cdl:    
         # open up the cdl and extract the cccid
+        print "INFO: Using CDL file at %s."%s_cdl_src
         cdltext = open(s_cdl_src, 'r').read()
         cccid_re_str = r'<ColorCorrection id="([A-Za-z0-9-_]+)">'
         cccid_re = re.compile(cccid_re_str)
@@ -126,31 +127,49 @@ def create_thumbnail(m_source_path):
         slope_re_str = r'<Slope>([0-9.-]+) ([0-9.-]+) ([0-9.-]+)</Slope>'
         slope_re = re.compile(slope_re_str)
         slope_match = slope_re.search(cdltext)
-        slope_r = slope_match.group(1)
-        slope_g = slope_match.group(2)
-        slope_b = slope_match.group(3)
+        if slope_match:
+            slope_r = slope_match.group(1)
+            slope_g = slope_match.group(2)
+            slope_b = slope_match.group(3)
+        else:
+            slope_r = 1.0
+            slope_g = 1.0
+            slope_b = 1.0
 
         # offset
-        offset_re_str = r'<Offset>([0-9.-]+) ([0-9.-]+) ([0-9.-]+)</Offset>'
+        offset_re_str = r'<Offset>([0-9.-e]+) ([0-9.-e]+) ([0-9.-e]+)</Offset>'
         offset_re = re.compile(offset_re_str)
         offset_match = offset_re.search(cdltext)
-        offset_r = offset_match.group(1)
-        offset_g = offset_match.group(2)
-        offset_b = offset_match.group(3)
-    
+        if offset_match:
+            offset_r = offset_match.group(1)
+            offset_g = offset_match.group(2)
+            offset_b = offset_match.group(3)
+        else:
+            offset_r = 0.0
+            offset_g = 0.0
+            offset_b = 0.0
+            
         # power
         power_re_str = r'<Power>([0-9.-]+) ([0-9.-]+) ([0-9.-]+)</Power>'
         power_re = re.compile(power_re_str)
         power_match = power_re.search(cdltext)
-        power_r = power_match.group(1)
-        power_g = power_match.group(2)
-        power_b = power_match.group(3)
-    
+        if power_match:
+            power_r = power_match.group(1)
+            power_g = power_match.group(2)
+            power_b = power_match.group(3)
+        else:
+            power_r = 1.0
+            power_g = 1.0
+            power_b = 1.0
+            
         # saturation
         saturation_re_str = r'<Saturation>([0-9.-]+)</Saturation>'
         saturation_re = re.compile(saturation_re_str)
         saturation_match = saturation_re.search(cdltext)
-        saturation = saturation_match.group(1)
+        if saturation_match:
+            saturation = saturation_match.group(1)
+        else:
+            saturation = 1.0
     
     
     fh_nukepy, s_nukepy = tempfile.mkstemp(suffix='.py')
