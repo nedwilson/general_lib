@@ -286,6 +286,11 @@ def create_thumbnail_from_movie(m_source_path, m_frame_number):
     ext = match_obj.group('ext')
     
     if not head or not frame or not ext:
+        print "Head: %s"%head
+        print "Ext: %s"%ext
+        print "Frame: %s"%frame
+        print "About to raise ValueError exception."
+        print "Source path: %s"%m_source_path
         raise ValueError("Movie path provided to create_thumbnail, %s, appears to be invalid."%m_source_path)
         
     match_obj = shot_re.search(head)
