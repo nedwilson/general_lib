@@ -931,7 +931,7 @@ def create_thumbnail(m_source_path):
         slope_b = slope_match.group(3)
 
         # offset
-        offset_re_str = r'<Offset>([0-9.-]+) ([0-9.-]+) ([0-9.-]+)</Offset>'
+        offset_re_str = r'<Offset>([0-9.e-]+) ([0-9.e-]+) ([0-9.e-]+)</Offset>'
         offset_re = re.compile(offset_re_str)
         offset_match = offset_re.search(cdltext)
         offset_r = offset_match.group(1)
