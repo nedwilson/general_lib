@@ -1227,7 +1227,7 @@ def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame
             
     s_err_ar = []
     f_progress = 0.0
-    frame_match_txt = r'^Rendered frame (?P<frameno>[0-9]{1,}) of (?P<filebase>[a-zA-Z0-9-_]+)\.mov\.$'
+    frame_match_txt = r'^Rendered frame (?P<frameno>[0-9]{1,}) of (?P<filebase>[a-zA-Z0-9-_]+)\.[0-9]*\.?[a-z]{3,4}\.$'
     frame_match_re = re.compile(frame_match_txt)
     print "INFO: Beginning: %s" % s_cmd
     proc = None
@@ -1251,7 +1251,7 @@ def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame
             matchobject = frame_match_re.search(s_out)
             if matchobject:
                 s_hires_frame = matchobject.groupdict()['frameno']
-                s_file_name = matchobject.groupdict()['filebase'].replace('_avid', '').replace('_vfx', '').replace('_export', '')
+                s_file_name = matchobject.groupdict()['filebase'].replace('_avid', '').replace('_vfx', '').replace('_export', '').replace('_matte', '')
                 i_hires_frame = int(s_hires_frame)
                 f_duration = float(end_frame - start_frame + 1)
                 f_progress = (float(i_hires_frame) - float(start_frame) + 1.0)/f_duration
@@ -1389,6 +1389,11 @@ def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame
             dbversion.set_status(g_config.get('delivery', 'version_status_qt'))
             dbversion.set_delivered(False)
             dbversion.set_client_code(get_client_version(tmp_version_name))
+            if d_db_thread_helper['matte_dest']:
+                dbversion.set_path_to_matte_frames(d_db_thread_helper['matte_dest'])
+                dbversion.set_matte_ready(True)
+                dbversion.set_matte_only(d_db_thread_helper['matte_only'])
+                dbversion.set_matte_delivered(False)
             g_ihdb.create_version(dbversion)
             print "Successfully created version %s in database with DBID %d."%(dbversion.g_version_code, int(dbversion.g_dbid))
         else:
@@ -1406,44 +1411,54 @@ def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame
             dbversion_upd.set_status(g_config.get('delivery', 'version_status_qt'))
             dbversion_upd.set_delivered(False)
             dbversion_upd.set_client_code(get_client_version(tmp_version_name))
+            if d_db_thread_helper['matte_dest']:
+                dbversion_upd.set_path_to_matte_frames(d_db_thread_helper['matte_dest'])
+                dbversion_upd.set_matte_ready(True)
+                dbversion_upd.set_matte_only(d_db_thread_helper['matte_only'])
+                dbversion_upd.set_matte_delivered(False)
+                dbversion.set_path_to_matte_frames(d_db_thread_helper['matte_dest'])
+                dbversion.set_matte_ready(True)
+                dbversion.set_matte_only(d_db_thread_helper['matte_only'])
+                dbversion.set_matte_delivered(False)
             dbversion.set_status(g_config.get('delivery', 'version_status_qt'))
             dbversion.set_delivered(False)
             dbversion.set_client_code(get_client_version(tmp_version_name))
             g_ihdb.update_version(dbversion_upd)
             print "Successfully updated version %s in database with DBID %d."%(dbversion.g_version_code, int(dbversion.g_dbid))
-            
-        g_ihdb.upload_thumbnail('Version', dbversion, thumb_file_gen)
-        g_ihdb.upload_thumbnail('Shot', dbshot, thumb_file_gen)
-        dbtask.g_status = g_config.get('delivery', 'version_status_qt')
-        print "Thread: %s Setting task status for task %s, shot %s to %s"%(threading.current_thread().getName(), dbtask.g_task_name, d_db_thread_helper['shot'], dbtask.g_status)
-        g_ihdb.update_task_status(dbtask)
-        progress_bar.setMessage("Publishing Nuke Script and Hi-Res Frames to Shotgun...")
-        # set shotgun authentication
-        auth_user = sgtk.get_authenticated_user()
-        if auth_user == None:
-            sa = sgtk.authentication.ShotgunAuthenticator()
-            user = sa.create_script_user(api_script=g_config.get('database', 'shotgun_script_name'), api_key=g_config.get('database', 'shotgun_api_key'), host=g_config.get('database', 'shotgun_server_path'))
-            sgtk.set_authenticated_user(user)
         
-        # retrieve Shotgun Toolkit object
-        tk = sgtk.sgtk_from_entity('Shot', int(dbshot.g_dbid))
-        # grab context for published version
-        context = tk.context_from_entity('Shot', int(dbshot.g_dbid))
-        sg_publish_name = os.path.basename(thumb_file).split('.')[0].split('_v')[0]
-        sg_publish_ver = int(os.path.basename(thumb_file).split('.')[0].split('_v')[1])
+        if not d_db_thread_helper['matte_only']:    
+            g_ihdb.upload_thumbnail('Version', dbversion, thumb_file_gen)
+            g_ihdb.upload_thumbnail('Shot', dbshot, thumb_file_gen)
+            dbtask.g_status = g_config.get('delivery', 'version_status_qt')
+            print "Thread: %s Setting task status for task %s, shot %s to %s"%(threading.current_thread().getName(), dbtask.g_task_name, d_db_thread_helper['shot'], dbtask.g_status)
+            g_ihdb.update_task_status(dbtask)
+            progress_bar.setMessage("Publishing Nuke Script and Hi-Res Frames to Shotgun...")
+            # set shotgun authentication
+            auth_user = sgtk.get_authenticated_user()
+            if auth_user == None:
+                sa = sgtk.authentication.ShotgunAuthenticator()
+                user = sa.create_script_user(api_script=g_config.get('database', 'shotgun_script_name'), api_key=g_config.get('database', 'shotgun_api_key'), host=g_config.get('database', 'shotgun_server_path'))
+                sgtk.set_authenticated_user(user)
         
-        # publish hi-res
-        dbpublishhires = None
-        if os.path.splitext(d_db_thread_helper['hires_dest'])[1] == '.dpx':
-            dbpublishhires = sgtk.util.register_publish(tk, context, d_db_thread_helper['hires_dest'], sg_publish_name, sg_publish_ver, comment = '\n'.join(clean_notes), published_file_type = 'DPX Image Sequence')
-        elif os.path.splitext(d_db_thread_helper['hires_dest'])[1] == '.exr':
-            dbpublishhires = sgtk.util.register_publish(tk, context, d_db_thread_helper['hires_dest'], sg_publish_name, sg_publish_ver, comment = '\n'.join(clean_notes), published_file_type = 'EXR Image Sequence')
-        g_ihdb.upload_thumbnail('PublishedFile', dbshot, thumb_file_gen, altid = dbpublishhires['id'])
+            # retrieve Shotgun Toolkit object
+            tk = sgtk.sgtk_from_entity('Shot', int(dbshot.g_dbid))
+            # grab context for published version
+            context = tk.context_from_entity('Shot', int(dbshot.g_dbid))
+            sg_publish_name = os.path.basename(thumb_file).split('.')[0].split('_v')[0]
+            sg_publish_ver = int(os.path.basename(thumb_file).split('.')[0].split('_v')[1])
         
-        s_nuke_script_path = d_db_thread_helper['nuke_script_path']
-        if not s_nuke_script_path == 'UNKNOWN':
-            dbpublishnk = sgtk.util.register_publish(tk, context, s_nuke_script_path, sg_publish_name, sg_publish_ver, comment = '\n'.join(clean_notes), published_file_type = 'Nuke Script')
-            g_ihdb.upload_thumbnail('PublishedFile', dbshot, thumb_file_gen, altid = dbpublishnk['id'])
+            # publish hi-res
+            dbpublishhires = None
+            if os.path.splitext(d_db_thread_helper['hires_dest'])[1] == '.dpx':
+                dbpublishhires = sgtk.util.register_publish(tk, context, d_db_thread_helper['hires_dest'], sg_publish_name, sg_publish_ver, comment = '\n'.join(clean_notes), published_file_type = 'DPX Image Sequence')
+            elif os.path.splitext(d_db_thread_helper['hires_dest'])[1] == '.exr':
+                dbpublishhires = sgtk.util.register_publish(tk, context, d_db_thread_helper['hires_dest'], sg_publish_name, sg_publish_ver, comment = '\n'.join(clean_notes), published_file_type = 'EXR Image Sequence')
+            g_ihdb.upload_thumbnail('PublishedFile', dbshot, thumb_file_gen, altid = dbpublishhires['id'])
+        
+            s_nuke_script_path = d_db_thread_helper['nuke_script_path']
+            if not s_nuke_script_path == 'UNKNOWN':
+                dbpublishnk = sgtk.util.register_publish(tk, context, s_nuke_script_path, sg_publish_name, sg_publish_ver, comment = '\n'.join(clean_notes), published_file_type = 'Nuke Script')
+                g_ihdb.upload_thumbnail('PublishedFile', dbshot, thumb_file_gen, altid = dbpublishnk['id'])
         progress_bar.setProgress(100)
         progress_bar.setMessage("Done!")
 
@@ -1593,6 +1608,7 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
         dbshot = g_ihdb.fetch_shot(s_shot)
             
         b_execute_overall = False
+        b_matte_only = False
         cc_delivery = False
         burnin_delivery = False
         export_delivery = False
@@ -1624,6 +1640,7 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
                 cvn_txt = pnl.knobs()['cvn_'].value()
                 cc_delivery = pnl.knobs()['cc_'].value()
                 avidqt_delivery = pnl.knobs()['avidqt_'].value()
+                vfxqt_delivery = pnl.knobs()['vfxqt_'].value()
                 burnin_delivery = pnl.knobs()['burnin_'].value()
                 hires_delivery = pnl.knobs()['hires_'].value()
                 matte_delivery = pnl.knobs()['matte_'].value()
@@ -1632,6 +1649,9 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
 
         if b_execute_overall:
         
+            if matte_delivery and not avidqt_delivery and not vfxqt_delivery and not hires_delivery and not export_delivery:
+                b_matte_only = True
+                
             # submission reason
             submission_reason = "For Review"
             if hires_delivery:
@@ -1703,7 +1723,9 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
             s_exportqt_dest = os.path.join(s_delivery_folder, 'mov', '%s_export.mov'%s_filename)
             s_dpx_dest = os.path.join(s_delivery_folder, 'dpx', "%s.*.dpx"%s_filename)
             s_exr_dest = os.path.join(s_delivery_folder, 'exr', "%s.*.exr"%s_filename)
-            s_matte_dest = os.path.join(s_delivery_folder, 'tif', "%s_matte.*.tif"%s_filename)
+            # matte file extension - some shows don't use TIFF
+            s_matte_fileext = g_config.get('delivery', 'matte_file_format')
+            s_matte_dest = os.path.join(s_delivery_folder, 'matte', "%s_matte.*.%s"%(s_filename, s_matte_fileext))
             s_xml_dest = os.path.join(s_delivery_folder, 'support_files', "%s.xml"%s_filename)
             all_dests = [s_avidqt_dest, s_vfxqt_dest, s_exportqt_dest, s_xml_dest]
             if hires_delivery:
@@ -1725,6 +1747,11 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
             d_db_thread_helper['dbartist'] = dbartist
             d_db_thread_helper['dbshot'] = dbshot
             d_db_thread_helper['nuke_script_path'] = s_nuke_script_path
+            d_db_thread_helper['matte_only'] = b_matte_only
+            if matte_delivery:
+                d_db_thread_helper['matte_dest'] = s_matte_dest
+            else:
+                d_db_thread_helper['matte_dest'] = None
  
             if s_delivery_fileext == 'dpx':
                 d_db_thread_helper['hires_dest'] = s_dpx_dest.replace('*', '%04d')
@@ -1963,7 +1990,7 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
                     hires_fname_se.text = os.path.basename(s_dpx_dest)
             if matte_delivery:
                 matte_fname_se = etree.SubElement(new_submission, 'MatteFileName')
-                matte_fname_se.text = os.path.basename(s_matte_src)
+                matte_fname_se.text = os.path.basename(s_matte_dest)
             sframe_se = etree.SubElement(new_submission, 'StartFrame')
             sframe_se.text = "%d" % (start_frame - 1)
             eframe_se = etree.SubElement(new_submission, 'EndFrame')
