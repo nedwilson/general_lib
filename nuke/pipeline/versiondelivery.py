@@ -41,6 +41,7 @@ class VersionDelivery():
         self.version_data['hires_ext'] = None
         self.version_data['b_hires'] = False
         self.version_data['matte'] = None
+        self.version_data['matte_ext'] = None
         self.version_data['b_matte'] = False
         self.version_data['start_frame'] = 0
         self.version_data['end_frame'] = 0
@@ -123,6 +124,7 @@ class VersionDelivery():
             self.version_data['lores_ext'] = os.path.splitext(dsub_dict['AvidQTFileName'])[1].lstrip('.')
             self.version_data['b_avidqt'] = True
         except KeyError:
+            self.version_data['lores_ext'] = 'mov'
             pass
         try:
             self.version_data['vfxqt'] = os.path.join(delivery_root, 'mov', dsub_dict['VFXQTFileName'])
@@ -147,7 +149,8 @@ class VersionDelivery():
             self.version_data['b_hires'] = False
 
         try:
-            self.version_data['matte'] = os.path.join(delivery_root, 'mov', dsub_dict['MatteFileName'])
+            self.version_data['matte'] = os.path.join(delivery_root, 'matte', dsub_dict['MatteFileName'])
+            self.version_data['matte_ext'] = os.path.splitext(dsub_dict['MatteFileName'])[1].replace('.', '')
             self.version_data['b_matte'] = True
         except KeyError:
             pass
