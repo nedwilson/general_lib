@@ -17,10 +17,12 @@ from utilities import *
 from vclf_multi_autotrack import *
 import scaleDagNodes
 
-def display_delivery_window(b_2k):
+def display_delivery_window(b_2k, b_matte=False):
     cmd = "/Volumes/raid_vol01/shows/SHARED/bin/publish_delivery.py --gui"
     if b_2k:
         cmd = "/Volumes/raid_vol01/shows/SHARED/bin/publish_delivery.py --gui --hires"
+    if b_matte:
+        cmd = "/Volumes/raid_vol01/shows/SHARED/bin/publish_delivery.py --gui --matte"
     print "INFO: Forking process %s."%cmd
     subprocess.Popen(cmd, shell=True)
 
@@ -51,6 +53,7 @@ n.addCommand("Send for Review", "send_for_review()")
 n.addCommand("Send for Review - Temp", "send_for_review(cc=False, b_method_hires=False)")
 n.addCommand("Publish Delivery", "display_delivery_window(False)")
 n.addCommand("Publish Hi-Res Delivery", "display_delivery_window(True)")
+n.addCommand("Publish Matte Delivery", "display_delivery_window(False, b_matte=True)")
 
 n = m.addMenu("&File")
 n.addCommand("Copy Read To Shot", "copyReadToShot()")
