@@ -54,6 +54,10 @@ class DBAccess(object):
         """Sets a status on an existing version."""
 
     @abc.abstractmethod
+    def update_version_matte_delivered(self, m_version_obj):
+        """Sets matte delivered to true on an existing version."""
+        
+    @abc.abstractmethod
     def update_shot_status(self, m_shot_obj):
         """Sets a status on an existing shot."""
             
@@ -68,6 +72,10 @@ class DBAccess(object):
     @abc.abstractmethod
     def fetch_versions_with_status(self, m_status):
         """Returns a list of versions in the database matching the status provided"""
+
+    @abc.abstractmethod
+    def fetch_versions_with_mattes(self):
+        """Returns a list of versions in the database with mattes ready to deliver"""
 
     @abc.abstractmethod
     def fetch_versions_for_shot(self, m_shot_obj):
