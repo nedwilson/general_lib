@@ -37,10 +37,22 @@ class Version():
         self.g_delivered = False
         self.g_client_code = None
         self.g_playlists = None
+        self.g_path_to_matte_frames = None
+        self.g_matte_only = False
+        self.g_matte_ready = False
+        self.g_matte_delivered = False
     def set_status(self, m_status):
         self.g_status = m_status
     def set_delivered(self, m_delivered):
         self.g_delivered = m_delivered
+    def set_path_to_matte_frames(self, m_path_to_matte_frames):
+        self.g_path_to_matte_frames = m_path_to_matte_frames
+    def set_matte_only(self, m_matte_only):
+        self.g_matte_only = m_matte_only
+    def set_matte_ready(self, m_matte_ready):
+        self.g_matte_ready = m_matte_ready
+    def set_matte_delivered(self, m_matte_delivered):
+        self.g_matte_delivered = m_matte_delivered
     def set_client_code(self, m_client_code):
         self.g_client_code = m_client_code
     def set_playlists(self, m_playlists):
