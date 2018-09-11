@@ -64,6 +64,7 @@ g_delivery_res = None
 g_delivery_package = None
 g_csv_file = None
 g_ale_file = None
+g_matte = False
 
 # copy/paste from goosebumps2_delivery
 
@@ -193,7 +194,6 @@ def get_delivery_directory():
     if g_config.get('delivery', 'use_global_serial') in ['Yes', 'yes', 'YES', 'Y', 'y', 'True', 'TRUE', 'true']:
         b_use_global_serial = True
         
-    
     delivery_serial = int(g_config.get('delivery', 'serial_start'))
     date_format = g_config.get('delivery', 'date_format')
     today = datetime.date.today().strftime(date_format)
@@ -223,13 +223,15 @@ def get_delivery_directory():
 
 def vd_list_from_versions():
     global g_version_list, g_vdlist
-    global g_config, g_ih_show_code, g_vendor_code, g_vendor_name, g_batch_id, g_package_dir, g_version_status, g_version_status_2k, g_version_status_qt
+    global g_config, g_ih_show_code, g_vendor_code, g_vendor_name, g_batch_id, g_package_dir, g_version_status, g_version_status_2k, g_version_status_qt, g_matte
     version_separator = g_config.get(g_ih_show_code, 'version_separator')
     ftu = g_config.get('delivery', 'fields_to_uppercase').split(',')
     element_type_re = re.compile(g_config.get('delivery', 'element_type_regexp'))
     client_version_fmt = g_config.get('delivery', 'client_version_format')
     subform_date_format = g_config.get('delivery', 'subform_date_format')
+    
     client_filename_format = g_config.get('delivery', 'client_filename')
+    client_matte_filename_format = g_config.get('delivery', 'client_matte_filename')
     for dbversion in g_version_list:
         print "INFO: Attempting to build a delivery for version %s."%dbversion.g_version_code
         vd_tmp = VersionDelivery(dbversion)
@@ -242,6 +244,7 @@ def vd_list_from_versions():
         if et_match:
             vd_tmp.set_element_type(et_match.groupdict()['element_type'])
         vd_tmp.load_from_filesystem()
+        # print vd_tmp.version_data
         for vd_tmp_key in vd_tmp.version_data.keys():
             if vd_tmp_key in ftu:
                 tmp_str = vd_tmp.version_data[vd_tmp_key].upper()
@@ -252,7 +255,10 @@ def vd_list_from_versions():
         if vd_tmp.version_data['b_hires']:
             vd_tmp.set_subreason(g_config.get('delivery', 'hires_subreason'))
         else:
-            vd_tmp.set_subreason(g_config.get('delivery', 'lores_subreason'))
+            if g_matte:
+                vd_tmp.set_subreason(g_config.get('delivery', 'matte_subreason'))
+            else:
+                vd_tmp.set_subreason(g_config.get('delivery', 'lores_subreason'))
         b_hires = False
         if g_version_status == g_version_status_2k:
             b_hires = True
@@ -261,19 +267,30 @@ def vd_list_from_versions():
             vd_tmp.set_client_filetype(vd_tmp.version_data['hires_ext'])
             d_client_fname_fmt['fileext'] = vd_tmp.version_data['hires_ext'].lower()
         else:
-            vd_tmp.set_client_filetype(vd_tmp.version_data['lores_ext'])
-            d_client_fname_fmt['fileext'] = vd_tmp.version_data['lores_ext'].lower()
-        vd_tmp.set_client_filename(client_filename_format.format(**d_client_fname_fmt))
+            if g_matte:
+                vd_tmp.set_client_filetype(vd_tmp.version_data['matte_ext'])
+                d_client_fname_fmt['fileext'] = vd_tmp.version_data['matte_ext'].lower()
+            else:
+                vd_tmp.set_client_filetype(vd_tmp.version_data['lores_ext'])
+                d_client_fname_fmt['fileext'] = vd_tmp.version_data['lores_ext'].lower()
+        if g_matte:
+            vd_tmp.set_client_filename(client_matte_filename_format.format(**d_client_fname_fmt))
+        else:
+            vd_tmp.set_client_filename(client_filename_format.format(**d_client_fname_fmt))
         g_vdlist.append(vd_tmp)
     
 def load_versions_for_status(m_status):
     global g_version_list
     g_version_list = ihdb.fetch_versions_with_status(m_status)
 
+def load_versions_with_mattes():
+    global g_version_list
+    g_version_list = ihdb.fetch_versions_with_mattes()
+
 # build the submission form
 def build_subform():
     
-    global g_vdlist, g_version_status, g_version_status_2k, g_version_status_qt, g_delivery_folder, g_delivery_package, g_config, g_csv_file, g_ale_file
+    global g_vdlist, g_version_status, g_version_status_2k, g_version_status_qt, g_delivery_folder, g_delivery_package, g_config, g_csv_file, g_ale_file, g_matte
     
     delivery_path = os.path.join(g_delivery_folder, g_package_dir)
     
@@ -307,8 +324,7 @@ def build_subform():
             csv_col = kvpair.split('|')[0]
             rowdict[csv_col] = vd.version_data[d_subform_translate[csv_col]]
         
-        rows.append(rowdict)
-        if vd.version_data['b_matte'] and b_hires:
+        if vd.version_data['b_matte'] and g_matte:
             for csv_col in d_subform_translate.keys():
                 mattedict[csv_col] = vd.version_data[d_subform_translate[csv_col]]
                 if d_subform_translate[csv_col] == 'subreason':
@@ -316,6 +332,8 @@ def build_subform():
                 elif d_subform_translate[csv_col] == 'client_filetype':
                     mattedict[csv_col] = matte_delivery_type
             rows.append(mattedict)
+        else:
+            rows.append(rowdict)
 
         # ALE-specific stuff    
         ale_row_single['Tracks'] = 'V'
@@ -340,7 +358,7 @@ def build_subform():
         csvfile_dw.writerows(rows)
         csvfile_fh.close()        
         
-        if g_write_ale:
+        if g_write_ale and not g_matte:
             g_ale_file = os.path.join(delivery_path, "%s.ale"%g_package_dir)
             alefile_path = os.path.join(delivery_path, "%s.ale"%g_package_dir)
             alefile_fh = open(alefile_path, 'w')
@@ -353,7 +371,7 @@ def build_subform():
 # this one does the heavy lifting of actually copying files into the delivery folder
 # takes a VersionDelivery object as an argument
 def copy_files(vd):
-    global g_delivery_folder, g_package_dir, g_config, g_version_status, g_version_status_2k, g_version_status_qt, g_fileop, g_delivery_res
+    global g_delivery_folder, g_package_dir, g_config, g_version_status, g_version_status_2k, g_version_status_qt, g_fileop, g_delivery_res, g_matte
     cc_deliver = False
     if g_config.get('delivery', 'cc_deliver') in ['Yes', 'YES', 'yes', 'Y', 'y', 'True', 'TRUE', 'true']:
         cc_deliver = True
@@ -395,20 +413,6 @@ def copy_files(vd):
                 shutil.copyfile(hr_src_file, dest_file)
             elif g_fileop == 'hardlink' :
                 os.link(hr_src_file, dest_file)
-        if vd.version_data['b_matte']:
-            matte_src_glob = vd.version_data['matte']
-            d_file_format['matteext'] = os.path.splitext(matte_src_glob)[1].lstrip('.')
-            for matte_src_file in glob.glob(matte_src_glob):
-                tmp_frame = matte_src_file.split('.')[-2]
-                d_file_format['frame'] = tmp_frame
-                dest_file = os.path.join(output_path, matte_dest.format(**d_file_format))
-                if not os.path.exists(os.path.dirname(dest_file)):
-                    os.makedirs(os.path.dirname(dest_file))
-                print "INFO: %s %s -> %s"%(g_fileop, matte_src_file, dest_file)
-                if g_fileop == 'copy' : 
-                    shutil.copyfile(matte_src_file, dest_file)
-                elif g_fileop == 'hardlink' :
-                    os.link(matte_src_file, dest_file)
         if cc_deliver:
             dest_file = os.path.join(output_path, cc_dest.format(**d_file_format))
             if not os.path.exists(os.path.dirname(dest_file)):
@@ -421,55 +425,76 @@ def copy_files(vd):
             elif cc_filetype == 'cdl':
                 vd.version_data['ccdata'].write_cdl_file(dest_file)
     else:
-        # copy quicktimes
-        if vd.version_data['b_avidqt']:
-            avidqt_src = vd.version_data['avidqt']
-            avidqt_ext = os.path.splitext(avidqt_src)[1].lstrip('.')
-            d_file_format['avidqtext'] = avidqt_ext
-            dest_file = os.path.join(output_path, avidqt_dest.format(**d_file_format))
-            if not os.path.exists(os.path.dirname(dest_file)):
-                os.makedirs(os.path.dirname(dest_file))
-            print "INFO: %s %s -> %s"%(g_fileop, avidqt_src, dest_file)
-            if g_fileop == 'copy' : 
-                shutil.copyfile(avidqt_src, dest_file)
-            elif g_fileop == 'hardlink' :
-                os.link(avidqt_src, dest_file)
-        if vd.version_data['b_vfxqt']:
-            vfxqt_src = vd.version_data['vfxqt']
-            vfxqt_ext = os.path.splitext(vfxqt_src)[1].lstrip('.')
-            d_file_format['vfxqtext'] = vfxqt_ext
-            dest_file = os.path.join(output_path, vfxqt_dest.format(**d_file_format))
-            if not os.path.exists(os.path.dirname(dest_file)):
-                os.makedirs(os.path.dirname(dest_file))
-            print "INFO: %s %s -> %s"%(g_fileop, vfxqt_src, dest_file)
-            if g_fileop == 'copy' : 
-                shutil.copyfile(vfxqt_src, dest_file)
-            elif g_fileop == 'hardlink' :
-                os.link(vfxqt_src, dest_file)
-        if vd.version_data['b_exportqt']:
-            exportqt_src = vd.version_data['exportqt']
-            exportqt_ext = os.path.splitext(exportqt_src)[1].lstrip('.')
-            d_file_format['exportqtext'] = exportqt_ext
-            dest_file = os.path.join(output_path, exportqt_dest.format(**d_file_format))
-            if not os.path.exists(os.path.dirname(dest_file)):
-                os.makedirs(os.path.dirname(dest_file))
-            print "INFO: %s %s -> %s"%(g_fileop, exportqt_src, dest_file)
-            if g_fileop == 'copy' : 
-                shutil.copyfile(exportqt_src, dest_file)
-            elif g_fileop == 'hardlink' :
-                os.link(exportqt_src, dest_file)
+        if g_matte:
+            if vd.version_data['b_matte']:
+                matte_src_glob = vd.version_data['matte']
+                d_file_format['matteext'] = os.path.splitext(matte_src_glob)[1].lstrip('.')
+                for matte_src_file in glob.glob(matte_src_glob):
+                    tmp_frame = matte_src_file.split('.')[-2]
+                    d_file_format['frame'] = tmp_frame
+                    dest_file = os.path.join(output_path, matte_dest.format(**d_file_format))
+                    if not os.path.exists(os.path.dirname(dest_file)):
+                        os.makedirs(os.path.dirname(dest_file))
+                    print "INFO: %s %s -> %s"%(g_fileop, matte_src_file, dest_file)
+                    if g_fileop == 'copy' : 
+                        shutil.copyfile(matte_src_file, dest_file)
+                    elif g_fileop == 'hardlink' :
+                        os.link(matte_src_file, dest_file)
+        else:        
+            # copy quicktimes
+            if vd.version_data['b_avidqt']:
+                avidqt_src = vd.version_data['avidqt']
+                avidqt_ext = os.path.splitext(avidqt_src)[1].lstrip('.')
+                d_file_format['avidqtext'] = avidqt_ext
+                dest_file = os.path.join(output_path, avidqt_dest.format(**d_file_format))
+                if not os.path.exists(os.path.dirname(dest_file)):
+                    os.makedirs(os.path.dirname(dest_file))
+                print "INFO: %s %s -> %s"%(g_fileop, avidqt_src, dest_file)
+                if g_fileop == 'copy' : 
+                    shutil.copyfile(avidqt_src, dest_file)
+                elif g_fileop == 'hardlink' :
+                    os.link(avidqt_src, dest_file)
+            if vd.version_data['b_vfxqt']:
+                vfxqt_src = vd.version_data['vfxqt']
+                vfxqt_ext = os.path.splitext(vfxqt_src)[1].lstrip('.')
+                d_file_format['vfxqtext'] = vfxqt_ext
+                dest_file = os.path.join(output_path, vfxqt_dest.format(**d_file_format))
+                if not os.path.exists(os.path.dirname(dest_file)):
+                    os.makedirs(os.path.dirname(dest_file))
+                print "INFO: %s %s -> %s"%(g_fileop, vfxqt_src, dest_file)
+                if g_fileop == 'copy' : 
+                    shutil.copyfile(vfxqt_src, dest_file)
+                elif g_fileop == 'hardlink' :
+                    os.link(vfxqt_src, dest_file)
+            if vd.version_data['b_exportqt']:
+                exportqt_src = vd.version_data['exportqt']
+                exportqt_ext = os.path.splitext(exportqt_src)[1].lstrip('.')
+                d_file_format['exportqtext'] = exportqt_ext
+                dest_file = os.path.join(output_path, exportqt_dest.format(**d_file_format))
+                if not os.path.exists(os.path.dirname(dest_file)):
+                    os.makedirs(os.path.dirname(dest_file))
+                print "INFO: %s %s -> %s"%(g_fileop, exportqt_src, dest_file)
+                if g_fileop == 'copy' : 
+                    shutil.copyfile(exportqt_src, dest_file)
+                elif g_fileop == 'hardlink' :
+                    os.link(exportqt_src, dest_file)
 
 # updates status in database to delivered for each version
 
 def set_version_delivered():
 
-    global g_vdlist, ihdb, g_config
+    global g_vdlist, ihdb, g_config, g_matte
     dlvr_status = g_config.get('delivery', 'db_delivered_status')
     for vd in g_vdlist:
         tmp_dbversion = vd.version_data['dbversion']
         tmp_dbversion.set_status(dlvr_status)
-        print "INFO: Setting status on %s to %s."%(tmp_dbversion.g_version_code, tmp_dbversion.g_status)
-        ihdb.update_version_status(tmp_dbversion)
+        tmp_dbversion.set_delivered(True)
+        if g_matte:
+            print "INFO: Setting matte_delivered to True on %s."%tmp_dbversion.g_version_code
+            ihdb.update_version_matte_delivered(tmp_dbversion)
+        else:
+            print "INFO: Setting status on %s to %s."%(tmp_dbversion.g_version_code, tmp_dbversion.g_status)
+            ihdb.update_version_status(tmp_dbversion)
 
 # builds a playlist in the database for all current versions
 def build_playlist():
@@ -483,20 +508,30 @@ def build_playlist():
     ihdb.create_playlist(dbplaylist)
     print "INFO: Created playlist %s in database."%(g_package_dir)
         
-def execute_shell(m_interactive=False, m_2k=False, send_email=True):
-    global g_version_list, g_version_status, g_package_dir, g_vdlist, g_delivery_folder, g_delivery_package
+def execute_shell(m_interactive=False, m_2k=False, send_email=True, m_matte=False):
+    global g_version_list, g_version_status, g_package_dir, g_vdlist, g_delivery_folder, g_delivery_package, g_matte
 
     if m_2k:
         g_version_status = g_version_status_2k
     else:
         g_version_status = g_version_status_qt
+        
+    if m_matte:
+        g_matte = True
     
     if m_interactive and not m_2k:
-        sys.stdout.write("Proceed with low-resolution (Quicktime) delivery? \nAnswering no will switch to high-resolution (2k) delivery: (y|n) ")
-        input = sys.stdin.readline()
-        if 'n' in input or 'N' in input:
-            print "INFO: Switching to high-resolution delivery."
-            g_version_status = g_version_status_2k
+        if g_matte:
+            sys.stdout.write("Proceed with matte delivery? (y|n) ")
+            input = sys.stdin.readline()
+            if 'n' in input or 'N' in input:
+                print "Program will now exit."
+                return
+        else:        
+            sys.stdout.write("Proceed with low-resolution (Quicktime) delivery? \nAnswering no will switch to high-resolution (2k) delivery: (y|n) ")
+            input = sys.stdin.readline()
+            if 'n' in input or 'N' in input:
+                print "INFO: Switching to high-resolution delivery."
+                g_version_status = g_version_status_2k
 
     if m_interactive and m_2k:
         sys.stdout.write("Proceed with high-resolution (2K) delivery? (y|n) ")
@@ -504,8 +539,13 @@ def execute_shell(m_interactive=False, m_2k=False, send_email=True):
         if 'n' in input or 'N' in input:
             print "Program will now exit."
             return
+    
 
-    load_versions_for_status(g_version_status)
+    if g_matte:
+        load_versions_with_mattes()
+    else:
+        load_versions_for_status(g_version_status)
+        
     version_names = []
     for version in g_version_list:
         version_names.append(version.g_version_code)
@@ -623,11 +663,11 @@ class CheckBoxDelegate(QItemDelegate):
         model.setData(index, True if int(index.data()) == 0 else False, Qt.EditRole)
 
 class PublishDeliveryWindow(QMainWindow):
-    def __init__(self, m_2k=False, send_email=True):
+    def __init__(self, m_2k=False, send_email=True, m_matte=False):
         super(PublishDeliveryWindow, self).__init__()
         self.b_send_email = send_email
         self.setWindowTitle('Publish Delivery')
-        self.setMinimumSize(640,480)
+        self.setMinimumSize(1024,768)
     
         # central widget
         self.widget = QWidget()
@@ -643,10 +683,13 @@ class PublishDeliveryWindow(QMainWindow):
     
         # ComboBox to select Quicktime or High-resolution delivery
         self.delivery_cbox = QComboBox()
-        self.delivery_cbox.addItems(["Avid/VFX Quicktime", "High Resolution (DPX/EXR)"])
+        self.delivery_cbox.addItems(["Avid/VFX Quicktime", "High Resolution (DPX/EXR)", "DI Matte"])
         if m_2k:
             self.delivery_cbox.setCurrentIndex(1)
-    
+        else:
+            if m_matte:
+                self.delivery_cbox.setCurrentIndex(2)
+                
         self.delivery_cbox.currentIndexChanged.connect(self.delivery_type_change)
     
         self.layout_top.addWidget(self.delivery_cbox)
@@ -685,7 +728,7 @@ class PublishDeliveryWindow(QMainWindow):
         QCoreApplication.instance().quit()
 
     def process_delivery(self):
-        global g_package_dir, g_delivery_package, g_delivery_folder, g_vdlist
+        global g_package_dir, g_delivery_package, g_delivery_folder, g_vdlist, g_matte
         file_list = []
         self.hide()
         self.results_window.show()
@@ -708,7 +751,8 @@ class PublishDeliveryWindow(QMainWindow):
                 copy_files(tmp_vd)
             self.results_window.delivery_results.appendPlainText("INFO: Building Submission Form and ALE Files.")
             self.results_window.delivery_results.appendPlainText("INFO: CSV Location: %s.csv"%os.path.join(g_package_dir, g_delivery_package))
-            self.results_window.delivery_results.appendPlainText("INFO: ALE Location: %s.ale"%os.path.join(g_package_dir, g_delivery_package))
+            if not g_matte:
+                self.results_window.delivery_results.appendPlainText("INFO: ALE Location: %s.ale"%os.path.join(g_package_dir, g_delivery_package))
             QApplication.processEvents()
             build_subform()
             self.results_window.delivery_results.appendPlainText("INFO: Setting status of all versions in submission to Delivered.")
@@ -716,7 +760,8 @@ class PublishDeliveryWindow(QMainWindow):
             set_version_delivered()
             QApplication.processEvents()
             self.results_window.delivery_results.appendPlainText("INFO: Building playlist %s in the database."%g_package_dir)
-            build_playlist()
+            if not g_matte:
+                build_playlist()
             if self.b_send_email:
                 self.results_window.delivery_results.appendPlainText("INFO: Spawning a sync child processs to copy files to production. Email notification will be sent upon completion.")
                 QApplication.processEvents()
@@ -746,10 +791,14 @@ class PublishDeliveryWindow(QMainWindow):
         self.process_delivery()
 
     def table_data(self):
+        global g_matte
         version_table_ret = []
         global g_version_list
         for version in g_version_list:
-            version_table_ret.append([True, version.g_dbid, version.g_version_code, version.g_shot.g_shot_code, version.g_artist.g_full_name, version.g_path_to_frames])
+            if g_matte:
+                version_table_ret.append([True, version.g_dbid, version.g_version_code, version.g_shot.g_shot_code, version.g_artist.g_full_name, version.g_path_to_matte_frames])
+            else:
+                version_table_ret.append([True, version.g_dbid, version.g_version_code, version.g_shot.g_shot_code, version.g_artist.g_full_name, version.g_path_to_frames])
         return version_table_ret
         
     def table_header(self):
@@ -762,11 +811,16 @@ class PublishDeliveryWindow(QMainWindow):
         if idx == 0:
             print "INFO: Switching delivery type to Avid/VFX Quicktime."
             g_version_status = g_version_status_qt
+            load_versions_for_status(g_version_status)
         elif idx == 1:
             print "INFO: Switching delivery type to High Resolution (DPX/EXR)."
             g_version_status = g_version_status_2k
-
-        load_versions_for_status(g_version_status)
+            load_versions_for_status(g_version_status)
+        elif idx == 2:
+            print "INFO: Switching delivery type to DI Matte."
+            g_version_status = g_version_status_2k
+            load_versions_with_mattes()
+        
         self.table_model.updateModel(self.table_data())
         self.table_view.setModel(self.table_model)
         self.table_view.update()
@@ -838,20 +892,25 @@ class PublishDeliveryResultsWindow(QMainWindow):
     def window_close(self):
         QCoreApplication.instance().quit()
 
-def display_window(m_2k=False, send_email=True):
-    global g_version_list, g_version_status, g_vdlist
+def display_window(m_2k=False, send_email=True, m_matte=False):
+    global g_version_list, g_version_status, g_vdlist, g_matte
     if m_2k:
         g_version_status = g_version_status_2k
     else:
         g_version_status = g_version_status_qt
 
-    load_versions_for_status(g_version_status)
+    if m_matte:
+        g_matte = True
+        load_versions_with_mattes()
+    else:
+        g_matte = False
+        load_versions_for_status(g_version_status)
         
     # Create a Qt application
     app = QApplication(sys.argv)
  
     # Our main window will be a QListView
-    window = PublishDeliveryWindow(m_2k, send_email)
+    window = PublishDeliveryWindow(m_2k, send_email, g_matte)
     window.show()
     app.exec_()
     
