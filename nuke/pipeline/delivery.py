@@ -660,6 +660,8 @@ class CheckBoxDelegate(QItemDelegate):
         '''
         The user wanted to change the old state in the opposite.
         '''
+        # print "INFO: Inside setModelData() for CheckBoxDelegate"
+        # print "INFO: index.data() = %s"%index.data()
         model.setData(index, True if int(index.data()) == 0 else False, Qt.EditRole)
 
 class PublishDeliveryWindow(QMainWindow):
@@ -728,7 +730,7 @@ class PublishDeliveryWindow(QMainWindow):
         QCoreApplication.instance().quit()
 
     def process_delivery(self):
-        global g_package_dir, g_delivery_package, g_delivery_folder, g_vdlist, g_matte
+        global g_package_dir, g_delivery_package, g_delivery_folder, g_vdlist, g_matte, g_version_list
         file_list = []
         self.hide()
         self.results_window.show()
@@ -739,6 +741,8 @@ class PublishDeliveryWindow(QMainWindow):
             QApplication.processEvents()
             # get detailed version delivery list from list of database versions
             vd_list_from_versions()
+            for tmp_vd in g_vdlist:
+                print "INFO: Proceeding with delivery for client version %s."%tmp_vd.version_data['client_version']
             if len(g_vdlist) == 0:
                 raise RuntimeError("There are no versions selected to send to production! Please select at least one in order to proceed.")
             else:
@@ -781,12 +785,15 @@ class PublishDeliveryWindow(QMainWindow):
     def accept(self):
         global g_version_list
         tmp_version_list = []
-        # print "INFO: Proceeding with delivery publish."
+        print "INFO: Proceeding with delivery publish."
         for index, row in enumerate(self.table_model.mylist):
             if not row[0]:
                 print "INFO: User requested removal of %s from delivery."%row[2]
             else:
-                tmp_version_list.append(g_version_list[index])
+                for dbversion in g_version_list:
+                    if dbversion.g_version_code == row[2]:
+                        print "INFO: Version %s will be included in delivery."%row[2]
+                        tmp_version_list.append(dbversion)
         g_version_list = tmp_version_list
         self.process_delivery()
 
@@ -844,6 +851,7 @@ class DeliveryTableModel(QAbstractTableModel):
         return self.mylist[index.row()][index.column()]
     def setData(self, index, value, role=Qt.DisplayRole):
         if index.column() == 0:
+            print "INFO: Setting checkbox value to %s"%value
             self.mylist[index.row()][0] = value
             return value
         return value
