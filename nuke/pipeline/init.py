@@ -7,7 +7,22 @@ import sys
 import nukescripts.ViewerProcess
 import ConfigParser
 import shlex
+import logging
 
+if sys.platform == 'win32':
+    print 'Windows detected. Adding C:/Python27/Lib/site-packages to PYTHONPATH'
+    sys.path.append('C:/Python27/Lib/site-packages')
+else:
+    sys.path.append('/Volumes/raid_vol01/shows/SHARED/lib/python')
+    sys.path.append('/Volumes/raid_vol01/shows/goosebumps2/SHARED/shotgun/install/core/python')
+    sys.path.append('/Library/Python/2.7/site-packages')
+    sys.path.append('/usr/local/lib/python2.7/site-packages')
+    
+# if sys.platform == 'win32':
+#     nuke.pluginAddPath('Y:\\shows\\SHARED\\lib\\rvnuke')
+# else:
+#     nuke.pluginAddPath('/Volumes/raid_vol01/shows/SHARED/lib/rvnuke')
+    
 # makes a file path from a selected write node if it does not exist. bound to F8
 
 def make_dir_path():
@@ -42,65 +57,142 @@ def make_dir_path():
             print "ERROR: Filename: %s" % e.filename
             print "ERROR: Error String: %s" % e.strerror
 
+# Prints "Rendered frame N of example.mov." Useful when rendering Quicktimes in non-interactive mode.
+# Not in use currently. Will be adding code to the after each frame knob of the DNXHD Quicktime Write
+# node in the template.
+def print_render_frame():
+    file = os.path.basename(nuke.thisNode()['file'].evaluate())
+    frame = nuke.frame()
+    print "Rendered frame %s of %s."%(frame, file)
+
 
 # function attempts to determine show, sequence, and shot from the nuke script name.
 # does nothing if the path does not produce a match to the shot regular expression
 def init_shot_env():
-    if not nuke.env['gui']:
-        return
+    homedir = os.path.expanduser('~')
+    logfile = ""
+    if sys.platform == 'win32':
+        logfile = os.path.join(homedir, 'AppData', 'Local', 'IHPipeline', 'nuke_launch.log')
+    elif sys.platform == 'darwin':
+        logfile = os.path.join(homedir, 'Library', 'Logs', 'IHPipeline', 'nuke_launch.log')
+    elif sys.platform == 'linux2':
+        logfile = os.path.join(homedir, 'Logs', 'IHPipeline', 'nuke_launch.log')
+    if not os.path.exists(os.path.dirname(logfile)):
+        os.makedirs(os.path.dirname(logfile))
+    logFormatter = logging.Formatter("%(asctime)s:[%(threadName)s]:[%(levelname)s]:%(message)s")
+    log = logging.getLogger()
+    log.setLevel(logging.DEBUG)
+    fileHandler = logging.FileHandler(logfile)
+    fileHandler.setFormatter(logFormatter)
+    log.addHandler(fileHandler)
+    consoleHandler = logging.StreamHandler()
+    consoleHandler.setFormatter(logFormatter)
+    log.addHandler(consoleHandler)    
+
     script_path = os.path.normpath(nuke.root().name())
     script_path_lst = script_path.split(os.path.sep)
     path_idx = 0
     str_show_code = None
     str_shot = None
     str_seq = None
+    
     try:
         str_show_code = os.environ['IH_SHOW_CODE']
     except KeyError:
-        print "WARNING: IH_SHOW_CODE environment variable not defined. Proceeding without environment."
+        log.warning("IH_SHOW_CODE environment variable not defined. Proceeding without environment.")
         return
 
     str_show_root = None
     try:
         str_show_root = os.environ['IH_SHOW_ROOT']
     except KeyError:
-        print "WARNING: IH_SHOW_ROOT environment variable not defined. Proceeding without environment."
+        log.warning("IH_SHOW_ROOT environment variable not defined. Proceeding without environment.")
         return
     
     if not os.path.exists(str_show_root):
-        print "WARNING: Show root directory does not exist at %s."%str_show_root
+        log.warning("Show root directory does not exist at %s."%str_show_root)
         return
     
     str_show_cfg_path = None
     try:
         str_show_cfg_path = os.environ['IH_SHOW_CFG_PATH']
     except KeyError:
-        print "WARNING: IH_SHOW_CFG_PATH environment variable not defined. Proceeding without environment."
+        log.warning("IH_SHOW_CFG_PATH environment variable not defined. Proceeding without environment.")
         return
     
     if not os.path.exists(str_show_cfg_path):
-        print "WARNING: Show configuration file does not exist at %s."%str_show_cfg_path
+        log.warning("Show configuration file does not exist at %s."%str_show_cfg_path)
         return
         
     config = ConfigParser.ConfigParser()
     config.read(str_show_cfg_path)
     cfg_shot_dir = config.get(str_show_code, 'shot_dir')
-    cfg_shot_regexp = config.get(g_ih_show_code, 'shot_regexp')
-    cfg_seq_regexp = config.get(g_ih_show_code, 'sequence_regexp')
+    cfg_shot_regexp = config.get(str_show_code, 'shot_regexp')
+    cfg_seq_regexp = config.get(str_show_code, 'sequence_regexp')
     
+    # were we called from within shotgun?
+    b_shotgun = False
+    b_shotgun_res = False
+    engine = None
+    ctx = None
+    entity = None
+    for envvar in os.environ.keys():
+        log.debug('ENVIRONMENT - %s: %s'%(envvar, os.environ[envvar]))
+        
+    try:
+        toolkit_engine = os.environ['TANK_ENGINE']
+        b_shotgun = True
+        log.info('Setting b_shotgun to True, os.environ[\'TANK_ENGINE\'] exists.')
+    except:
+        pass
 
     if not script_path.startswith(str_show_root):
-    	print "WARNING: Unable to match show root directory with Nuke script path. Skipping init_shot_env()."
-    	return
-    
+        log.warning("Unable to match show root directory with Nuke script path.")
+        b_shotgun_res = True
+
     matchobject = re.search(cfg_shot_regexp, script_path)
     # make sure this file matches the shot pattern
     if not matchobject:
-        print "WARNING: This script name does not match the shot regular expression pattern for the show."
-        return
+        log.warning("This script name does not match the shot regular expression pattern for the show.")
+        b_shotgun_res = True
     else:
         str_shot = matchobject.group(0)
         str_seq = re.search(cfg_seq_regexp, str_shot).group(0)
+
+    if b_shotgun:        
+        log.info("Nuke executed from within Shotgun Desktop Integration.")
+        ctx = None
+        try:
+            import sgtk
+            ctx = sgtk.Context.deserialize(os.environ['TANK_CONTEXT'])
+        except KeyError:
+            log.error("Envionrment variable TANK_CONTEXT not found.")
+        except ImportError:
+            log.error("Unable to import sgtk.")
+        if ctx == None:
+            log.warning("Nuke executed within Shotgun, but the context associated with the current engine is None.")
+        else:
+            log.info("Shotgun Toolkit Context Object:")
+            log.info(ctx)
+            entity = ctx.entity
+            if entity == None:
+                log.warning("Nuke executed within Shotgun, but the entity associated with the current context is None.")
+            else:
+                if entity['type'] != 'Shot':
+                    log.warning("Nuke executed within Shotgun, but not in the context of a specific shot.")
+                else:
+                    if b_shotgun_res:
+                        log.info("Nuke executed within Shotgun, but no active script available. Setting sequence and shot from current engine context.")
+                        try:
+                            str_shot = entity['name']
+                            str_seq = re.search(cfg_seq_regexp, str_shot).group(0)
+                        except KeyError:
+                            log.error("For some reason, context provided by Shotgun to Nuke is %s. Unable to proceed."%ctx)
+                            str_shot = None
+    
+    if str_shot == None:
+        log.warning("Could not determine current shot from script name, or from database. Exiting init_shot_env().")
+        return
         
     str_seq_path = ""
     str_shot_path = ""
@@ -114,9 +206,9 @@ def init_shot_env():
     	
     str_show = str_show_code
     
-    print "INFO: Located show %s, path %s"%(str_show, str_show_path)
-    print "INFO: Located sequence %s, path %s"%(str_seq, str_seq_path)
-    print "INFO: Located shot %s, path %s"%(str_shot, str_shot_path)
+    log.info("Located show %s, path %s"%(str_show, str_show_path))
+    log.info("Located sequence %s, path %s"%(str_seq, str_seq_path))
+    log.info("Located shot %s, path %s"%(str_shot, str_shot_path))
 
     os.environ['SHOW'] = str_show
     os.environ['SHOW_PATH'] = str_show_path
@@ -214,11 +306,29 @@ nuke.load("formats.tcl")
 # attempt to populate environment variables
 
 if nuke.env['gui']:
+   init_shot_env()
    nuke.addOnScriptLoad(init_shot_env)
+else:
+    try:
+        tmp = os.environ['TANK_CONTEXT']
+        print "INFO: Nuke launched from Shotgun."
+        nuke.addOnScriptLoad(init_shot_env)
+    except KeyError:
+        pass
 
+   
+# print the environment to STDOUT
+# print "DEBUG: Inside init.py, printing current environment."
+# for env_key in sorted(os.environ.keys()):
+#    print "%s : %s"%(env_key, os.environ[env_key])
+
+# add support for RV
+if nuke.env['gui']:
+    import rvflipbook
+    
 if nuke.NUKE_VERSION_MAJOR > 8:
     nuke.knobDefault("Read.mov.mov64_decode_video_levels", "Video Range")
 
 # add callback to auto-create directory path for write nodes
 nuke.addBeforeRender(make_dir_path, nodeClass = 'Write')
-
+# nuke.addAfterFrameRender(print_render_frame, nodeClass = 'Write')
