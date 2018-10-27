@@ -10,8 +10,16 @@ from timecode import TimeCode
 import db_access as DB
 
 sgdb = DB.DBAccessGlobals.get_db_access()
+<<<<<<< Updated upstream
 # shot = sgdb.fetch_shot('TS000_000')
 shot = sgdb.fetch_shot('CB061_300')
+=======
+
+seq = sgdb.fetch_sequence('sa')
+print seq
+
+shot = sgdb.fetch_shot('sa3080')
+>>>>>>> Stashed changes
 print shot
 seq = sgdb.fetch_sequence('CB061')
 print seq
@@ -77,6 +85,37 @@ print plate
 # sgdb.create_plate(new_plate_obj)
 # print new_plate_obj
 
+<<<<<<< Updated upstream
+=======
+# tasks = sgdb.fetch_tasks_for_shot(shot)
+# task = None
+# for task_tmp in tasks:
+#     if "final" in task_tmp.g_task_name.lower():
+#         task = task_tmp
+# print task
+# 
+# artist = sgdb.fetch_artist("Ned Wilson")
+# print artist
+
+# print "Version Create"
+# new_version_obj = DB.Version('HC019_300_comp_v002', 
+#                              -1, 
+#                              'Removed white halo around A-pillar.', 
+#                              1001, 
+#                              1065, 
+#                              65, 
+#                              '/Volumes/raid_vol01/shows/spinel/HC019/HC019_300/pix/comp/HC019_300_comp_v002/HC019_300_comp_v002.%04d.exr', 
+#                              '/Volumes/raid_vol01/shows/spinel/HC019/HC019_300/pix/comp/HC019_300_comp_v002/HC019_300_comp_v002.mov',
+#                              shot,
+#                              artist,
+#                              task)
+# sgdb.create_version(new_version_obj)
+# print new_version_obj
+
+version = sgdb.fetch_version('sa3080_comp_v500001', shot)
+print version
+
+>>>>>>> Stashed changes
 
 
 

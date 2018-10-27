@@ -39,7 +39,7 @@ class DBAccessGlobals():
             DBAccessGlobals.g_shot_regexp = re.compile(DBAccessGlobals.g_config.get(DBAccessGlobals.g_ih_show_code, 'shot_regexp'))
             DBAccessGlobals.g_shot_dir_format = DBAccessGlobals.g_config.get(DBAccessGlobals.g_ih_show_code, 'shot_dir_format')
             DBAccessGlobals.g_seq_dir_format = DBAccessGlobals.g_config.get(DBAccessGlobals.g_ih_show_code, 'seq_dir_format')
-            DBAccessGlobals.g_thumb_template = DBAccessGlobals.g_config.get('thumb_template', sys.platform)
+            DBAccessGlobals.g_thumb_template = DBAccessGlobals.g_config.get('thumbnails', 'template_%s'%sys.platform)
         except ConfigParser.NoSectionError:
             e = sys.exc_info()
             print "ERROR: caught %s when attempting to populate globals, with message %s"%(e[0],e[1])
