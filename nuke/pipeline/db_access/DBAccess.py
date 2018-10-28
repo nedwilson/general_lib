@@ -127,4 +127,8 @@ class DBAccess(object):
     @abc.abstractmethod
     def upload_thumbnail(self, m_entity_type, m_entity, m_thumb_path):
         """Uploads a thumbnail to the database and attaches it to a specific entity"""
+
+    @abc.abstractmethod
+    def publish_for_shot(self, m_shot_obj, m_publish_path, m_clean_notes):
+        """Publishes an item for a shot"""
         
