@@ -1432,33 +1432,19 @@ def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame
             dbtask.g_status = g_config.get('delivery', 'version_status_qt')
             print "Thread: %s Setting task status for task %s, shot %s to %s"%(threading.current_thread().getName(), dbtask.g_task_name, d_db_thread_helper['shot'], dbtask.g_status)
             g_ihdb.update_task_status(dbtask)
-            progress_bar.setMessage("Publishing Nuke Script and Hi-Res Frames to Shotgun...")
-            # set shotgun authentication
-            auth_user = sgtk.get_authenticated_user()
-            if auth_user == None:
-                sa = sgtk.authentication.ShotgunAuthenticator()
-                user = sa.create_script_user(api_script=g_config.get('database', 'shotgun_script_name'), api_key=g_config.get('database', 'shotgun_api_key'), host=g_config.get('database', 'shotgun_server_path'))
-                sgtk.set_authenticated_user(user)
-        
-            # retrieve Shotgun Toolkit object
-            tk = sgtk.sgtk_from_entity('Shot', int(dbshot.g_dbid))
-            # grab context for published version
-            context = tk.context_from_entity('Shot', int(dbshot.g_dbid))
-            sg_publish_name = os.path.basename(thumb_file).split('.')[0].split('_v')[0]
-            sg_publish_ver = int(os.path.basename(thumb_file).split('.')[0].split('_v')[1])
-        
-            # publish hi-res
-            dbpublishhires = None
-            if os.path.splitext(d_db_thread_helper['hires_dest'])[1] == '.dpx':
-                dbpublishhires = sgtk.util.register_publish(tk, context, d_db_thread_helper['hires_dest'], sg_publish_name, sg_publish_ver, comment = '\n'.join(clean_notes), published_file_type = 'DPX Image Sequence')
-            elif os.path.splitext(d_db_thread_helper['hires_dest'])[1] == '.exr':
-                dbpublishhires = sgtk.util.register_publish(tk, context, d_db_thread_helper['hires_dest'], sg_publish_name, sg_publish_ver, comment = '\n'.join(clean_notes), published_file_type = 'EXR Image Sequence')
-            g_ihdb.upload_thumbnail('PublishedFile', dbshot, thumb_file_gen, altid = dbpublishhires['id'])
+            progress_bar.setMessage("Publishing Nuke Script and Hi-Res Frames to Database...")
+
+            dbpublish = None
+            # call the publish method from the DBAccess class...
+            dbpublish = g_ihdb.publish_for_shot(dbshot, d_db_thread_helper['hires_dest'], clean_notes)
+            if dbpublish:
+                g_ihdb.upload_thumbnail('PublishedFile', dbshot, thumb_file_gen, altid = dbpublish['id'])
         
             s_nuke_script_path = d_db_thread_helper['nuke_script_path']
             if not s_nuke_script_path == 'UNKNOWN':
-                dbpublishnk = sgtk.util.register_publish(tk, context, s_nuke_script_path, sg_publish_name, sg_publish_ver, comment = '\n'.join(clean_notes), published_file_type = 'Nuke Script')
-                g_ihdb.upload_thumbnail('PublishedFile', dbshot, thumb_file_gen, altid = dbpublishnk['id'])
+                dbpublishnk = g_ihdb.publish_for_shot(dbshot, s_nuke_script_path, clean_notes)
+                if dbpublishnk:
+                    g_ihdb.upload_thumbnail('PublishedFile', dbshot, thumb_file_gen, altid = dbpublishnk['id'])
         progress_bar.setProgress(100)
         progress_bar.setMessage("Done!")
 
