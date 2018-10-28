@@ -24,6 +24,8 @@ import DBAccess
 
 from timecode import TimeCode
 
+import sgtk
+
 # Shotgun-specific data source implementation
 
 class ShotgunDBAccess(DBAccess.DBAccess):
@@ -667,6 +669,30 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             print "ShotgunDbAccess: upload_thumbnail(): Unexpected Error caught!"
             print sys.exc_info()[0]
             print sys.exc_info()[1]
+ 
+     def publish_for_shot(self, m_shot_obj, m_publish_path, m_clean_notes):
+        dbpublishret = None
+        # set shotgun authentication
+        auth_user = sgtk.get_authenticated_user()
+        if auth_user == None:
+            sa = sgtk.authentication.ShotgunAuthenticator()
+            user = sa.create_script_user(api_script=DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'shotgun_script_name'), api_key=DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'shotgun_api_key'), host=DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'shotgun_server_path'))
+            sgtk.set_authenticated_user(user)
     
+        # retrieve Shotgun Toolkit object
+        tk = sgtk.sgtk_from_entity('Shot', int(m_shot_obj.g_dbid))
+        # grab context for published version
+        context = tk.context_from_entity('Shot', int(m_shot_obj.g_dbid))
+        sg_publish_name = os.path.basename(m_publish_path).split('.')[0].split('_v')[0]
+        sg_publish_ver = int(os.path.basename(m_publish_path).split('.')[0].split('_v')[1])
+
+        if os.path.splitext(m_publish_path)[1] == '.dpx':
+            dbpublishret = sgtk.util.register_publish(tk, context, m_publish_path, sg_publish_name, sg_publish_ver, comment = '\n'.join(m_clean_notes), published_file_type = 'DPX Image Sequence')
+        elif os.path.splitext(m_publish_path)[1] == '.exr':
+            dbpublishret = sgtk.util.register_publish(tk, context, m_publish_path, sg_publish_name, sg_publish_ver, comment = '\n'.join(m_clean_notes), published_file_type = 'EXR Image Sequence')
+        elif os.path.splitext(m_publish_path)[1] == '.nk':
+            dbpublishret = sgtk.util.register_publish(tk, context, m_publish_path, sg_publish_name, sg_publish_ver, comment = '\n'.join(m_clean_notes), published_file_type = 'Nuke Script')
+        return dbpublishret
+           
     
     
