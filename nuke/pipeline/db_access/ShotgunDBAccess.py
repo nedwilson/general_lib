@@ -669,8 +669,8 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             print "ShotgunDbAccess: upload_thumbnail(): Unexpected Error caught!"
             print sys.exc_info()[0]
             print sys.exc_info()[1]
- 
-     def publish_for_shot(self, m_shot_obj, m_publish_path, m_clean_notes):
+
+    def publish_for_shot(self, m_shot_obj, m_publish_path, m_clean_notes):
         dbpublishret = None
         # set shotgun authentication
         auth_user = sgtk.get_authenticated_user()
