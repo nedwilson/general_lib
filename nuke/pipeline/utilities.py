@@ -1342,13 +1342,15 @@ def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame
         dbtasks = g_ihdb.fetch_tasks_for_shot(dbshot)
         # If no tasks have been created for this shot, use a blank task
         dbtask = DB.Task("Blank Task", dbartist, 'wtg', dbshot, -1)
+        temp_task_name = g_config.get('delivery', 'temp_comp_task_name')
+        final_task_name = g_config.get('delivery', 'final_comp_task_name')
         tmptask = None
         finaltask = None
         for tmp_dbtask in dbtasks:
             print "DEBUG: Got task for shot: %s"%tmp_dbtask.g_task_name
-            if tmp_re.search(tmp_dbtask.g_task_name):
+            if tmp_dbtask.g_task_name = temp_task_name:
                 tmptask = tmp_dbtask
-            else:
+            elif tmp_dbtask.g_task_name = final_task_name:
                 finaltask = tmp_dbtask
 
         if b_istemp:
