@@ -1348,9 +1348,9 @@ def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame
         finaltask = None
         for tmp_dbtask in dbtasks:
             print "DEBUG: Got task for shot: %s"%tmp_dbtask.g_task_name
-            if tmp_dbtask.g_task_name = temp_task_name:
+            if tmp_dbtask.g_task_name == temp_task_name:
                 tmptask = tmp_dbtask
-            elif tmp_dbtask.g_task_name = final_task_name:
+            elif tmp_dbtask.g_task_name == final_task_name:
                 finaltask = tmp_dbtask
 
         if b_istemp:
