@@ -49,6 +49,17 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             print e[1]
             
     def fetch_shot(self, m_shot_code):
+    	# use the sequence matching regular expression here instead of hard coding m_shot_code[0:5]
+        matchobject = DBAccessGlobals.DBAccessGlobals.g_shot_regexp.search(m_shot_code)
+        shot = None
+        seq = None
+        # make sure this file matches the shot pattern
+        if not matchobject:
+            raise ValueError("Shot name provided %s does not match regular expression!"%m_shot_code)
+        else:
+            shot = matchobject.groupdict()['shot']
+            seq = matchobject.groupdict()['sequence']
+
         shot_ret = None
         filters = [
             ['project', 'is', {'type' : 'Project', 'id' : int(self.g_shotgun_project_id)}],
@@ -65,7 +76,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
                 local_seq = Sequence.Sequence(sg_shot['sg_sequence']['name'], DBAccessGlobals.DBAccessGlobals.get_path_for_sequence(sg_shot['sg_sequence']['name']), sg_shot['sg_sequence']['id'])
             except KeyError:
                 print "ERROR: %s - Sequence is NULL! %s"%(threading.current_thread().getName(), sg_shot)
-                local_seq = Sequence.Sequence(m_shot_code[0:5], DBAccessGlobals.DBAccessGlobals.get_path_for_sequence(m_shot_code[0:5]), -1)
+                local_seq = Sequence.Sequence(seq, DBAccessGlobals.DBAccessGlobals.get_path_for_sequence(seq), -1)
             local_shot_path = DBAccessGlobals.DBAccessGlobals.get_path_for_shot(sg_shot['code'])
             shot_ret = Shot.Shot(sg_shot['code'],
                             local_shot_path,
