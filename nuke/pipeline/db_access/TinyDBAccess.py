@@ -4,7 +4,6 @@ import sys
 import os
 import re
 import ConfigParser
-import shotgun_api3
 import pprint
 import threading
 import traceback
@@ -98,33 +97,36 @@ class TinyDBAccess(DBAccess.DBAccess):
 
         return shot_ret
 
+    # updated from Shotgun to TinyDB
     def fetch_plate(self, m_plate_name, m_shot_obj):
-        plate_ret = None
-        filters = [
-            ['project', 'is', {'type' : 'Project', 'id' : int(self.g_shotgun_project_id)}],
-            ['sg_shot_code', 'is', {'type' : 'Shot', 'id' : int(m_shot_obj.g_dbid)}],
-            ['code', 'is', m_plate_name]
-        ]
-        
-        fields = ['code', 'sg_start_frame', 'sg_end_frame', 'sg_duration', 'sg_filesystem_path', 'sg_start_timecode', 'sg_clip_name', 'sg_scene', 'sg_take', 'sg_end_timecode', 'sg_shot_code', 'id']
-        sg_plate = self.g_sg.find_one("CustomEntity01", filters, fields)
-        if not sg_plate:
-            return plate_ret
-        else:
-            useful_path = sg_plate['sg_filesystem_path']['url'].replace('file://', '')
-            plate_ret = Plate.Plate(sg_plate['code'],
-                              sg_plate['sg_start_frame'],
-                              sg_plate['sg_end_frame'],
-                              sg_plate['sg_duration'],
-                              useful_path,
-                              TimeCode(round(float(sg_plate['sg_start_timecode'])/41.6666666666666666)).time_code(),
-                              sg_plate['sg_clip_name'],
-                              sg_plate['sg_scene'],
-                              sg_plate['sg_take'],
-                              TimeCode(round(float(sg_plate['sg_end_timecode'])/41.6666666666666666)).time_code(),
+        plate_ret = Plate.Plate(m_plate_name,
+                              1001,
+                              1100,
+                              100,
+                              "",
+                              "00:00:41:17",
+                              "",
+                              "",
+                              "",
+                              "00:00:45:20",
                               m_shot_obj,
-                              sg_plate['id'])
-            return plate_ret
+                              -1)
+        plate_table = self.g_tinydb.table('Plate')
+        plate_query = tinydb.Query()
+        dbplate = plate_table.get(plate_query.code == m_plate_name)
+        if dbplate:
+            plate_ret.g_dbid = dbplate.doc_id
+            plate_ret.g_start_frame = dbplate.sg_start_frame
+            plate_ret.g_end_frame = dbplate.sg_end_frame
+            plate_ret.g_duration = dbplate.sg_duration
+            plate_ret.g_filesystem_path = dbplate.sg_filesystem_path
+            plate_ret.g_start_timecode = dbplate.sg_start_timecode
+            plate_ret.g_clip_name = dbplate.sg_clip_name
+            plate_ret.g_scene = dbplate.sg_scene
+            plate_ret.g_take = dbplate.sg_take
+            plate_ret.g_end_timecode = dbplate.sg_end_timecode
+            
+        return plate_ret
 
     # updated from Shotgun to TinyDB
     def fetch_sequence(self, m_seq_code):
@@ -139,46 +141,61 @@ class TinyDBAccess(DBAccess.DBAccess):
             
         return seq_ret
 
-    def fetch_artist(self, m_full_name):                
-        artist_ret = None
-        filters = [
-            ['name', 'is', m_full_name]
-        ]
-        fields = ['firstname', 'lastname', 'name', 'login', 'id']
-        sg_artist = self.g_sg.find_one("HumanUser", filters, fields)
-        if not sg_artist:
+    # updated from Shotgun to TinyDB
+    def fetch_artist(self, m_full_name):
+        artist_ret = Artist.Artist('Alan', 'Smithee', 'alan', -1)
+        name_list = m_full_name.split(' ')
+        if len(name_list) == 0:
             return artist_ret
+        artist_ret.g_first_name = name_list[0]
+        if len(name_list) > 1:
+            artist_ret.g_last_name = ' '.join(name_list[1:])
         else:
-            artist_ret = Artist.Artist(sg_artist['firstname'], sg_artist['lastname'], sg_artist['login'], sg_artist['id'])
-            return artist_ret
+            artist_ret.g_last_name = ''
 
-    def fetch_artist_from_username(self, m_username):                
-        artist_ret = None
-        filters = [
-            ['login', 'is', m_username]
-        ]
-        fields = ['firstname', 'lastname', 'name', 'login', 'id']
-        sg_artist = self.g_sg.find_one("HumanUser", filters, fields)
-        if not sg_artist:
-            return artist_ret
-        else:
-            artist_ret = Artist.Artist(sg_artist['firstname'], sg_artist['lastname'], sg_artist['login'], sg_artist['id'])
-            return artist_ret
+        artist_table = self.g_tinydb.table('Artist')
+        artist_query = tinydb.Query()
+        dbartist = artist_table.get((artist_query.firstname == artist_ret.g_first_name) & (artist_query.lastname == artist_ret.g_last_name))
 
-    def fetch_artist_from_id(self, m_artist_id):                
-        artist_ret = None
-        filters = [
-            ['id', 'is', m_artist_id]
-        ]
-        fields = ['firstname', 'lastname', 'name', 'login', 'id']
-        sg_artist = self.g_sg.find_one("HumanUser", filters, fields)
-        if not sg_artist:
+        if dbartist:
+            artist_ret.g_dbid = dbartist.doc_id
+            artist_ret.g_username = dbartist.login
+        return artist_ret
+
+    # updated from Shotgun to TinyDB
+    def fetch_artist_from_username(self, m_username):
+        artist_ret = Artist.Artist('Alan', 'Smithee', 'alan', -1)
+        if not m_username or m_username == '':
             return artist_ret
         else:
-            # print threading.current_thread().getName()
-            # print sg_artist
-            artist_ret = Artist.Artist(sg_artist['firstname'], sg_artist['lastname'], sg_artist['login'], sg_artist['id'])
+            artist_ret.g_username = m_username
+
+        artist_table = self.g_tinydb.table('Artist')
+        artist_query = tinydb.Query()
+        dbartist = artist_table.get(artist_query.login == m_username)
+
+        if dbartist:
+            artist_ret.g_dbid = dbartist.doc_id
+            artist_ret.g_first_name = dbartist.firstname
+            artist_ret.g_last_name = dbartist.lastname
+        return artist_ret
+
+    # updated from Shotgun to TinyDB
+    def fetch_artist_from_id(self, m_artist_id):
+        artist_ret = Artist.Artist('Alan', 'Smithee', 'alan', -1)
+        if not m_artist_id:
             return artist_ret
+        else:
+            artist_ret.g_dbid = m_artist_id
+
+        artist_table = self.g_tinydb.table('Artist')
+        dbartist = artist_table.get(doc_id=m_artist_id)
+
+        if dbartist:
+            artist_ret.g_username = dbartist.login
+            artist_ret.g_first_name = dbartist.firstname
+            artist_ret.g_last_name = dbartist.lastname
+        return artist_ret
 
     def fetch_tasks_for_shot(self, m_shot_obj):
         tasks_array = []
