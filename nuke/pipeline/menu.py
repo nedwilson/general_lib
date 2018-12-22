@@ -12,6 +12,11 @@ from utilities import *
 from vclf_multi_autotrack import *
 import scaleDagNodes
 
+import autosave_backup
+
+# add incremental autosave functionality
+nuke.addOnScriptSave(autosave_backup.backup_autosave)
+
 def display_delivery_window(b_2k, b_matte=False, b_combined=False):
     cmd = "/Volumes/raid_vol01/shows/SHARED/bin/publish_delivery.py --gui"
     if b_2k:
