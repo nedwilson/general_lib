@@ -201,7 +201,15 @@ def get_delivery_directory():
     b_use_global_serial = False
     if g_config.get('delivery', 'use_global_serial') in ['Yes', 'yes', 'YES', 'Y', 'y', 'True', 'TRUE', 'true']:
         b_use_global_serial = True
-        
+
+    b_use_alphabetical_serial = False
+    try:
+        if g_config.get('delivery', 'use_alphabetical_serial') in ['Yes', 'yes', 'YES', 'Y', 'y', 'True', 'TRUE', 'true']:
+            b_use_alphabetical_serial = True
+    # most likely use_alphabetical_serial isn't defined in this show's config file
+    except:
+        pass
+
     delivery_serial = int(g_config.get('delivery', 'serial_start'))
     date_format = g_config.get('delivery', 'date_format')
     today = datetime.date.today().strftime(date_format)
@@ -218,13 +226,26 @@ def get_delivery_directory():
             if folder_match:
                 folder_match_dict = folder_match.groupdict()
                 if b_use_global_serial:
-                    if int(folder_match_dict['serial']) > max_serial:
-                        max_serial = int(folder_match_dict['serial'])
-                else:
-                    if folder_match_dict['date'] == today:
+                    if b_use_alphabetical_serial:
+                        if ord(folder_match_dict['serial']) > ord(max_serial):
+                            max_serial = folder_match_dict['serial']
+                    else:
                         if int(folder_match_dict['serial']) > max_serial:
                             max_serial = int(folder_match_dict['serial'])
-    d_folder_format = {'vendor_code' : g_vendor_code, 'project_code' : g_project_code, 'date' : today, 'serial' : str(max_serial + 1), 'delivery_type' : delivery_type}
+                else:
+                    if folder_match_dict['date'] == today:
+                        if b_use_alphabetical_serial:
+                            if ord(folder_match_dict['serial']) > ord(max_serial):
+                                max_serial = folder_match_dict['serial']
+                        else:
+                            if int(folder_match_dict['serial']) > max_serial:
+                                max_serial = int(folder_match_dict['serial'])
+    new_serial = ''
+    if b_use_alphabetical_serial:
+        new_serial = chr(ord(max_serial) + 1)
+    else:
+        new_serial = str(max_serial + 1)
+    d_folder_format = {'vendor_code' : g_vendor_code, 'project_code' : g_project_code, 'date' : today, 'serial' : new_serial, 'delivery_type' : delivery_type}
     g_package_dir = g_config.get('delivery', 'package_directory').format(**d_folder_format)
     g_batch_id = g_config.get('delivery', 'batch_id').format(**d_folder_format)
     g_delivery_package = os.path.join(g_delivery_folder, g_package_dir)
