@@ -280,6 +280,7 @@ def init_shot_env():
                         nuke.removeFavoriteDir(fav_name)
                                 
     # add favorite directories in file browser
+    # TODO: pull these values out of the show config file
     nuke.addFavoriteDir("SHOW", '[getenv IH_SHOW_ROOT]')
     if os.path.exists(os.path.join(str_show_root, 'SHARED')):
         nuke.addFavoriteDir("SHOW/SHARED", os.path.join('[getenv IH_SHOW_ROOT]', 'SHARED'))
@@ -292,16 +293,16 @@ def init_shot_env():
         if os.path.exists(os.path.join(str_seq_path, 'ref')):
             nuke.addFavoriteDir("SEQ/ref", os.path.join('[getenv SEQ_PATH]', 'ref'))
     nuke.addFavoriteDir("SHOT", '[getenv SHOT_PATH]')
-    nuke.addFavoriteDir("SHOT/plates", os.path.join('[getenv SHOT_PATH]', 'pix', 'plates'))
-    nuke.addFavoriteDir("SHOT/comp", os.path.join('[getenv SHOT_PATH]', 'pix', 'comp'))
-    nuke.addFavoriteDir("SHOT/precomp", os.path.join('[getenv SHOT_PATH]', 'pix', 'precomp'))
+    nuke.addFavoriteDir("SHOT/plates", os.path.join('[getenv SHOT_PATH]', 'img', 'plates'))
+    nuke.addFavoriteDir("SHOT/comp", os.path.join('[getenv SHOT_PATH]', 'img', 'comp'))
+    nuke.addFavoriteDir("SHOT/precomp", os.path.join('[getenv SHOT_PATH]', 'img', 'precomp'))
     nuke.addFavoriteDir("SHOT/nuke", os.path.join('[getenv SHOT_PATH]', 'nuke'))
     nuke.addFavoriteDir("SHOT/ref", os.path.join('[getenv SHOT_PATH]', 'ref'))
     
 	
 
 # custom formats
-nuke.load("formats.tcl")
+# nuke.load("formats.tcl")
 
 # attempt to populate environment variables
 
