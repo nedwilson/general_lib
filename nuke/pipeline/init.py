@@ -8,6 +8,7 @@ import nukescripts.ViewerProcess
 import ConfigParser
 import shlex
 import logging
+import traceback
 
 if sys.platform == 'win32':
     print 'Windows detected. Adding C:/Python27/Lib/site-packages to PYTHONPATH'
@@ -315,6 +316,7 @@ def init_shot_env():
         nuke.addFavoriteDir("SHOT/ref", os.path.join(l_ref_dir))
     except Exception as e:
         log.warning("Caught exception %s when attempting to extract shot structure from the config file. Reverting to hard-coded shortcut paths."%type(e).__name__)
+        log.warning(traceback.format_exc())
         nuke.addFavoriteDir("SHOT/nuke", os.path.join('[getenv SHOT_PATH]', 'nuke'))
         nuke.addFavoriteDir("SHOT/plates", os.path.join('[getenv SHOT_PATH]', 'pix', 'plates'))
         nuke.addFavoriteDir("SHOT/precomp", os.path.join('[getenv SHOT_PATH]', 'pix', 'precomp'))
