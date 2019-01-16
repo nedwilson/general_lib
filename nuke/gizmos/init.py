@@ -46,20 +46,28 @@ import os
 import re
 
 import nuke
-
+import ConfigParser
+import sys
+import traceback
 
 # This can be used to set the root directory for the GizmoPathManager search
 # without the need to define any environment variables. Note that if this is
 # defined and points to an existing directory, other possible search locations
 # will be ignored, unless the `__main__` entry point code is modified below.
 
-CUSTOM_GIZMO_LOCATION = None
+CUSTOM_GIZMO_LOCATION = r'/Volumes/raid_vol01/shows/SHARED/lib/nuke/gizmos/luma'
 try:
-    show_root = os.environ['IH_SHOW_ROOT']
-    CUSTOM_GIZMO_LOCATION = os.path.join(os.path.dirname(show_root), "SHARED", "lib", "nuke", "gizmos", "luma")
-except:
-    CUSTOM_GIZMO_LOCATION = r'/Volumes/raid_vol01/shows/SHARED/lib/nuke/gizmos/luma'
+    str_show_cfg_path = os.environ['IH_SHOW_CFG_PATH']
+    str_show_code = os.environ['IH_SHOW_CODE']
+    config = ConfigParser.ConfigParser()
+    config.read(str_show_cfg_path)
+    CUSTOM_GIZMO_LOCATION = config.get(str_show_code, 'custom_gizmo_location_%s'%sys.platform)
+except BaseException as be:
+    print "ERROR: Exception caught while attempting to load Luma Pictures Nuke Gizmos!"
+    print traceback.format_exc()
 
+
+print "INFO: CUSTOM_GIZMO_LOCATION initialized to: %s"%CUSTOM_GIZMO_LOCATION
 
 class GizmoPathManager(object):
     '''
@@ -195,6 +203,7 @@ class GizmoPathManager(object):
 if __name__ == '__main__':
     CUSTOM_GIZMO_LOCATION = os.path.expandvars(CUSTOM_GIZMO_LOCATION.strip()).rstrip('/\\')
     if CUSTOM_GIZMO_LOCATION and os.path.isdir(CUSTOM_GIZMO_LOCATION):
+        print "INFO: Initializing GizmoPathManager with searchPaths = %s."%CUSTOM_GIZMO_LOCATION
         gizManager = GizmoPathManager(searchPaths=[CUSTOM_GIZMO_LOCATION])
     else:
         gizManager = GizmoPathManager()
