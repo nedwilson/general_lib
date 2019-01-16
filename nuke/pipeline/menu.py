@@ -72,6 +72,7 @@ n = m.addMenu("&Filter")
 n.addCommand("Arri Alexa Grain", "nuke.createNode(\'ScannedGrainIH\')")
 n.addCommand("Edge Scatter", "nuke.createNode(\'EdgeScatter\')")
 n.addCommand("Gradient Blur", "nuke.createNode(\"GradientBlur.nk\")")
+n.addCommand("HiPass", "nuke.createNode(\'HIPASS\')")
 n.addCommand("Weighted Blur", "nuke.createNode(\"WeightedBlur.nk\")")
 
 n = m.addMenu("&Time")

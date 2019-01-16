@@ -178,6 +178,7 @@ class GizmoPathManager(object):
             niceName = name
             if niceName.find('_v')==len(name) - 4:
                 niceName = name[:-4]
+            print "INFO: GizmoPathManager: Adding Gizmo %s to Nuke menu."%niceName
             toolbar.addCommand(niceName,"nuke.createNode('%s')" % name)
 
         for folder, data in crawlData.get('dirs', {}).iteritems():
