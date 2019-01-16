@@ -195,13 +195,16 @@ def init_shot_env():
     if str_shot == None:
         log.warning("Could not determine current shot from script name, or from database. Exiting init_shot_env().")
         return
-        
+
+    str_seq = re.search(cfg_seq_regexp, str_shot).group(0)
+    log.info('Sequence is %s'%str_seq)
+    log.info('Shot is %s'%str_shot)
     str_seq_path = ""
     str_shot_path = ""
     str_show_path = str_show_root
 
     str_shot_path = cfg_shot_dir.format(show_root=str_show_path, pathsep=os.path.sep, sequence=str_seq, shot=str_shot)
-    str_seq_path = cfg_shot_dir.format(show_root=str_show_path, pathsep=os.path.sep, sequence=str_seq)
+    str_seq_path = cfg_seq_dir.format(show_root=str_show_path, pathsep=os.path.sep, sequence=str_seq)
 
     str_show = str_show_code
     
