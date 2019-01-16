@@ -127,7 +127,8 @@ def init_shot_env():
         
     config = ConfigParser.ConfigParser()
     config.read(str_show_cfg_path)
-    cfg_shot_dir = config.get(str_show_code, 'shot_dir')
+    cfg_shot_dir = config.get(str_show_code, 'shot_dir_format')
+    cfg_seq_dir = config.get(str_show_code, 'seq_dir_format')
     cfg_shot_regexp = config.get(str_show_code, 'shot_regexp')
     cfg_seq_regexp = config.get(str_show_code, 'sequence_regexp')
     
@@ -199,12 +200,9 @@ def init_shot_env():
     str_shot_path = ""
     str_show_path = str_show_root
 
-    str_shot_path = cfg_shot_dir.replace('/', os.path.sep).replace("SHOW_ROOT", str_show_root).replace("SEQUENCE", str_seq).replace("SHOT", str_shot)
-    
-    # show uses subdirectories for sequence
-    if 'SEQUENCE' in cfg_shot_dir:
-        str_seq_path = cfg_shot_dir.replace('/', os.path.sep).replace("SHOW_ROOT", str_show_root).replace("SEQUENCE", str_seq).replace("SHOT", '')
-    	
+    str_shot_path = cfg_shot_dir.format(show_root=str_show_path, pathsep=os.path.sep, sequence=str_seq, shot=str_shot)
+    str_seq_path = cfg_shot_dir.format(show_root=str_show_path, pathsep=os.path.sep, sequence=str_seq)
+
     str_show = str_show_code
     
     log.info("Located show %s, path %s"%(str_show, str_show_path))
@@ -305,14 +303,14 @@ def init_shot_env():
         l_renderelem_dir = config.get('shot_structure', 'renderelem_dir').split('{pathsep}')
         l_mograph_dir = config.get('shot_structure', 'mograph_dir').split('{pathsep}')
         l_ref_dir = config.get('shot_structure', 'ref_dir').split('{pathsep}')
-        l_nukescript_dir.insert(0, str_shot_path)
-        l_plate_dir.insert(0, str_shot_path)
-        l_precomp_dir.insert(0, str_shot_path)
-        l_rendercomp_dir.insert(0, str_shot_path)
-        l_element_dir.insert(0, str_shot_path)
-        l_renderelem_dir.insert(0, str_shot_path)
-        l_mograph_dir.insert(0, str_shot_path)
-        l_ref_dir.insert(0, str_shot_path)
+        l_nukescript_dir.insert(0, r'[getenv SHOT_PATH]')
+        l_plate_dir.insert(0, r'[getenv SHOT_PATH]')
+        l_precomp_dir.insert(0, r'[getenv SHOT_PATH]')
+        l_rendercomp_dir.insert(0, r'[getenv SHOT_PATH]')
+        l_element_dir.insert(0, r'[getenv SHOT_PATH]')
+        l_renderelem_dir.insert(0, r'[getenv SHOT_PATH]')
+        l_mograph_dir.insert(0, r'[getenv SHOT_PATH]')
+        l_ref_dir.insert(0, r'[getenv SHOT_PATH]')
         log.info('Successfully retrieved Shot directory structure from config file.')
         log.info(l_nukescript_dir)
         log.info(os.path.sep.join(l_nukescript_dir))
