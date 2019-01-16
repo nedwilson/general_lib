@@ -297,6 +297,9 @@ def init_shot_env():
 
     # shot directories
     try:
+        log.info(config.get('shot_structure', 'nukescript_dir'))
+        log.info(config.get('shot_structure', 'nukescript_dir').split('{pathsep}'))
+        log.info(config.get('shot_structure', 'nukescript_dir').split('{pathsep}').insert(0, '[getenv SHOT_PATH]'))
         l_nukescript_dir = config.get('shot_structure', 'nukescript_dir').split('{pathsep}').insert(0, '[getenv SHOT_PATH]')
         l_plate_dir = config.get('shot_structure', 'plate_dir').split('{pathsep}').insert(0, '[getenv SHOT_PATH]')
         l_precomp_dir = config.get('shot_structure', 'precomp_dir').split('{pathsep}').insert(0, '[getenv SHOT_PATH]')
