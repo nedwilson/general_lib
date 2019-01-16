@@ -293,11 +293,35 @@ def init_shot_env():
         if os.path.exists(os.path.join(str_seq_path, 'ref')):
             nuke.addFavoriteDir("SEQ/ref", os.path.join('[getenv SEQ_PATH]', 'ref'))
     nuke.addFavoriteDir("SHOT", '[getenv SHOT_PATH]')
-    nuke.addFavoriteDir("SHOT/plates", os.path.join('[getenv SHOT_PATH]', 'img', 'plates'))
-    nuke.addFavoriteDir("SHOT/comp", os.path.join('[getenv SHOT_PATH]', 'img', 'comp'))
-    nuke.addFavoriteDir("SHOT/precomp", os.path.join('[getenv SHOT_PATH]', 'img', 'precomp'))
-    nuke.addFavoriteDir("SHOT/nuke", os.path.join('[getenv SHOT_PATH]', 'nuke'))
-    nuke.addFavoriteDir("SHOT/ref", os.path.join('[getenv SHOT_PATH]', 'ref'))
+
+    # shot directories
+    try:
+        l_nukescript_dir = config.get('shot_structure', 'nukescript_dir').split('{pathsep}').insert(0, '[getenv SHOT_PATH]')
+        l_plate_dir = config.get('shot_structure', 'plate_dir').split('{pathsep}').insert(0, '[getenv SHOT_PATH]')
+        l_precomp_dir = config.get('shot_structure', 'precomp_dir').split('{pathsep}').insert(0, '[getenv SHOT_PATH]')
+        l_rendercomp_dir = config.get('shot_structure', 'rendercomp_dir').split('{pathsep}').insert(0, '[getenv SHOT_PATH]')
+        l_element_dir = config.get('shot_structure', 'element_dir').split('{pathsep}').insert(0, '[getenv SHOT_PATH]')
+        l_renderelem_dir = config.get('shot_structure', 'renderelem_dir').split('{pathsep}').insert(0, '[getenv SHOT_PATH]')
+        l_mograph_dir = config.get('shot_structure', 'mograph_dir').split('{pathsep}').insert(0, '[getenv SHOT_PATH]')
+        l_ref_dir = config.get('shot_structure', 'ref_dir').split('{pathsep}').insert(0, '[getenv SHOT_PATH]')
+        nuke.addFavoriteDir("SHOT/nuke", l_nukescript_dir)
+        nuke.addFavoriteDir("SHOT/plates", l_plate_dir)
+        nuke.addFavoriteDir("SHOT/precomp", l_precomp_dir)
+        nuke.addFavoriteDir("SHOT/comp", l_rendercomp_dir)
+        nuke.addFavoriteDir("SHOT/elements", l_element_dir)
+        nuke.addFavoriteDir("SHOT/renders", l_renderelem_dir)
+        nuke.addFavoriteDir("SHOT/mograph", l_mograph_dir)
+        nuke.addFavoriteDir("SHOT/ref", l_ref_dir)
+    except Exception as e:
+        log.warning("Caught exception %s when attempting to extract shot structure from the config file. Reverting to hard-coded shortcut paths."%type(e).__name__)
+        nuke.addFavoriteDir("SHOT/nuke", os.path.join('[getenv SHOT_PATH]', 'nuke'))
+        nuke.addFavoriteDir("SHOT/plates", os.path.join('[getenv SHOT_PATH]', 'pix', 'plates'))
+        nuke.addFavoriteDir("SHOT/precomp", os.path.join('[getenv SHOT_PATH]', 'pix', 'precomp'))
+        nuke.addFavoriteDir("SHOT/comp", os.path.join('[getenv SHOT_PATH]', 'pix', 'comp'))
+        nuke.addFavoriteDir("SHOT/elements", os.path.join('[getenv SHOT_PATH]', 'pix', 'elements'))
+        nuke.addFavoriteDir("SHOT/renders", os.path.join('[getenv SHOT_PATH]', 'pix', 'renders'))
+        nuke.addFavoriteDir("SHOT/mograph", os.path.join('[getenv SHOT_PATH]', 'pix', 'mograph'))
+        nuke.addFavoriteDir("SHOT/ref", os.path.join('[getenv SHOT_PATH]', 'ref'))
     
 	
 
