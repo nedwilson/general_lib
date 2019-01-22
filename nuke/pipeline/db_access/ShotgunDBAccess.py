@@ -279,7 +279,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
                 'sg_path_to_movie' : m_version_obj.g_path_to_movie, 
                 'user' : {'type' : 'HumanUser', 'id' : int(m_version_obj.g_artist.g_dbid)}, 
                 'sg_status_list' : m_version_obj.g_status, 
-                'sg_delivered' : str(m_version_obj.g_delivered)
+                'sg_delivered' : m_version_obj.g_delivered
             }
             if m_version_obj.g_client_code : 
                 data['client_code'] = m_version_obj.g_client_code
