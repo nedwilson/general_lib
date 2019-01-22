@@ -129,6 +129,10 @@ class DBAccess(object):
         """Uploads a thumbnail to the database and attaches it to a specific entity"""
 
     @abc.abstractmethod
+    def upload_movie(self, m_entity_type, m_entity, m_movie_path):
+        """Uploads a movie file to the database and attaches it to a specific entity"""
+
+    @abc.abstractmethod
     def publish_for_shot(self, m_shot_obj, m_publish_path, m_clean_notes):
         """Publishes an item for a shot"""
         

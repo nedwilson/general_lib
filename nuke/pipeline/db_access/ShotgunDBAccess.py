@@ -179,6 +179,16 @@ class ShotgunDBAccess(DBAccess.DBAccess):
         fields = ['firstname', 'lastname', 'name', 'login', 'id']
         sg_artist = self.g_sg.find_one("HumanUser", filters, fields)
         if not sg_artist:
+            # try again, but this time, try using the sg_network_login field as a filter
+            filters = [
+                ['sg_network_login', 'is', m_username]
+            ]
+            try:
+                sg_artist = self.g_sg.find_one("HumanUser", filters, fields)
+                artist_ret = Artist.Artist(sg_artist['firstname'], sg_artist['lastname'], sg_artist['login'], sg_artist['id'])
+            except:
+                print "ERROR: Unable to retrieve user information from Shotgun using sg_network_login as a field name."
+                print traceback.format_exc()
             return artist_ret
         else:
             artist_ret = Artist.Artist(sg_artist['firstname'], sg_artist['lastname'], sg_artist['login'], sg_artist['id'])
@@ -677,7 +687,20 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             else:
                 raise ValueError('ShotgunDBAccess.upload_thumbnail(): entity type %s not supported.'%m_entity_type)
         except:
-            print "ShotgunDbAccess: upload_thumbnail(): Unexpected Error caught!"
+            print "ShotgunDBAccess: upload_thumbnail(): Unexpected Error caught!"
+            print sys.exc_info()[0]
+            print sys.exc_info()[1]
+
+    # uploads a Quicktime movie for a given database object type.
+    # currently, valid values are 'Version'
+    def upload_movie(self, m_entity_type, m_entity, m_movie_path, altid = -1):
+        try:
+            if m_entity_type == 'Version':
+                self.g_sg.upload('Version', m_entity.g_dbid, m_movie_path, 'sg_uploaded_movie')
+            else:
+                raise ValueError('ShotgunDBAccess.upload_movie(): entity type %s not supported.'%m_entity_type)
+        except:
+            print "ShotgunDBAccess: upload_movie(): Unexpected Error caught!"
             print sys.exc_info()[0]
             print sys.exc_info()[1]
 
