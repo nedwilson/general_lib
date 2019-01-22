@@ -838,7 +838,7 @@ def open_count_sheet():
 # it writes the thumbnail out to the data/thumbnails directory of the shot.
 # 
     
-def create_thumbnail(m_source_path):
+def create_thumbnail(m_source_path, b_applycc=True):
 
     if sys.platform == 'win32':
         print "Platform is windows, outputting debugging information."
@@ -856,16 +856,37 @@ def create_thumbnail(m_source_path):
     show_cfg_path = os.environ['IH_SHOW_CFG_PATH']
     show_root = os.environ['IH_SHOW_ROOT']
     show_code = os.environ['IH_SHOW_CODE']
-        
+
     shot_regexp = config.get(show_code, 'shot_regexp')
     shot_dir_format = config.get(show_code, 'shot_dir_format')
-    cdl_dir_format = config.get(show_code, 'cdl_dir_format')
     write_frame_format = config.get(show_code, 'write_frame_format')
-    cdl_ext = config.get(show_code, 'cdl_file_ext')
+    cdl_ext = config.get('color', 'shot_lut_file_ext')
+    shot_lut_path = config.get('color', 'shot_lut_file_path_%s'%sys.platform)
     thumb_template = config.get('thumbnails', 'template_%s'%sys.platform)
     thumb_dir = config.get('thumbnails', 'shot_thumb_dir')
     nuke_exe_path = config.get('nuke_exe_path', sys.platform)
-    
+
+    # color transform nodes
+    s_colorspace_node = None
+    s_cdl_node = None
+    s_lut_node = None
+
+    try:
+        tmp_colorspace_node = config.get('thumbnails', 'colorspace_node')
+        tmp_cdl_node = config.get('thumbnails', 'cdl_node')
+        tmp_lut_node = config.get('thumbnails', 'lut_node')
+        if len(tmp_colorspace_node) > 0:
+            s_colorspace_node = tmp_colorspace_node
+        if len(tmp_cdl_node) > 0:
+            s_cdl_node = tmp_cdl_node
+        if len(tmp_lut_node) > 0:
+            s_lut_node = tmp_lut_node
+    except ConfigParser.NoOptionError as e:
+        print("ERROR: Show config file %s is missing some options!"%show_cfg_path)
+        print(e.message)
+        nuke.message("ERROR: Show config file %s is missing options!\nError Message:\n%s"%(show_cfg_path, e.message))
+        raise e
+
     filename_re = re.compile(r'(?P<head>[\\\/A-Za-z \._\-0-9]+)\.(?P<frame>[0-9]+)\.(?P<ext>[a-zA-Z0-9]+)$')
     shot_re = re.compile(shot_regexp)
     
@@ -897,23 +918,22 @@ def create_thumbnail(m_source_path):
     
     # try to locate the CDL for the shot, if it exists
     
-    cdl_format_dict = { 'pathsep' : os.path.sep, 'show_root' : show_root, 'sequence' : seq, 'shot' : shot }
-    cdl_dir = ("%s{pathsep}%s"%(shot_dir_format, cdl_dir_format)).format(**cdl_format_dict)
+    lut_format_dict = { 'sequence' : seq, 'shot' : shot , 'ext' : cdl_ext }
 
     b_deliver_cdl = True
     
-    s_cdl_src = os.path.join(cdl_dir, "%s.%s"%(base, cdl_ext))
+    s_cdl_src = shot_lut_path.format(**lut_format_dict)
    
     # do we have a specific CDL for this image sequence?
     if not os.path.exists(s_cdl_src):
-        # try to find a generic one for the shot
-        s_cdl_src = os.path.join(cdl_dir, "%s.%s"%(shot, cdl_ext))
-        if not os.path.exists(s_cdl_src):
-            print "WARNING: Unable to locate CDL file at: %s"%s_cdl_src
-            b_deliver_cdl = False
+        b_deliver_cdl = False
 
     s_cccid = None
-    if b_deliver_cdl:    
+
+    if not b_applycc:
+        b_deliver_cdl = False
+
+    if b_deliver_cdl and cdl_ext in [ 'cc', 'ccc', 'cdl' ]:
         # open up the cdl and extract the cccid
         cdltext = open(s_cdl_src, 'r').read()
         cccid_re_str = r'<ColorCorrection id="([A-Za-z0-9-_]+)">'
@@ -975,16 +995,26 @@ def create_thumbnail(m_source_path):
     os.write(fh_nukepy, "nd_read.knob('last').setValue(%d)\n"%int(frame))
 
     if not b_deliver_cdl:
-        os.write(fh_nukepy, "nuke.toNode('OCIOCDLTransform1').knob('disable').setValue(True)\n")
+        if s_colorspace_node:
+            os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(True)\n"%s_colorspace_node)
+        if s_cdl_node:
+            os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(True)\n"%s_cdl_node)
+        if s_lut_node:
+            os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(True)\n"%s_lut_node)
     else:
-        os.write(fh_nukepy, "nuke.toNode('OCIOCDLTransform1').knob('file').setValue(\"%s\")\n"%s_cdl_src.replace('\\', '/'))
-        if s_cccid:
-            os.write(fh_nukepy, "nuke.toNode('OCIOCDLTransform1').knob('cccid').setValue(\"%s\")\n"%s_cccid)
-        os.write(fh_nukepy, "nuke.toNode('OCIOCDLTransform1').knob('read_from_file').setValue(False)\n")
-        os.write(fh_nukepy, "nuke.toNode('OCIOCDLTransform1').knob('slope').setValue([%s, %s, %s])\n"%(slope_r, slope_g, slope_b))
-        os.write(fh_nukepy, "nuke.toNode('OCIOCDLTransform1').knob('offset').setValue([%s, %s, %s])\n"%(offset_r, offset_g, offset_b))
-        os.write(fh_nukepy, "nuke.toNode('OCIOCDLTransform1').knob('power').setValue([%s, %s, %s])\n"%(power_r, power_g, power_b))
-        os.write(fh_nukepy, "nuke.toNode('OCIOCDLTransform1').knob('saturation').setValue(%s)\n"%saturation)
+        if cdl_ext in [ 'cc', 'ccc', 'cdl' ]:
+            if s_cdl_node:
+                os.write(fh_nukepy, "nuke.toNode('%s').knob('file').setValue(\"%s\")\n"%(s_cdl_node, s_cdl_src))
+                if s_cccid:
+                    os.write(fh_nukepy, "nuke.toNode('%s').knob('cccid').setValue(\"%s\")\n"%(s_cdl_node, s_cccid))
+                os.write(fh_nukepy, "nuke.toNode('%s').knob('read_from_file').setValue(False)\n"%s_cdl_node)
+                os.write(fh_nukepy, "nuke.toNode('%s').knob('slope').setValue([%s, %s, %s])\n"%(s_cdl_node, slope_r, slope_g, slope_b))
+                os.write(fh_nukepy, "nuke.toNode('%s').knob('offset').setValue([%s, %s, %s])\n"%(s_cdl_node, offset_r, offset_g, offset_b))
+                os.write(fh_nukepy, "nuke.toNode('%s').knob('power').setValue([%s, %s, %s])\n"%(s_cdl_node, power_r, power_g, power_b))
+                os.write(fh_nukepy, "nuke.toNode('%s').knob('saturation').setValue(%s)\n"%(s_cdl_node, saturation))
+        else:
+            if s_lut_node:
+                os.write(fh_nukepy, "nuke.toNode('%s').knob('file').setValue(\"%s\")\n" % (s_lut_node, s_cdl_src))
 
     os.write(fh_nukepy, "nuke.toNode('THUMB_WRITE').knob('file').setValue('%s')\n"%dest_path)            
     os.write(fh_nukepy, "print \"INFO: About to execute render...\"\n")
@@ -998,7 +1028,8 @@ def create_thumbnail(m_source_path):
     s_windows_addl = ""
     s_cmd = ""
     if sys.platform == 'win32':
-        s_windows_addl = ' --remap "/Volumes/raid_vol01,Y:"'
+        l_win32_netpath_transforms = config.get(show_code, 'win32_netpath_transforms').split('|')
+        s_windows_addl = ' --remap "%s,%s"'%(l_win32_netpath_transforms[0], l_win32_netpath_transforms[1])
         s_cmd = "\"%s\" -i -V 2%s -c 2G -t %s" % (nuke_exe_path, s_windows_addl, s_pyscript)
     else:
         s_cmd = "%s -i -V 2 -c 2G -t %s" % (nuke_exe_path, s_pyscript)
@@ -1067,7 +1098,7 @@ def create_thumbnail_from_movie(m_source_path, m_frame_number):
     ext = match_obj.group('ext')
     
     if not head or not frame or not ext:
-        raise ValueError("Movie path provided to create_thumbnail, %s, appears to be invalid."%m_source_path)
+        raise ValueError("Movie path provided to create_thumbnail_from_movie, %s, appears to be invalid."%m_source_path)
         
     match_obj = shot_re.search(head)
     
@@ -1075,7 +1106,7 @@ def create_thumbnail_from_movie(m_source_path, m_frame_number):
     seq = match_obj.group('sequence')
     
     if not shot or not seq:
-        raise ValueError("Movie path provided to create_thumbnail, %s, does not match the shot naming convention for show %s."%(m_source_path, show_code))
+        raise ValueError("Movie path provided to create_thumbnail_from_movie, %s, does not match the shot naming convention for show %s."%(m_source_path, show_code))
     
     base = os.path.basename(head)
     dest_path_format = "%s{pathsep}%s{pathsep}%s_movie_thumb.{framepad}.png"%(shot_dir_format, thumb_dir, base)
@@ -1184,18 +1215,18 @@ class DeliveryNotesPanel(nukescripts.panels.PythonPanel):
         self.cc_knob = nuke.Boolean_Knob('cc_', 'CC', True)
         self.cc_knob.setFlag(nuke.STARTLINE)
         self.addKnob(self.cc_knob)
-        self.avidqt_knob = nuke.Boolean_Knob('avidqt_', 'Avid QT', True)
+        self.avidqt_knob = nuke.Boolean_Knob('avidqt_', 'Avid Movie', True)
         self.addKnob(self.avidqt_knob)
-        self.vfxqt_knob = nuke.Boolean_Knob('vfxqt_', 'VFX MP4', True)
+        self.vfxqt_knob = nuke.Boolean_Knob('vfxqt_', 'VFX Movie', True)
         self.addKnob(self.vfxqt_knob)
-        self.burnin_knob = nuke.Boolean_Knob('burnin_', 'QT Burnin', True)
-        self.addKnob(self.burnin_knob)
         self.hires_knob = nuke.Boolean_Knob('hires_', 'Hi-Res', True)
-        self.hires_knob.setFlag(nuke.STARTLINE)
         self.addKnob(self.hires_knob)
+        self.burnin_knob = nuke.Boolean_Knob('burnin_', 'Movie Burnin', True)
+        self.burnin_knob.setFlag(nuke.STARTLINE)
+        self.addKnob(self.burnin_knob)
         self.matte_knob = nuke.Boolean_Knob('matte_', 'Matte', False)
         self.addKnob(self.matte_knob)
-        self.export_knob = nuke.Boolean_Knob('export_', 'Export', False)
+        self.export_knob = nuke.Boolean_Knob('export_', 'Export Movie', False)
         self.addKnob(self.export_knob)
 
 # render a delivery in the background
@@ -1203,6 +1234,7 @@ def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame
     global g_config, g_ihdb
     get_config()
     get_ihdb()
+    str_show_code = os.environ['IH_SHOW_CODE']
     
     progress_bar = nuke.ProgressTask("Building Delivery")
     progress_bar.setMessage("Initializing...")
@@ -1211,14 +1243,16 @@ def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame
     s_nuke_exe_path = g_config.get('nuke_exe_path', sys.platform)
     s_pyscript = ms_python_script
     s_windows_addl = ""
+    l_win32_netpath_transforms = g_config.get(str_show_code, 'win32_netpath_transforms').split('|')
     if sys.platform == 'win32':
-        s_windows_addl = ' --remap "/Volumes/raid_vol01,Y:"'
+        s_windows_addl = ' --remap "%s,%s"'%(l_win32_netpath_transforms[0], l_win32_netpath_transforms[1])
     
     s_cmd = "%s -i -V 2%s -c 2G -t %s" % (s_nuke_exe_path, s_windows_addl, s_pyscript)
     s_cmd_ar = [s_nuke_exe_path, '-i', '-V', '2']
     if sys.platform == 'win32':
         s_cmd_ar.append('--remap')
-        s_cmd_ar.append('"/Volumes/raid_vol01,Y:"')
+        l_win32_netpath_transforms = g_config.get(str_show_code, 'win32_netpath_transforms').split('|')
+        s_cmd_ar.append('"%s,%s"')%(l_win32_netpath_transforms[0], l_win32_netpath_transforms[1])
 
     s_cmd_ar.append('-c')
     s_cmd_ar.append('2G')
@@ -1333,7 +1367,7 @@ def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame
         tmp_version_name = os.path.basename(thumb_file).split('.')[0]
 
         # is this a temp version?
-        tmp_re = re.compile(r'[Tt][Ee][Mm][Pp]')
+        tmp_re = re.compile(g_config.get(str_show_code, 'temp_element_regexp'))
         b_istemp = False
         if tmp_re.search(tmp_version_name):
             b_istemp = True
@@ -1342,8 +1376,8 @@ def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame
         dbtasks = g_ihdb.fetch_tasks_for_shot(dbshot)
         # If no tasks have been created for this shot, use a blank task
         dbtask = DB.Task("Blank Task", dbartist, 'wtg', dbshot, -1)
-        temp_task_name = g_config.get('delivery', 'temp_comp_task_name')
-        final_task_name = g_config.get('delivery', 'final_comp_task_name')
+        temp_task_name = g_config.get('scan_ingest', 'temp_comp_task_name')
+        final_task_name = g_config.get('scan_ingest', 'final_comp_task_name')
         tmptask = None
         finaltask = None
         for tmp_dbtask in dbtasks:
@@ -1363,7 +1397,11 @@ def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame
                 dbtask = finaltask
 
         # create a thumbnail
-        thumb_file_gen = os_path_sub(create_thumbnail(thumb_file))
+        b_apply_cc = True
+        if b_istemp:
+            b_apply_cc = False
+
+        thumb_file_gen = os_path_sub(create_thumbnail(thumb_file, b_applycc=b_apply_cc))
         
         # does the version already exist?
         print "Thread: %s Fetching version for %s, for shot %s"%(threading.current_thread().getName(), tmp_version_name, d_db_thread_helper['shot'])
@@ -1430,6 +1468,20 @@ def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame
         
         if not d_db_thread_helper['matte_only']:    
             g_ihdb.upload_thumbnail('Version', dbversion, thumb_file_gen)
+            # should we upload a movie file for this version? Check in the config to see...
+            b_upload_movie = False
+            try:
+                upload_movie_from_config = g_config.get('delivery', 'upload_movie')
+                if upload_movie_from_config in ['Yes', 'YES', 'Y', 'y', 'True', 'TRUE', 'true']:
+                    b_upload_movie = True
+            except ConfigParser.NoOptionError as e:
+                print "ERROR: Config File is missing an option!"
+                print e.message
+                nuke.message("The show configuration file is missing an option! Specifically:\n%s"%e.message)
+            if b_upload_movie:
+                print "INFO: About to upload: %s"%d_db_thread_helper['export_dest']
+                g_ihdb.upload_movie('Version', dbversion, d_db_thread_helper['export_dest'])
+                print "INFO: Done."
             g_ihdb.upload_thumbnail('Shot', dbshot, thumb_file_gen)
             dbtask.g_status = g_config.get('delivery', 'version_status_qt')
             print "Thread: %s Setting task status for task %s, shot %s to %s"%(threading.current_thread().getName(), dbtask.g_task_name, d_db_thread_helper['shot'], dbtask.g_status)
@@ -1453,7 +1505,7 @@ def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame
     del progress_bar
 
 # send a shot for review
-def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b_method_vfxqt=True, b_method_burnin=True, b_method_hires=True, b_method_matte=False, b_method_artist=None):
+def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b_method_vfxqt=True, b_method_burnin=True, b_method_hires=True, b_method_export=False, b_method_matte=False, b_method_artist=None):
 
     global g_config, g_ihdb
     if g_config == None:
@@ -1623,6 +1675,7 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
             pnl.knobs()['burnin_'].setValue(b_method_burnin)
             pnl.knobs()['hires_'].setValue(b_method_hires)
             pnl.knobs()['matte_'].setValue(b_method_matte)
+            pnl.knobs()['export_'].setValue(b_method_export)
             
             if pnl.showModalDialog():
                 cvn_txt = pnl.knobs()['cvn_'].value()
@@ -1682,7 +1735,8 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
             
             if b_method_artist:
                 s_artist_login = b_method_artist
-                
+
+
             dbartist = g_ihdb.fetch_artist_from_username(s_artist_login)
             s_artist_name = dbartist.g_full_name
             
@@ -1732,6 +1786,7 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
             d_db_thread_helper['exr_src'] = s_exr_src
             d_db_thread_helper['mov_src'] = s_avidqt_dest
             d_db_thread_helper['mov_dest'] = s_avidqt_dest
+            d_db_thread_helper['export_dest'] = s_exportqt_dest
             d_db_thread_helper['dbartist'] = dbartist
             d_db_thread_helper['dbshot'] = dbshot
             d_db_thread_helper['nuke_script_path'] = s_nuke_script_path
@@ -1756,67 +1811,72 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
             s_cdl_dir = g_config.get(s_show, 'cdl_dir_format').format(pathsep = os.path.sep)
             s_cdl_src = os.path.join(s_shot_path, s_cdl_dir, "%s.%s"%(s_shot,s_cdl_file_ext))
             s_cdl_dest = os.path.join(s_delivery_folder, 'support_files', "%s.%s"%(s_shot,s_cdl_file_ext))
+            b_shot_lut_is_cdl = False
+            if s_cdl_file_ext.lower() in ['cc','ccc','cdl']:
+                b_shot_lut_is_cdl = True
 
             if not os.path.exists(s_cdl_src):
                 print "WARNING: Unable to locate %s file at: %s"%(s_cdl_file_ext.upper(), s_cdl_src)
                 b_deliver_cdl = False
                 cc_delivery = False
             else:
-                # open up the cdl and extract the cccid
-                cdltext = open(s_cdl_src, 'r').read()
-                cccid_re_str = r'<ColorCorrection id="([A-Za-z0-9-_]+)">'
-                cccid_re = re.compile(cccid_re_str)
-                cccid_match = cccid_re.search(cdltext)
-                if cccid_match:
-                    s_cccid = cccid_match.group(1)
-                else:
-                    s_cccid = s_shot
-            
-                # slope
-                slope_re_str = r'<Slope>([0-9.-]+) ([0-9.-]+) ([0-9.-]+)</Slope>'
-                slope_re = re.compile(slope_re_str)
-                slope_match = slope_re.search(cdltext)
-                if slope_match:
-                    slope_r = slope_match.group(1)
-                    slope_g = slope_match.group(2)
-                    slope_b = slope_match.group(3)
-                else:
-                    nuke.critical("Unable to locate <Slope> tag inside CDL.")
-                    return
+                # only do this if the CC file is a CDL,CC,CCC
+                if b_shot_lut_is_cdl:
+                    # open up the cdl and extract the cccid
+                    cdltext = open(s_cdl_src, 'r').read()
+                    cccid_re_str = r'<ColorCorrection id="([A-Za-z0-9-_]+)">'
+                    cccid_re = re.compile(cccid_re_str)
+                    cccid_match = cccid_re.search(cdltext)
+                    if cccid_match:
+                        s_cccid = cccid_match.group(1)
+                    else:
+                        s_cccid = s_shot
 
-                # offset
-                offset_re_str = r'<Offset>([0-9.-]+e?[0-9-]*) ([0-9.-]+e?[0-9-]*) ([0-9.-]+e?[0-9-]*)</Offset>'
-                offset_re = re.compile(offset_re_str)
-                offset_match = offset_re.search(cdltext)
-                if offset_match:
-                    offset_r = offset_match.group(1)
-                    offset_g = offset_match.group(2)
-                    offset_b = offset_match.group(3)
-                else:
-                    nuke.critical("Unable to locate <Offset> tag inside CDL.")
-                    return
-            
-                # power
-                power_re_str = r'<Power>([0-9.-]+) ([0-9.-]+) ([0-9.-]+)</Power>'
-                power_re = re.compile(power_re_str)
-                power_match = power_re.search(cdltext)
-                if power_match:
-                    power_r = power_match.group(1)
-                    power_g = power_match.group(2)
-                    power_b = power_match.group(3)
-                else:
-                    nuke.critical("Unable to locate <Power> tag inside CDL.")
-                    return
-            
-                # saturation
-                saturation_re_str = r'<Saturation>([0-9.-]+)</Saturation>'
-                saturation_re = re.compile(saturation_re_str)
-                saturation_match = saturation_re.search(cdltext)
-                if saturation_match:
-                    saturation = saturation_match.group(1)
-                else:
-                    nuke.critical("Unable to locate <Saturation> tag inside CDL.")
-                    return
+                    # slope
+                    slope_re_str = r'<Slope>([0-9.-]+) ([0-9.-]+) ([0-9.-]+)</Slope>'
+                    slope_re = re.compile(slope_re_str)
+                    slope_match = slope_re.search(cdltext)
+                    if slope_match:
+                        slope_r = slope_match.group(1)
+                        slope_g = slope_match.group(2)
+                        slope_b = slope_match.group(3)
+                    else:
+                        nuke.critical("Unable to locate <Slope> tag inside CDL.")
+                        return
+
+                    # offset
+                    offset_re_str = r'<Offset>([0-9.-]+e?[0-9-]*) ([0-9.-]+e?[0-9-]*) ([0-9.-]+e?[0-9-]*)</Offset>'
+                    offset_re = re.compile(offset_re_str)
+                    offset_match = offset_re.search(cdltext)
+                    if offset_match:
+                        offset_r = offset_match.group(1)
+                        offset_g = offset_match.group(2)
+                        offset_b = offset_match.group(3)
+                    else:
+                        nuke.critical("Unable to locate <Offset> tag inside CDL.")
+                        return
+
+                    # power
+                    power_re_str = r'<Power>([0-9.-]+) ([0-9.-]+) ([0-9.-]+)</Power>'
+                    power_re = re.compile(power_re_str)
+                    power_match = power_re.search(cdltext)
+                    if power_match:
+                        power_r = power_match.group(1)
+                        power_g = power_match.group(2)
+                        power_b = power_match.group(3)
+                    else:
+                        nuke.critical("Unable to locate <Power> tag inside CDL.")
+                        return
+
+                    # saturation
+                    saturation_re_str = r'<Saturation>([0-9.-]+)</Saturation>'
+                    saturation_re = re.compile(saturation_re_str)
+                    saturation_match = saturation_re.search(cdltext)
+                    if saturation_match:
+                        saturation = saturation_match.group(1)
+                    else:
+                        nuke.critical("Unable to locate <Saturation> tag inside CDL.")
+                        return
             
             # print out python script to a temp file
             fh_nukepy, s_nukepy = tempfile.mkstemp(suffix='.py')
@@ -1881,9 +1941,10 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
             os.write(fh_nukepy, "nd_root.knob('txt_ih_shot_path').setValue(\"%s\")\n"%s_shot_path)
             # encode with proper timecode
             for tcnode in g_config.get('delivery', 'timecode_nodes').split(','):
-                os.write(fh_nukepy, "nuke.toNode('%s').knob('startcode').setValue(\"%s\")\n"%(tcnode, first_frame_tc_str))
-                os.write(fh_nukepy, "nuke.toNode('%s').knob('frame').setValue(%s)\n"%(tcnode, start_frame))
-                os.write(fh_nukepy, "nuke.toNode('%s').knob('fps').setValue(%s)\n"%(tcnode, s_project_fps))
+                if len(tcnode) > 0:
+                    os.write(fh_nukepy, "nuke.toNode('%s').knob('startcode').setValue(\"%s\")\n"%(tcnode, first_frame_tc_str))
+                    os.write(fh_nukepy, "nuke.toNode('%s').knob('frame').setValue(%s)\n"%(tcnode, start_frame))
+                    os.write(fh_nukepy, "nuke.toNode('%s').knob('fps').setValue(%s)\n"%(tcnode, s_project_fps))
 
             if not burnin_delivery:
                 os.write(fh_nukepy, "nd_root.knob('noburnin').setValue(True)\n")
@@ -1893,24 +1954,36 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
 
             if not cc_delivery:
                 for cdlnode in g_config.get('delivery', 'cdl_nodes').split(','):
-                    os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(True)\n"%cdlnode)
+                    if len(cdlnode) > 0:
+                        os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(True)\n"%cdlnode)
                 for lutnode in g_config.get('delivery', 'lut_nodes').split(','):
-                    os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(True)\n"%lutnode)
+                    if len(lutnode) > 0:
+                        os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(True)\n"%lutnode)
+                for shotlutnode in g_config.get('delivery', 'shot_lut_nodes').split(','):
+                    if len(shotlutnode) > 0:
+                        os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(True)\n" % shotlutnode)
             else:
                 # hard code cdl values
                 if sys.platform == 'win32':
                     s_cdl_src = s_cdl_src.replace('\\', '/')
                     tmp_lut = os.environ['IH_SHOW_CFG_LUT'].replace('\\', '/')
                     for lutnode in g_config.get('delivery', 'lut_nodes').split(','):
-                        os.write(fh_nukepy, "nuke.toNode('%s').knob('vfield_file').setValue(\"%s\")\n"%(lutnode, tmp_lut))
-                for cdlnode in g_config.get('delivery', 'cdl_nodes').split(','):
-                    os.write(fh_nukepy, "nuke.toNode('%s').knob('file').setValue(\"%s\")\n"%(cdlnode, s_cdl_src))
-                    os.write(fh_nukepy, "nuke.toNode('%s').knob('cccid').setValue(\"%s\")\n"%(cdlnode, s_cccid))
-                    os.write(fh_nukepy, "nuke.toNode('%s').knob('read_from_file').setValue(False)\n"%(cdlnode))
-                    os.write(fh_nukepy, "nuke.toNode('%s').knob('slope').setValue([%s, %s, %s])\n"%(cdlnode, slope_r, slope_g, slope_b))
-                    os.write(fh_nukepy, "nuke.toNode('%s').knob('offset').setValue([%s, %s, %s])\n"%(cdlnode, offset_r, offset_g, offset_b))
-                    os.write(fh_nukepy, "nuke.toNode('%s').knob('power').setValue([%s, %s, %s])\n"%(cdlnode, power_r, power_g, power_b))
-                    os.write(fh_nukepy, "nuke.toNode('%s').knob('saturation').setValue(%s)\n"%(cdlnode, saturation))
+                        if len(lutnode) > 0:
+                            os.write(fh_nukepy, "nuke.toNode('%s').knob('vfield_file').setValue(\"%s\")\n"%(lutnode, tmp_lut))
+                if b_shot_lut_is_cdl:
+                    for cdlnode in g_config.get('delivery', 'cdl_nodes').split(','):
+                        if len(cdlnode) > 0:
+                            os.write(fh_nukepy, "nuke.toNode('%s').knob('file').setValue(\"%s\")\n"%(cdlnode, s_cdl_src))
+                            os.write(fh_nukepy, "nuke.toNode('%s').knob('cccid').setValue(\"%s\")\n"%(cdlnode, s_cccid))
+                            os.write(fh_nukepy, "nuke.toNode('%s').knob('read_from_file').setValue(False)\n"%(cdlnode))
+                            os.write(fh_nukepy, "nuke.toNode('%s').knob('slope').setValue([%s, %s, %s])\n"%(cdlnode, slope_r, slope_g, slope_b))
+                            os.write(fh_nukepy, "nuke.toNode('%s').knob('offset').setValue([%s, %s, %s])\n"%(cdlnode, offset_r, offset_g, offset_b))
+                            os.write(fh_nukepy, "nuke.toNode('%s').knob('power').setValue([%s, %s, %s])\n"%(cdlnode, power_r, power_g, power_b))
+                            os.write(fh_nukepy, "nuke.toNode('%s').knob('saturation').setValue(%s)\n"%(cdlnode, saturation))
+                else:
+                    for otherccnode in g_config.get('delivery', 'shot_lut_nodes'):
+                        if len(otherccnode) > 0:
+                            os.write(fh_nukepy, "nuke.toNode('%s').knob('file').setValue(\"%s\")\n" % (otherccnode, s_cdl_src))
             
             l_exec_nodes = []
             s_hires_node = None
