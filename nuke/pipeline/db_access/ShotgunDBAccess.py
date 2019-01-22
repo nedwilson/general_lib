@@ -603,7 +603,8 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             'entity' : {'type' : 'Shot', 'id' : int(m_version_obj.g_shot.g_dbid)},
             'user' : {'type' : 'HumanUser', 'id' : int(m_version_obj.g_artist.g_dbid)},
             'sg_task' : {'type' : 'Task', 'id' : int(m_version_obj.g_task.g_dbid)},
-            'sg_delivered' : str(m_version_obj.g_delivered)
+            # 'sg_delivered' : str(m_version_obj.g_delivered)
+            'sg_delivered': m_version_obj.g_delivered
         }
         if m_version_obj.g_client_code : 
             data['client_code'] = m_version_obj.g_client_code
