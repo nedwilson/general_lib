@@ -5,6 +5,7 @@ import os.path
 import nuke
 import nukescripts
 import subprocess
+import ConfigParser
 
 import autoBackdrop
 from SetEnabledByName import *
@@ -17,16 +18,16 @@ import autosave_backup
 # add incremental autosave functionality
 nuke.addOnScriptSave(autosave_backup.backup_autosave)
 
-def display_delivery_window(b_2k, b_matte=False, b_combined=False):
-    cmd = "/Volumes/raid_vol01/shows/SHARED/bin/publish_delivery.py --gui"
-    if b_2k:
-        cmd = "/Volumes/raid_vol01/shows/SHARED/bin/publish_delivery.py --gui --hires"
-    if b_matte:
-        cmd = "/Volumes/raid_vol01/shows/SHARED/bin/publish_delivery.py --gui --matte"
-    if b_combined:
-        cmd = "/Volumes/raid_vol01/shows/SHARED/bin/publish_delivery.py --gui --combined"
+def display_delivery_window(cmd):
     print "INFO: Forking process %s."%cmd
     subprocess.Popen(cmd, shell=True)
+
+def build_delivery_args(output_opts='cc,avidqt,vfxqt,burnin,hires,export'):
+    return_string='send_for_review(cc={cc}, b_method_avidqt={avidqt}, b_method_vfxqt={vfxqt}, b_method_burnin={burnin}, b_method_export={export}, b_method_hires={hires}, b_method_matte={matte})'
+    dict_delivery_opts = { 'cc' : 'False', 'avidqt' : 'False', 'vfxqt' : 'False', 'burnin' : 'False', 'export' : 'False', 'hires' : 'False', 'matte' : 'False' }
+    for output_opt in output_opts.split(','):
+        dict_delivery_opts[output_opt] = 'True'
+    return return_string.format(**dict_delivery_opts)
 
 import trackLinker
 
@@ -44,6 +45,20 @@ import version_control
 # except:
 #     pass
 
+# read options from config file
+
+config = ConfigParser.ConfigParser()
+show_config_path = None
+try:
+    show_config_path = os.environ['IH_SHOW_CFG_PATH']
+except KeyError:
+    raise RuntimeError("This system does not have an IH_SHOW_CFG_PATH environment variable defined.")
+
+if not os.path.exists(show_config_path):
+    raise RuntimeError("The IH_SHOW_CFG_PATH environment variable is defined on this system with value %s, but no file exists at that location." % show_config_path)
+
+config.read(show_config_path)
+
 menubar = nuke.menu("Nuke")
 m = menubar.addMenu("In-House")
 
@@ -52,15 +67,20 @@ n.addCommand("Lin2Log Wrapper", "nuke.createNode(\"LinLogWrapper.nk\")")
 
 n = m.addMenu("Delivery")
 o = n.addMenu("Render")
-o.addCommand("Standard Delivery", "send_for_review()")
-o.addCommand("Temp Delivery", "send_for_review(cc=False, b_method_hires=False)")
-o.addCommand("DI Matte Delivery", "send_for_review(cc=False, b_method_avidqt=False, b_method_vfxqt=False, b_method_burnin=False, b_method_hires=False, b_method_matte=True)")
+
+l_render_commands = config.get('delivery', 'render_delivery_options').split('|')
+for render_command in l_render_commands:
+    l_command = render_command.split(':')
+    s_command = build_delivery_args(l_command[1])
+    o.addCommand(l_command[0], s_command)
 
 p = n.addMenu("Publish")
-p.addCommand("Combined Package", "display_delivery_window(False, b_combined=True)")
-p.addCommand("Quicktime Package", "display_delivery_window(False)")
-p.addCommand("Hi-Res Package", "display_delivery_window(True)")
-p.addCommand("Matte Package", "display_delivery_window(False, b_matte=True)")
+l_publish_commands = config.get('delivery', 'publish_delivery_menu_commands').split(',')
+s_command_common = config.get('delivery', 'publish_delivery_cmd_%s'%sys.platform)
+for publish_command in l_publish_commands:
+    l_command = publish_command.split('|')
+    s_command = 'display_delivery_window("%s %s")'%(s_command_common, l_command[1])
+    p.addCommand(l_command[0], s_command)
 
 n = m.addMenu("&File")
 n.addCommand("Copy Read To Shot", "copyReadToShot()")
