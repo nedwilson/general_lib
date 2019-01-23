@@ -88,6 +88,17 @@ class RVFlipbook(flipbooking.FlipbookApplication):
         return os.environ["NUKE_TEMP_DIR"]
 
     def run(self, filename, frameRanges, views, options):
+        # replace '####' in frame range with '%04d'
+        pound_frameno_re = re.compile(r'\.(#+)\.')
+        pound_match = pound_frameno_re.search(filename)
+        if pound_match:
+            pound_str = pound_match.group(1)
+            pound_str_len = len(pound_str)
+            valid_format_str = '%d'
+            if pound_str_len > 1:
+                valid_format_str = '%%0%dd'%pound_str_len
+            filename = filename.replace(pound_str, valid_format_str)
+
         # handle frame ranges
         sequence_interval = str(frameRanges.minFrame())+"-"+str(frameRanges.maxFrame())
         for frame in xrange(frameRanges.minFrame(), frameRanges.maxFrame()):
