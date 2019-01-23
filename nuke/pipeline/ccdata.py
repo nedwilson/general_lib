@@ -14,7 +14,15 @@ import re
 
 class CCData():
 
-    def __init__(self, ccdatafile):
+    def __init__(self, ccdatafile=None):
+        # if ccdatafile provided is None, then, just initialize with default values and return.
+        if not ccdatafile:
+            self.ccid = 'default'
+            self.slope = [1.0,1.0,1.0]
+            self.offset = [0.0,0.0,0.0]
+            self.power = [1.0,1.0,1.0]
+            self.saturation = 1.0
+            return
         # check to be sure the file provided in the constructor exists
         if not os.path.exists(ccdatafile):
             raise ValueError("No CC data file exists on the filesystem at %s."%ccdatafile)
