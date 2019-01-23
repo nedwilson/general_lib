@@ -211,7 +211,10 @@ def get_delivery_directory():
     except:
         pass
 
-    delivery_serial = int(g_config.get('delivery', 'serial_start'))
+    if not b_use_alphabetical_serial:
+        delivery_serial = int(g_config.get('delivery', 'serial_start'))
+    else:
+        delivery_serial = g_config.get('delivery', 'serial_start')
     date_format = g_config.get('delivery', 'date_format')
     today = datetime.date.today().strftime(date_format)
     
