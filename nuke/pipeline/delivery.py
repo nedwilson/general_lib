@@ -66,6 +66,7 @@ g_csv_file = None
 g_ale_file = None
 g_matte = False
 g_combined = False
+g_playlistonly = False
 
 # copy/paste from goosebumps2_delivery
 
@@ -576,8 +577,8 @@ def build_playlist():
     ihdb.create_playlist(dbplaylist)
     print "INFO: Created playlist %s in database."%(g_package_dir)
         
-def execute_shell(m_interactive=False, m_2k=False, send_email=True, m_matte=False, m_combined=False):
-    global g_version_list, g_version_status, g_package_dir, g_vdlist, g_delivery_folder, g_delivery_package, g_matte, g_combined
+def execute_shell(m_interactive=False, m_2k=False, send_email=True, m_matte=False, m_combined=False, m_playlistonly=False):
+    global g_version_list, g_version_status, g_package_dir, g_vdlist, g_delivery_folder, g_delivery_package, g_matte, g_combined, g_playlistonly
 
     if m_2k:
         g_version_status = g_version_status_2k
@@ -589,7 +590,9 @@ def execute_shell(m_interactive=False, m_2k=False, send_email=True, m_matte=Fals
         
     if m_combined:
         g_combined = True
-    
+
+    g_playlistonly = m_playlistonly
+
     if m_interactive and not m_2k:
         if g_matte:
             sys.stdout.write("Proceed with matte delivery? (y|n) ")
@@ -665,26 +668,27 @@ def execute_shell(m_interactive=False, m_2k=False, send_email=True, m_matte=Fals
     file_list = []    
     try:
         get_delivery_directory()
-        print "INFO: Delivery package initialized to %s."%g_package_dir
+        print "INFO: Delivery package initialized to %s."%g_delivery_package
         vd_list_from_versions()
         if len(g_vdlist) == 0:
             raise RuntimeError("There are no versions available to send to production! Please select at least one in order to proceed.")
         else:
             print "INFO: Retrieved all information from database."
-        for tmp_vd in g_vdlist:
-            print "INFO: Copying files for version %s to package."%tmp_vd.version_data['dbversion'].g_version_code
-            file_list.append(tmp_vd.version_data['client_filename'])
-            copy_files(tmp_vd)
-        
-        print "INFO: Building Submission Form and ALE Files."
-        print "INFO: CSV Location: %s.csv"%os.path.join(g_package_dir, g_delivery_package)
-        print "INFO: ALE Location: %s.ale"%os.path.join(g_package_dir, g_delivery_package)
-        build_subform()
-        print "INFO: Setting status of all versions in submission to Delivered."
-        set_version_delivered()
+        if not g_playlistonly:
+            for tmp_vd in g_vdlist:
+                print "INFO: Copying files for version %s to package."%tmp_vd.version_data['dbversion'].g_version_code
+                file_list.append(tmp_vd.version_data['client_filename'])
+                copy_files(tmp_vd)
+
+            print "INFO: Building Submission Form and ALE Files."
+            print "INFO: CSV Location: %s.csv"%os.path.join(g_package_dir, g_delivery_package)
+            print "INFO: ALE Location: %s.ale"%os.path.join(g_package_dir, g_delivery_package)
+            build_subform()
+            print "INFO: Setting status of all versions in submission to Delivered."
+            set_version_delivered()
         print "INFO: Building a playlist in the database."
         build_playlist()
-        if send_email:
+        if send_email and not g_playlistonly:
             print "INFO: Spawning a sync child processs to copy files to production. Email notification will be sent upon completion."
             handle_sync_and_send_email(os.path.join(g_delivery_folder, g_package_dir), file_list)
         print "INFO: Delivery is complete."
@@ -743,9 +747,10 @@ class CheckBoxDelegate(QItemDelegate):
         model.setData(index, True if int(index.data()) == 0 else False, Qt.EditRole)
 
 class PublishDeliveryWindow(QMainWindow):
-    def __init__(self, m_2k=False, send_email=True, m_matte=False, m_combined=False):
+    def __init__(self, m_2k=False, send_email=True, m_matte=False, m_combined=False, m_playlistonly=False):
         super(PublishDeliveryWindow, self).__init__()
         self.b_send_email = send_email
+        self.b_playlistonly = m_playlistonly
         self.setWindowTitle('Publish Delivery')
         self.setMinimumSize(1024,768)
     
@@ -817,7 +822,7 @@ class PublishDeliveryWindow(QMainWindow):
         try:
             # first, get delivery directory
             get_delivery_directory()
-            self.results_window.delivery_results.appendPlainText("INFO: Delivery package initialized to %s."%g_package_dir)
+            self.results_window.delivery_results.appendPlainText("INFO: Delivery package initialized to %s."%g_delivery_package)
             QApplication.processEvents()
             # get detailed version delivery list from list of database versions
             vd_list_from_versions()
@@ -828,25 +833,27 @@ class PublishDeliveryWindow(QMainWindow):
             else:
                 self.results_window.delivery_results.appendPlainText("INFO: Retrieved all information from database.")
             QApplication.processEvents()
-            for tmp_vd in g_vdlist:
-                self.results_window.delivery_results.appendPlainText("INFO: Copying files for version %s to package."%tmp_vd.version_data['dbversion'].g_version_code)
-                file_list.append(tmp_vd.version_data['client_filename'])
+            if not self.b_playlistonly:
+                for tmp_vd in g_vdlist:
+                    self.results_window.delivery_results.appendPlainText("INFO: Copying files for version %s to package."%tmp_vd.version_data['dbversion'].g_version_code)
+                    file_list.append(tmp_vd.version_data['client_filename'])
+                    QApplication.processEvents()
+                    copy_files(tmp_vd)
+                self.results_window.delivery_results.appendPlainText("INFO: Building Submission Form and ALE Files.")
+                self.results_window.delivery_results.appendPlainText("INFO: CSV Location: %s.csv"%os.path.join(g_package_dir, g_delivery_package))
+                if not g_matte:
+                    self.results_window.delivery_results.appendPlainText("INFO: ALE Location: %s.ale"%os.path.join(g_package_dir, g_delivery_package))
                 QApplication.processEvents()
-                copy_files(tmp_vd)
-            self.results_window.delivery_results.appendPlainText("INFO: Building Submission Form and ALE Files.")
-            self.results_window.delivery_results.appendPlainText("INFO: CSV Location: %s.csv"%os.path.join(g_package_dir, g_delivery_package))
-            if not g_matte:
-                self.results_window.delivery_results.appendPlainText("INFO: ALE Location: %s.ale"%os.path.join(g_package_dir, g_delivery_package))
-            QApplication.processEvents()
-            build_subform()
-            self.results_window.delivery_results.appendPlainText("INFO: Setting status of all versions in submission to Delivered.")
-            QApplication.processEvents()
-            set_version_delivered()
-            QApplication.processEvents()
+                build_subform()
+                self.results_window.delivery_results.appendPlainText("INFO: Setting status of all versions in submission to Delivered.")
+                QApplication.processEvents()
+                set_version_delivered()
+                QApplication.processEvents()
             self.results_window.delivery_results.appendPlainText("INFO: Building playlist %s in the database."%g_package_dir)
             if not g_matte:
                 build_playlist()
-            if self.b_send_email:
+            QApplication.processEvents()
+            if self.b_send_email and not self.b_playlistonly:
                 self.results_window.delivery_results.appendPlainText("INFO: Spawning a sync child processs to copy files to production. Email notification will be sent upon completion.")
                 QApplication.processEvents()
                 handle_sync_and_send_email(os.path.join(g_delivery_folder, g_package_dir), file_list)
@@ -985,9 +992,10 @@ class PublishDeliveryResultsWindow(QMainWindow):
     def window_close(self):
         QCoreApplication.instance().quit()
 
-def display_window(m_2k=False, send_email=True, m_matte=False, m_combined=False):
-    global g_version_list, g_version_status, g_vdlist, g_matte, g_combined
+def display_window(m_2k=False, send_email=True, m_matte=False, m_combined=False, m_playlistonly=False):
+    global g_version_list, g_version_status, g_vdlist, g_matte, g_combined, g_playlistonly
     g_combined = m_combined
+    g_playlistonly = m_playlistonly
     if m_2k:
         g_version_status = g_version_status_2k
     else:
@@ -1004,7 +1012,7 @@ def display_window(m_2k=False, send_email=True, m_matte=False, m_combined=False)
     app = QApplication(sys.argv)
  
     # Our main window will be a QListView
-    window = PublishDeliveryWindow(m_2k, send_email, g_matte, g_combined)
+    window = PublishDeliveryWindow(m_2k, send_email, g_matte, g_combined, g_playlistonly)
     window.show()
     app.exec_()
     
