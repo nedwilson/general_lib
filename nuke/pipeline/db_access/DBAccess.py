@@ -135,4 +135,9 @@ class DBAccess(object):
     @abc.abstractmethod
     def publish_for_shot(self, m_shot_obj, m_publish_path, m_clean_notes):
         """Publishes an item for a shot"""
+
+    @abc.abstractmethod
+    def publish_for_ingest(self, m_shot_obj, m_publish_path, m_publish_name, m_publish_notes, m_publish_file_type):
+        """Publishes a plate from the scan ingestion process, which will either be a Quicktime Movie or an Image Sequence.
+           Supported publish file types are currently Movie or Plate."""
         

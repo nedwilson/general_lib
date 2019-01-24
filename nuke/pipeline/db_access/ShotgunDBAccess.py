@@ -733,6 +733,35 @@ class ShotgunDBAccess(DBAccess.DBAccess):
         elif os.path.splitext(m_publish_path)[1] == '.nk':
             dbpublishret = sgtk.util.register_publish(tk, context, m_publish_path, sg_publish_name, sg_publish_ver, comment = '\n'.join(m_clean_notes), published_file_type = 'Nuke Script')
         return dbpublishret
-           
-    
+
+    def publish_for_ingest(self, m_shot_obj, m_publish_path, m_publish_name, m_publish_notes, m_publish_file_type):
+        dbpublishret = None
+        # first, is there a PublishedFile record that already exists?
+        filters = [
+            ['project', 'is', {'type' : 'Project', 'id' : int(self.g_shotgun_project_id)}],
+            ['code', 'is', m_publish_name]
+        ]
+        fields = ['id', 'code', 'link', 'name', 'path', 'published_file_type', 'sg_format_name', 'version', 'version_number']
+        dbpublishret = self.g_sg.find_one('PublishedFile', filters, fields)
+        # If we've found one, just return. No sense in entering the data twice.
+        if dbpublishret:
+            return dbpublishret
+
+        # set shotgun authentication
+        auth_user = sgtk.get_authenticated_user()
+        if auth_user == None:
+            sa = sgtk.authentication.ShotgunAuthenticator()
+            user = sa.create_script_user(
+                api_script=DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'shotgun_script_name'),
+                api_key=DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'shotgun_api_key'),
+                host=DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'shotgun_server_path'))
+            sgtk.set_authenticated_user(user)
+
+        # retrieve Shotgun Toolkit object
+        tk = sgtk.sgtk_from_entity('Shot', int(m_shot_obj.g_dbid))
+        # grab context for published version
+        context = tk.context_from_entity('Shot', int(m_shot_obj.g_dbid))
+        dbpublishret = sgtk.util.register_publish(tk, context, m_publish_path, m_publish_name, 1, comment = m_publish_notes, published_file_type = m_publish_file_type)
+        return dbpublishret
+
     
