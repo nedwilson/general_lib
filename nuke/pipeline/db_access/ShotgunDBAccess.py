@@ -711,7 +711,26 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             print sys.exc_info()[1]
 
     def publish_for_shot(self, m_shot_obj, m_publish_path, m_clean_notes):
+        cfg_version_separator = DBAccessGlobals.DBAccessGlobals.g_config.get(DBAccessGlobals.DBAccessGlobals.g_ih_show_code, 'version_separator')
+        sg_publish_name = os.path.basename(m_publish_path).split('.')[0].split(cfg_version_separator)[0]
+        sg_publish_ver = int(os.path.basename(m_publish_path).split('.')[0].split(cfg_version_separator)[1])
         dbpublishret = None
+        # first, is there a PublishedFile record that already exists?
+        filters = [
+            ['project', 'is', {'type' : 'Project', 'id' : int(self.g_shotgun_project_id)}],
+            ['code', 'is', sg_publish_name],
+            ['version_number', 'is', sg_publish_ver]
+        ]
+        fields = ['id', 'code', 'link', 'name', 'path', 'published_file_type', 'sg_format_name', 'version', 'version_number', 'description']
+        dbpublishret = self.g_sg.find_one('PublishedFile', filters, fields)
+        # If we've found one, just return. No sense in entering the data twice.
+        if dbpublishret:
+            # make sure the notes are up-to-date
+            data = { 'description' : m_clean_notes }
+            self.g_sg.update('PublishedFile', dbpublishret['id'], data)
+            dbpublishret['description'] = m_clean_notes
+            return dbpublishret
+
         # set shotgun authentication
         auth_user = sgtk.get_authenticated_user()
         if auth_user == None:
@@ -723,8 +742,6 @@ class ShotgunDBAccess(DBAccess.DBAccess):
         tk = sgtk.sgtk_from_entity('Shot', int(m_shot_obj.g_dbid))
         # grab context for published version
         context = tk.context_from_entity('Shot', int(m_shot_obj.g_dbid))
-        sg_publish_name = os.path.basename(m_publish_path).split('.')[0].split('_v')[0]
-        sg_publish_ver = int(os.path.basename(m_publish_path).split('.')[0].split('_v')[1])
 
         if os.path.splitext(m_publish_path)[1] == '.dpx':
             dbpublishret = sgtk.util.register_publish(tk, context, m_publish_path, sg_publish_name, sg_publish_ver, comment = '\n'.join(m_clean_notes), published_file_type = 'DPX Image Sequence')
@@ -741,10 +758,14 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             ['project', 'is', {'type' : 'Project', 'id' : int(self.g_shotgun_project_id)}],
             ['code', 'is', m_publish_name]
         ]
-        fields = ['id', 'code', 'link', 'name', 'path', 'published_file_type', 'sg_format_name', 'version', 'version_number']
+        fields = ['id', 'code', 'link', 'name', 'path', 'published_file_type', 'sg_format_name', 'version', 'version_number', 'description']
         dbpublishret = self.g_sg.find_one('PublishedFile', filters, fields)
         # If we've found one, just return. No sense in entering the data twice.
         if dbpublishret:
+            # make sure the notes are up-to-date
+            data = { 'description' : m_clean_notes }
+            self.g_sg.update('PublishedFile', dbpublishret['id'], data)
+            dbpublishret['description'] = m_clean_notes
             return dbpublishret
 
         # set shotgun authentication
