@@ -126,7 +126,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             ['code', 'is', m_plate_name]
         ]
         
-        fields = ['code', 'sg_start_frame', 'sg_end_frame', 'sg_duration', 'sg_filesystem_path', 'sg_start_timecode', 'sg_clip_name', self.g_shotgun_plates_scene_field, 'sg_take', 'sg_end_timecode', 'sg_shot_code', 'id']
+        fields = ['code', 'sg_start_frame', 'sg_end_frame', 'sg_duration', 'sg_filesystem_path', 'sg_start_timecode', 'sg_clip_name', self.g_shotgun_plates_scene_field, self.g_shotgun_plates_slate_field, 'sg_take', 'sg_end_timecode', 'sg_shot_code', 'id']
         sg_plate = self.g_sg.find_one(self.g_shotgun_plates_entity, filters, fields)
         if not sg_plate:
             return plate_ret
@@ -144,6 +144,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
                               TimeCode(round(float(sg_plate['sg_end_timecode'])/41.6666666666666666)).time_code(),
                               m_shot_obj,
                               sg_plate['id'])
+            plate_ret.set_slate(sg_plate[self.g_shotgun_plates_slate_field])
             return plate_ret
 
     def fetch_sequence(self, m_seq_code):                
@@ -649,6 +650,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             'sg_start_timecode' : m_plate_obj.g_start_timecode, 
             'sg_clip_name' : m_plate_obj.g_clip_name, 
             self.g_shotgun_plates_scene_field : m_plate_obj.g_scene,
+            self.g_shotgun_plates_slate_field : m_plate_obj.g_slate,
             'sg_take' : m_plate_obj.g_take, 
             'sg_end_timecode' : m_plate_obj.g_end_timecode
         }

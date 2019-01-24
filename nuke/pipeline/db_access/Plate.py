@@ -37,6 +37,10 @@ class Plate():
         self.g_end_timecode = m_end_timecode
         self.g_shot = m_shot
         self.g_dbid = m_dbid
+        self.g_slate = ''
+
+    def set_slate(self, m_slate):
+        self.g_slate = m_slate
 
     def __str__(self):
         ret_str = """class Plate():
@@ -48,6 +52,7 @@ class Plate():
     Start TimeCode: {g_start_timecode}
     Clip Name: {g_clip_name}
     Scene: {g_scene}
+    Slate: {g_slate}
     Take: {g_take}
     End TimeCode: {g_end_timecode}
     Shot: {g_shot}
@@ -60,6 +65,7 @@ class Plate():
            g_start_timecode = self.g_start_timecode,
            g_clip_name = self.g_clip_name,
            g_scene = self.g_scene,
+           g_slate = self.g_slate,
            g_take = self.g_take,
            g_end_timecode = self.g_end_timecode,
            g_shot = self.g_shot.g_shot_code,
