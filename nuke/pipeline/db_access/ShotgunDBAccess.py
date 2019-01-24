@@ -38,6 +38,8 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             self.g_shotgun_project_id = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'shotgun_project_id')
             self.g_shotgun_task_template = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'shotgun_task_template')
             self.g_shotgun_plates_entity = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'plates_entity')
+            self.g_shotgun_plates_scene_field = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'plates_scene_field')
+            self.g_shotgun_plates_slate_field = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'plates_slate_field')
             self.g_sg = shotgun_api3.Shotgun(self.g_shotgun_server_path, self.g_shotgun_script_name, self.g_shotgun_api_key)
         except ConfigParser.NoSectionError:
             e = sys.exc_info()
@@ -124,7 +126,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             ['code', 'is', m_plate_name]
         ]
         
-        fields = ['code', 'sg_start_frame', 'sg_end_frame', 'sg_duration', 'sg_filesystem_path', 'sg_start_timecode', 'sg_clip_name', 'sg_scene', 'sg_take', 'sg_end_timecode', 'sg_shot_code', 'id']
+        fields = ['code', 'sg_start_frame', 'sg_end_frame', 'sg_duration', 'sg_filesystem_path', 'sg_start_timecode', 'sg_clip_name', self.g_shotgun_plates_scene_field, 'sg_take', 'sg_end_timecode', 'sg_shot_code', 'id']
         sg_plate = self.g_sg.find_one(self.g_shotgun_plates_entity, filters, fields)
         if not sg_plate:
             return plate_ret
@@ -137,7 +139,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
                               useful_path,
                               TimeCode(round(float(sg_plate['sg_start_timecode'])/41.6666666666666666)).time_code(),
                               sg_plate['sg_clip_name'],
-                              sg_plate['sg_scene'],
+                              sg_plate[self.g_shotgun_plates_scene_field],
                               sg_plate['sg_take'],
                               TimeCode(round(float(sg_plate['sg_end_timecode'])/41.6666666666666666)).time_code(),
                               m_shot_obj,
@@ -646,7 +648,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             }, 
             'sg_start_timecode' : m_plate_obj.g_start_timecode, 
             'sg_clip_name' : m_plate_obj.g_clip_name, 
-            'sg_scene' : m_plate_obj.g_scene, 
+            self.g_shotgun_plates_scene_field : m_plate_obj.g_scene,
             'sg_take' : m_plate_obj.g_take, 
             'sg_end_timecode' : m_plate_obj.g_end_timecode
         }
