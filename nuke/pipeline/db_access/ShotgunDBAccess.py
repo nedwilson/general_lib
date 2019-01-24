@@ -37,6 +37,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             self.g_shotgun_server_path = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'shotgun_server_path')
             self.g_shotgun_project_id = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'shotgun_project_id')
             self.g_shotgun_task_template = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'shotgun_task_template')
+            self.g_shotgun_plates_entity = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'plates_entity')
             self.g_sg = shotgun_api3.Shotgun(self.g_shotgun_server_path, self.g_shotgun_script_name, self.g_shotgun_api_key)
         except ConfigParser.NoSectionError:
             e = sys.exc_info()
@@ -124,7 +125,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
         ]
         
         fields = ['code', 'sg_start_frame', 'sg_end_frame', 'sg_duration', 'sg_filesystem_path', 'sg_start_timecode', 'sg_clip_name', 'sg_scene', 'sg_take', 'sg_end_timecode', 'sg_shot_code', 'id']
-        sg_plate = self.g_sg.find_one("CustomEntity01", filters, fields)
+        sg_plate = self.g_sg.find_one(self.g_shotgun_plates_entity, filters, fields)
         if not sg_plate:
             return plate_ret
         else:
@@ -649,7 +650,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             'sg_take' : m_plate_obj.g_take, 
             'sg_end_timecode' : m_plate_obj.g_end_timecode
         }
-        sg_plate = self.g_sg.create('CustomEntity01', data)
+        sg_plate = self.g_sg.create(self.g_shotgun_plates_entity, data)
         m_plate_obj.g_dbid = sg_plate['id']
 
     def create_note(self, m_note_obj):
@@ -678,7 +679,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
     def upload_thumbnail(self, m_entity_type, m_entity, m_thumb_path, altid = -1):
         try:
             if m_entity_type == 'Plate':
-                self.g_sg.upload_thumbnail('CustomEntity01', m_entity.g_dbid, m_thumb_path)
+                self.g_sg.upload_thumbnail(self.g_shotgun_plates_entity, m_entity.g_dbid, m_thumb_path)
             elif m_entity_type == 'Shot':
                 self.g_sg.upload_thumbnail('Shot', m_entity.g_dbid, m_thumb_path)
             elif m_entity_type == 'Version':
