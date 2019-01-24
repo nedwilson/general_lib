@@ -38,7 +38,7 @@ def get_config():
 # it writes the thumbnail out to the data/thumbnails directory of the shot.
 # 
     
-def create_thumbnail(m_source_path):
+def create_thumbnail(m_source_path, b_applycc=True):
 
     if sys.platform == 'win32':
         print "Platform is windows, outputting debugging information."
@@ -62,10 +62,31 @@ def create_thumbnail(m_source_path):
     cdl_dir_format = config.get(show_code, 'cdl_dir_format')
     write_frame_format = config.get(show_code, 'write_frame_format')
     cdl_ext = config.get(show_code, 'cdl_file_ext')
+    shot_lut_path = config.get('color', 'shot_lut_file_path_%s'%sys.platform)
     thumb_template = config.get('thumbnails', 'template_%s'%sys.platform)
     thumb_dir = config.get('thumbnails', 'shot_thumb_dir')
     nuke_exe_path = config.get('nuke_exe_path', sys.platform)
-    
+
+    # color transform nodes
+    s_colorspace_node = None
+    s_cdl_node = None
+    s_lut_node = None
+
+    try:
+        tmp_colorspace_node = config.get('thumbnails', 'colorspace_node')
+        tmp_cdl_node = config.get('thumbnails', 'cdl_node')
+        tmp_lut_node = config.get('thumbnails', 'lut_node')
+        if len(tmp_colorspace_node) > 0:
+            s_colorspace_node = tmp_colorspace_node
+        if len(tmp_cdl_node) > 0:
+            s_cdl_node = tmp_cdl_node
+        if len(tmp_lut_node) > 0:
+            s_lut_node = tmp_lut_node
+    except ConfigParser.NoOptionError as e:
+        print("ERROR: Show config file %s is missing some options!"%show_cfg_path)
+        print(e.message)
+        raise e
+
     filename_re = re.compile(r'(?P<head>[\\\/A-Za-z \._\-0-9]+)\.(?P<frame>[0-9]+)\.(?P<ext>[a-zA-Z0-9]+)$')
     shot_re = re.compile(shot_regexp)
     
@@ -90,32 +111,31 @@ def create_thumbnail(m_source_path):
     format_dict = { 'pathsep' : os.path.sep, 'show_root' : show_root, 'sequence' : seq, 'shot' : shot, 'framepad' : write_frame_format  }
     dest_path = dest_path_format.format(**format_dict).replace('\\', '/')
     
-    format_dict['framepad'] = "%04d"%int(frame)
+    format_dict['framepad'] = write_frame_format%int(frame)
     dest_path_frame = dest_path_format.format(**format_dict)
     
     print "INFO: Thumbnail path: %s"%dest_path
-    
+
     # try to locate the CDL for the shot, if it exists
-    
-    cdl_format_dict = { 'pathsep' : os.path.sep, 'show_root' : show_root, 'sequence' : seq, 'shot' : shot }
-    cdl_dir = ("%s{pathsep}%s"%(shot_dir_format, cdl_dir_format)).format(**cdl_format_dict)
+
+    lut_format_dict = {'sequence': seq, 'shot': shot, 'ext': cdl_ext}
 
     b_deliver_cdl = True
-    
-    s_cdl_src = os.path.join(cdl_dir, "%s.%s"%(base, cdl_ext))
-   
+
+    s_cdl_src = shot_lut_path.format(**lut_format_dict)
+
     # do we have a specific CDL for this image sequence?
     if not os.path.exists(s_cdl_src):
-        # try to find a generic one for the shot
-        s_cdl_src = os.path.join(cdl_dir, "%s.%s"%(shot, cdl_ext))
-        if not os.path.exists(s_cdl_src):
-            print "WARNING: Unable to locate CDL file at: %s"%s_cdl_src
-            b_deliver_cdl = False
+        b_deliver_cdl = False
 
     s_cccid = None
-    if b_deliver_cdl:    
+
+    if not b_applycc:
+        b_deliver_cdl = False
+
+    if b_deliver_cdl and cdl_ext in ['cc', 'ccc', 'cdl']:
         # open up the cdl and extract the cccid
-        print "INFO: Using CDL file at %s."%s_cdl_src
+        print "INFO: Using color correction file at %s."%s_cdl_src
         cdltext = open(s_cdl_src, 'r').read()
         cccid_re_str = r'<ColorCorrection id="([A-Za-z0-9-_]+)">'
         cccid_re = re.compile(cccid_re_str)
@@ -194,16 +214,26 @@ def create_thumbnail(m_source_path):
     os.write(fh_nukepy, "nd_read.knob('last').setValue(%d)\n"%int(frame))
 
     if not b_deliver_cdl:
-        os.write(fh_nukepy, "nuke.toNode('OCIOCDLTransform1').knob('disable').setValue(True)\n")
+        if s_colorspace_node:
+            os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(True)\n"%s_colorspace_node)
+        if s_cdl_node:
+            os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(True)\n"%s_cdl_node)
+        if s_lut_node:
+            os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(True)\n"%s_lut_node)
     else:
-        os.write(fh_nukepy, "nuke.toNode('OCIOCDLTransform1').knob('file').setValue(\"%s\")\n"%s_cdl_src.replace('\\', '/'))
-        if s_cccid:
-            os.write(fh_nukepy, "nuke.toNode('OCIOCDLTransform1').knob('cccid').setValue(\"%s\")\n"%s_cccid)
-        os.write(fh_nukepy, "nuke.toNode('OCIOCDLTransform1').knob('read_from_file').setValue(False)\n")
-        os.write(fh_nukepy, "nuke.toNode('OCIOCDLTransform1').knob('slope').setValue([%s, %s, %s])\n"%(slope_r, slope_g, slope_b))
-        os.write(fh_nukepy, "nuke.toNode('OCIOCDLTransform1').knob('offset').setValue([%s, %s, %s])\n"%(offset_r, offset_g, offset_b))
-        os.write(fh_nukepy, "nuke.toNode('OCIOCDLTransform1').knob('power').setValue([%s, %s, %s])\n"%(power_r, power_g, power_b))
-        os.write(fh_nukepy, "nuke.toNode('OCIOCDLTransform1').knob('saturation').setValue(%s)\n"%saturation)
+        if cdl_ext in [ 'cc', 'ccc', 'cdl' ]:
+            if s_cdl_node:
+                os.write(fh_nukepy, "nuke.toNode('%s').knob('file').setValue(\"%s\")\n"%(s_cdl_node, s_cdl_src))
+                if s_cccid:
+                    os.write(fh_nukepy, "nuke.toNode('%s').knob('cccid').setValue(\"%s\")\n"%(s_cdl_node, s_cccid))
+                os.write(fh_nukepy, "nuke.toNode('%s').knob('read_from_file').setValue(False)\n"%s_cdl_node)
+                os.write(fh_nukepy, "nuke.toNode('%s').knob('slope').setValue([%s, %s, %s])\n"%(s_cdl_node, slope_r, slope_g, slope_b))
+                os.write(fh_nukepy, "nuke.toNode('%s').knob('offset').setValue([%s, %s, %s])\n"%(s_cdl_node, offset_r, offset_g, offset_b))
+                os.write(fh_nukepy, "nuke.toNode('%s').knob('power').setValue([%s, %s, %s])\n"%(s_cdl_node, power_r, power_g, power_b))
+                os.write(fh_nukepy, "nuke.toNode('%s').knob('saturation').setValue(%s)\n"%(s_cdl_node, saturation))
+        else:
+            if s_lut_node:
+                os.write(fh_nukepy, "nuke.toNode('%s').knob('file').setValue(\"%s\")\n" % (s_lut_node, s_cdl_src))
 
     os.write(fh_nukepy, "nuke.toNode('THUMB_WRITE').knob('file').setValue('%s')\n"%dest_path)            
     os.write(fh_nukepy, "print \"INFO: About to execute render...\"\n")
@@ -217,15 +247,15 @@ def create_thumbnail(m_source_path):
     s_windows_addl = ""
     s_cmd = ""
     if sys.platform == 'win32':
-        s_windows_addl = ' --remap "/Volumes/raid_vol01,Y:"'
+        l_win32_netpath_transforms = config.get(show_code, 'win32_netpath_transforms').split('|')
+        s_windows_addl = ' --remap "%s,%s"'%(l_win32_netpath_transforms[0], l_win32_netpath_transforms[1])
         s_cmd = "\"%s\" -i -V 2%s -c 2G -t %s" % (nuke_exe_path, s_windows_addl, s_pyscript)
     else:
         s_cmd = "%s -i -V 2 -c 2G -t %s" % (nuke_exe_path, s_pyscript)
 
-    
     s_err_ar = []
     print "INFO: Thumbnail render command: %s" % s_cmd
-    proc = subprocess.Popen(s_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    proc = subprocess.Popen(s_cmd, stdout=subprocess.PIPE, shell=True)
     while proc.poll() is None:
         try:
             s_out = proc.stdout.readline()
@@ -236,21 +266,16 @@ def create_thumbnail(m_source_path):
             print var
     if proc.returncode != 0:
         s_errmsg = ""
-        if sys.platform == 'win32':
-            s_err_ar = proc.stdout.read().split('\n')
-        s_err = '\n'.join(s_err_ar)
-        l_err_verbose = []
-        for err_line in s_err_ar:
-            if err_line.find("ERROR") != -1:
-                l_err_verbose.append(err_line)
-        if s_err.find("FOUNDRY LICENSE ERROR REPORT") != -1:
-            s_errmsg = "Unable to obtain a license for Nuke! Package execution fails, will not proceed!"
+        s_err = proc.stderr.read()
+        s_errmsg = "Error(s) have occurred. Details:\n%s" % s_err
+        print(s_errmsg)
+        if s_errmsg.find('FOUNDRY LICENSE ERROR REPORT') != -1:
+            raise Exception('Nuke is unable to get a license!\nDetails:\n%s' % s_err)
         else:
-            s_errmsg = "Error(s) have occurred. Details:\n%s"%'\n'.join(l_err_verbose)
-        print s_errmsg
+            raise Exception('The thumbnail creation process did not complete successfully!\nDetails:\n%s' % s_err)
     else:
-        print "INFO: Successfully completed thumbnail render."
-    
+        print("INFO: Successfully completed thumbnail render.")
+
     return dest_path_frame
 
 def create_thumbnail_from_movie(m_source_path, m_frame_number):
@@ -346,38 +371,34 @@ def create_thumbnail_from_movie(m_source_path, m_frame_number):
     s_windows_addl = ""
     s_cmd = ""
     if sys.platform == 'win32':
-        s_windows_addl = ' --remap "/Volumes/raid_vol01,Y:"'
-        s_cmd = "\"%s\" -i -V 2%s -c 2G -t %s" % (nuke_exe_path, s_windows_addl, s_pyscript)
+        l_win32_netpath_transforms = config.get(show_code, 'win32_netpath_transforms').split('|')
+        s_windows_addl = ' --remap "%s,%s"'%(l_win32_netpath_transforms[0], l_win32_netpath_transforms[1])
+        s_cmd = r'"%s" -i -V 2%s -c 2G -t %s' % (nuke_exe_path, s_windows_addl, s_pyscript)
     else:
-        s_cmd = "%s -i -V 2 -c 2G -t %s" % (nuke_exe_path, s_pyscript)
+        s_cmd = r'%s -i -V 2 -c 2G -t %s' % (nuke_exe_path, s_pyscript)
 
-    
-    s_err_ar = []
-    print "INFO: Thumbnail render command: %s" % s_cmd
+
+    print("INFO: Thumbnail render command: %s" % s_cmd)
+    s_stdout_ar = []
     proc = subprocess.Popen(s_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
     while proc.poll() is None:
         try:
             s_out = proc.stdout.readline()
-            s_err_ar.append(s_out.rstrip())
+            s_stdout_ar.append(s_out.rstrip())
         except IOError:
-            print "ERROR: IOError Caught!"
+            print("ERROR: IOError Caught!")
             var = traceback.format_exc()
-            print var
+            print(var)
     if proc.returncode != 0:
         s_errmsg = ""
-        if sys.platform == 'win32':
-            s_err_ar = proc.stdout.read().split('\n')
-        s_err = '\n'.join(s_err_ar)
-        l_err_verbose = []
-        for err_line in s_err_ar:
-            if err_line.find("ERROR") != -1:
-                l_err_verbose.append(err_line)
-        if s_err.find("FOUNDRY LICENSE ERROR REPORT") != -1:
-            s_errmsg = "Unable to obtain a license for Nuke! Package execution fails, will not proceed!"
+        s_err = proc.stderr.read()
+        s_errmsg = "Error(s) have occurred. Details:\n%s" % s_err
+        print(s_errmsg)
+        if s_errmsg.find('FOUNDRY LICENSE ERROR REPORT') != -1:
+            raise Exception('Nuke is unable to get a license!\nDetails:\n%s' % s_err)
         else:
-            s_errmsg = "Error(s) have occurred. Details:\n%s"%'\n'.join(l_err_verbose)
-        print s_errmsg
+            raise Exception('The thumbnail creation process did not complete successfully!\nDetails:\n%s' % s_err)
     else:
-        print "INFO: Successfully completed thumbnail render."
-    
+        print("INFO: Successfully completed thumbnail render.")
+
     return dest_path_frame
