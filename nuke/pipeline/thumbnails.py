@@ -31,6 +31,49 @@ def get_config():
         return g_config
 
 #
+# get_thumbnail_for_shot takes one argument: a shot name. It determines the filesystem
+# path of the thumbnail using parameters from the show config file, and then returns
+# the path of the default thumbnail.
+
+def get_thumbnail_for_shot(m_shot):
+
+    show_cfg_path = None
+    show_root = None
+    show_code = None
+
+    config = get_config()
+
+    show_cfg_path = os.environ['IH_SHOW_CFG_PATH']
+    show_root = os.environ['IH_SHOW_ROOT']
+    show_code = os.environ['IH_SHOW_CODE']
+
+    shot_regexp = config.get(show_code, 'shot_regexp')
+    shot_lut_file_path = config.get('color', 'shot_lut_file_path_%s' % sys.platform)
+    shot_lut_file_ext = config.get('color', 'shot_lut_file_ext')
+
+    shot_re = re.compile(shot_regexp)
+
+    match_obj = shot_re.search(m_shot)
+
+    shot = match_obj.group('shot')
+    seq = match_obj.group('sequence')
+
+    if not shot or not seq:
+        raise ValueError(
+            "Shot name provided to get_thumbnail_for_shot(), %s, does not match the shot naming convention for show %s." % (
+            m_shot, show_code))
+
+    d_shot_lut_file = { 'sequence' : seq, 'shot' : shot, 'ext' : shot_lut_file_ext }
+    default_shot_lut_path = shot_lut_file_path.format(**d_shot_lut_file)
+
+    return default_shot_lut_path
+
+
+
+
+
+
+#
 # create_thumbnail takes one argument: the path of an image to make a thumbnail from. 
 # it requires that environment variable IH_SHOW_CFG_PATH be defined, and that config
 # file must have a thumb_template section.
