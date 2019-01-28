@@ -1594,6 +1594,9 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
                 os.write(fh_nukepy, "nd_root.knob('exportburnin').setValue(True)\n")
 
             if not cc_delivery:
+                for csnode in g_config.get('delivery', 'colorspace_nodes').split(','):
+                    if len(csnode) > 0:
+                        os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(True)\n"%csnode)
                 for cdlnode in g_config.get('delivery', 'cdl_nodes').split(','):
                     if len(cdlnode) > 0:
                         os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(True)\n"%cdlnode)
