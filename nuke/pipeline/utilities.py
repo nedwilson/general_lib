@@ -1304,6 +1304,7 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
         if versions_list and len(versions_list) > 0:
             def_note_text = versions_list[-1].g_description
 
+        # are we running this from a Python console?
         if current_version_notes is not None:
             cvn_txt = current_version_notes
             avidqt_delivery = b_method_avidqt
@@ -1311,6 +1312,7 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
             burnin_delivery = b_method_burnin
             hires_delivery = b_method_hires
             matte_delivery = b_method_matte
+            export_delivery = b_method_export
             cc_delivery = cc
             b_execute_overall = True
         else:
