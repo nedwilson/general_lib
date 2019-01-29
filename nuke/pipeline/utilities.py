@@ -1555,7 +1555,9 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
             # allow user to disable color correction, usually for temps
             if not cc_delivery:
                 os.write(fh_nukepy, "nd_root.knob('nocc').setValue(True)\n")
-            
+            else:
+                os.write(fh_nukepy, "nd_root.knob('nocc').setValue(False)\n")
+
             os.write(fh_nukepy, "\n")
             os.write(fh_nukepy, "nd_read = nuke.toNode('%s')\n"%g_config.get('delivery', 'exr_read_node'))
             os.write(fh_nukepy, "nd_read.knob('file').setValue(\"%s\")\n"%render_path)
