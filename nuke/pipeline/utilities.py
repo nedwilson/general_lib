@@ -935,7 +935,9 @@ def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame
         except IOError:
             print "ERROR: IOError Caught!"
             var = traceback.format_exc()
+            nuke.critical(var)
             print var
+            b_kill = True
     if b_kill:
         proc.kill()
         del progress_bar
@@ -962,6 +964,10 @@ def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame
         else:
             s_errmsg = "Error(s) have occurred. Details:\n%s"%'\n'.join(l_err_verbose)
         nuke.critical(s_errmsg)
+        print('Errors have occurred.')
+        print(s_errmsg)
+        del progress_bar
+        return
     else:
         print "INFO: Successfully completed delivery render."
 
