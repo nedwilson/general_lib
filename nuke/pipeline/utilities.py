@@ -1625,7 +1625,7 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
                             os.write(fh_nukepy, "nuke.toNode('%s').knob('power').setValue([%s, %s, %s])\n"%(cdlnode, power_r, power_g, power_b))
                             os.write(fh_nukepy, "nuke.toNode('%s').knob('saturation').setValue(%s)\n"%(cdlnode, saturation))
                 else:
-                    for otherccnode in g_config.get('delivery', 'shot_lut_nodes'):
+                    for otherccnode in g_config.get('delivery', 'shot_lut_nodes').split(','):
                         if len(otherccnode) > 0:
                             os.write(fh_nukepy, "nuke.toNode('%s').knob('file').setValue(\"%s\")\n" % (otherccnode, s_cdl_src))
             
