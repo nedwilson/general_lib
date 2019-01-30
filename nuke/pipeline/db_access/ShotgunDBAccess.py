@@ -326,7 +326,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             ['entity', 'is', {'type' : 'Shot', 'id' : int(m_shot_obj.g_dbid)}],
             ['code', 'is', m_version_name]
         ]
-        fields = ['code', 'id', 'description', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', 'sg_path_to_matte_frames', 'sg_matte_ready_', 'sg_matte_delivered_']
+        fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', 'sg_path_to_matte_frames', 'sg_matte_ready_', 'sg_matte_delivered_']
         sg_ver = self.g_sg.find_one("Version", filters, fields)
         if not sg_ver:
             return ver_ret
@@ -337,6 +337,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             tmp_delivered = False
             if sg_ver['sg_delivered'] == 'True':
                 tmp_delivered = True
+            ver_ret.set_status(sg_ver['sg_status_list'])
             ver_ret.set_delivered(tmp_delivered)
             ver_ret.set_client_code(sg_ver['client_code'])
             tmp_playlists = []
@@ -357,7 +358,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             ['project', 'is', {'type' : 'Project', 'id' : int(self.g_shotgun_project_id)}],
             ['id', 'is', m_version_id]
         ]
-        fields = ['code', 'id', 'description', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', 'sg_path_to_matte_frames', 'sg_matte_ready_', 'sg_matte_delivered_']
+        fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', 'sg_path_to_matte_frames', 'sg_matte_ready_', 'sg_matte_delivered_']
         sg_ver = self.g_sg.find_one("Version", filters, fields)
         if not sg_ver:
             return ver_ret
@@ -369,6 +370,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             tmp_delivered = False
             if sg_ver['sg_delivered'] == 'True':
                 tmp_delivered = True
+            ver_ret.set_status(sg_ver['sg_status_list'])
             ver_ret.set_delivered(tmp_delivered)
             ver_ret.set_client_code(sg_ver['client_code'])
             tmp_playlists = []
@@ -389,7 +391,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             ['project', 'is', {'type' : 'Project', 'id' : int(self.g_shotgun_project_id)}],
             ['sg_status_list', 'is', m_status]
         ]
-        fields = ['code', 'id', 'description', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', 'sg_path_to_matte_frames', 'sg_matte_ready_', 'sg_matte_delivered_']
+        fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', 'sg_path_to_matte_frames', 'sg_matte_ready_', 'sg_matte_delivered_']
         sg_vers = self.g_sg.find("Version", filters, fields)
         if not sg_vers:
             return ver_ret
@@ -401,6 +403,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
                 tmp_delivered = False
                 if sg_ver['sg_delivered'] == 'True':
                     tmp_delivered = True
+                tmp_ver.set_status(sg_ver['sg_status_list'])
                 tmp_ver.set_delivered(tmp_delivered)
                 tmp_ver.set_client_code(sg_ver['client_code'])
                 tmp_playlists = []
@@ -423,7 +426,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             ['sg_matte_ready_', 'is', True],
             ['sg_matte_delivered_', 'is', False]
         ]
-        fields = ['code', 'id', 'description', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', 'sg_path_to_matte_frames', 'sg_matte_ready_', 'sg_matte_delivered_']
+        fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', 'sg_path_to_matte_frames', 'sg_matte_ready_', 'sg_matte_delivered_']
         sg_vers = self.g_sg.find("Version", filters, fields)
         if not sg_vers:
             return ver_ret
@@ -435,6 +438,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
                 tmp_delivered = False
                 if sg_ver['sg_delivered'] == 'True':
                     tmp_delivered = True
+                tmp_ver.set_status(sg_ver['sg_status_list'])
                 tmp_ver.set_delivered(tmp_delivered)
                 tmp_ver.set_client_code(sg_ver['client_code'])
                 tmp_playlists = []
@@ -456,7 +460,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             ['project', 'is', {'type' : 'Project', 'id' : int(self.g_shotgun_project_id)}],
             ['entity', 'is', {'type' : 'Shot', 'id' : int(m_shot_obj.g_dbid)}]
         ]
-        fields = ['code', 'id', 'description', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', 'sg_path_to_matte_frames', 'sg_matte_ready_', 'sg_matte_delivered_']
+        fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', 'sg_path_to_matte_frames', 'sg_matte_ready_', 'sg_matte_delivered_']
         sg_vers = self.g_sg.find("Version", filters, fields)
         if not sg_vers:
             return ver_ret
@@ -467,6 +471,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
                 tmp_delivered = False
                 if sg_ver['sg_delivered'] == 'True':
                     tmp_delivered = True
+                tmp_ver.set_status(sg_ver['sg_status_list'])
                 tmp_ver.set_delivered(tmp_delivered)
                 tmp_ver.set_client_code(sg_ver['client_code'])
                 tmp_playlists = []
