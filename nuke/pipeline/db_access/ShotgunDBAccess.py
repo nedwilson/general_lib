@@ -498,6 +498,30 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             playlist_ret = Playlist.Playlist(sg_playlist['code'], version_list, sg_playlist['id'])
             return playlist_ret
 
+    # returns a list of playlists created in the last N days, default is 30.
+    def fetch_playlists_timeframe(self, m_days_back=30, m_populate_versions=False):
+        playlist_ret = []
+        filters = [
+            ['project', 'is', {'type': 'Project', 'id': int(self.g_shotgun_project_id)}],
+            ['created_at', 'in_last', m_days_back, 'DAY']
+        ]
+        fields = ['id', 'code', 'versions']
+        order = [{'field_name' : 'created_at', 'direction' : 'desc'}]
+        sg_playlists = self.g_sg.find("Playlist", filters, fields, order)
+        if not sg_playlists:
+            return playlist_ret
+        else:
+            for sg_playlist in sg_playlists:
+                version_list = []
+                for version in sg_playlist['versions']:
+                    if m_populate_versions:
+                        version_list.append(self.fetch_version_from_id(version['id']))
+                    else:
+                        tmp_version = Version.Version(version['name'], version['id'], '', '1001', '1024', '24', '', '', None, None, None)
+                        version_list.append(tmp_version)
+                playlist_ret.append(Playlist.Playlist(sg_playlist['code'], version_list, sg_playlist['id']))
+            return playlist_ret
+
     def fetch_notes_for_version(self, m_version_obj, b_populate_playlists=False):
         notes_ret = []
         fields = ['id', 'subject', 'addressings_to', 'user', 'content', 'sg_note_type', 'note_links']

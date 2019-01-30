@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/local/bin/python
 
 import pprint
 import os
@@ -10,19 +10,16 @@ from timecode import TimeCode
 import db_access as DB
 
 sgdb = DB.DBAccessGlobals.get_db_access()
-<<<<<<< Updated upstream
 # shot = sgdb.fetch_shot('TS000_000')
-shot = sgdb.fetch_shot('CB061_300')
-=======
+# shot = sgdb.fetch_shot('CB061_300')
 
-seq = sgdb.fetch_sequence('sa')
-print seq
+# seq = sgdb.fetch_sequence('sa')
+# print seq
 
-shot = sgdb.fetch_shot('sa3080')
->>>>>>> Stashed changes
-print shot
-seq = sgdb.fetch_sequence('CB061')
-print seq
+# shot = sgdb.fetch_shot('sa3080')
+# print shot
+# seq = sgdb.fetch_sequence('CB061')
+# print seq
 
 # print "Sequence Create"
 # new_seq_path = DB.DBAccess.get_path_for_sequence('TS000')
@@ -36,8 +33,8 @@ print seq
 # sgdb.create_shot(new_shot_obj)
 # print new_shot_obj
 
-plate = sgdb.fetch_plate('CB061_300_BG', shot)
-print plate
+# plate = sgdb.fetch_plate('CB061_300_BG', shot)
+# print plate
 
 # print "Plate Create"
 # 
@@ -85,8 +82,6 @@ print plate
 # sgdb.create_plate(new_plate_obj)
 # print new_plate_obj
 
-<<<<<<< Updated upstream
-=======
 # tasks = sgdb.fetch_tasks_for_shot(shot)
 # task = None
 # for task_tmp in tasks:
@@ -111,11 +106,12 @@ print plate
 #                              task)
 # sgdb.create_version(new_version_obj)
 # print new_version_obj
+# version = sgdb.fetch_version('sa3080_comp_v500001', shot)
+# print version
 
-version = sgdb.fetch_version('sa3080_comp_v500001', shot)
-print version
+# Playlists - uncomment out the following to test this functionality
 
->>>>>>> Stashed changes
+dbplaylists = sgdb.fetch_playlists_timeframe()
 
-
-
+for dbplaylist in dbplaylists:
+    print(dbplaylist)

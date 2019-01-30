@@ -46,6 +46,7 @@ g_version_status = 'rev'
 g_version_status_qt = 'rev'
 g_version_status_2k = 'p2k'
 g_version_list = []
+g_playlists = []
 g_vdlist = []
 g_ih_show_code = None
 g_ih_show_root = None
@@ -67,6 +68,8 @@ g_ale_file = None
 g_matte = False
 g_combined = False
 g_playlistonly = False
+g_deliveryonly = False
+g_playlist_age_days = 30
 
 # copy/paste from goosebumps2_delivery
 
@@ -92,6 +95,7 @@ g_rsync_dest = ""
 def globals_from_config():
     global ihdb, g_ih_show_cfg_path, g_ih_show_root, g_ih_show_code, g_config, g_version_status, g_version_status_2k, g_version_status_qt, g_project_code, g_vendor_code, g_vendor_name, g_delivery_folder, g_fileop, g_delivery_res
     global g_distro_list_to, g_distro_list_cc, g_mail_from, g_write_ale, g_shared_root, g_credentials_dir, g_client_secret, g_gmail_creds, g_application_name, g_email_text, g_rsync_enabled, g_rsync_filetypes, g_rsync_dest, g_subform_lpf
+    global g_playlist_age_days
     try:
         g_ih_show_code = os.environ['IH_SHOW_CODE']
         g_ih_show_root = os.environ['IH_SHOW_ROOT']
@@ -126,6 +130,12 @@ def globals_from_config():
     except:        
         e = sys.exc_info()
         print e[1]
+    # for playlist_age_days, it won't matter if it's not in the config file, just default to 30
+    try:
+        g_playlist_age_days = int(g_config.get('delivery', 'playlist_age_days'))
+    except:
+        g_playlist_age_days = 30
+
 
 def handle_sync_and_send_email(m_source_folder, file_list):
     global g_config
@@ -334,6 +344,15 @@ def load_versions_for_status(m_status):
 def load_versions_with_mattes():
     global g_version_list
     g_version_list = ihdb.fetch_versions_with_mattes()
+
+def load_playlists():
+    global g_playlists, g_playlist_age_days
+    g_playlists = ihdb.fetch_playlists_timeframe(m_days_back=g_playlist_age_days)
+
+def load_versions_from_playlist(m_playlist_obj):
+    global g_version_list
+    o_hero_playlist = ihdb.fetch_playlist(m_playlist_obj.g_playlist_name)
+    g_version_list = o_hero_playlist.g_playlist_versions
 
 # build the submission form
 def build_subform():
@@ -580,8 +599,8 @@ def build_playlist():
     ihdb.create_playlist(dbplaylist)
     print "INFO: Created playlist %s in database."%(g_package_dir)
         
-def execute_shell(m_interactive=False, m_2k=False, send_email=True, m_matte=False, m_combined=False, m_playlistonly=False):
-    global g_version_list, g_version_status, g_package_dir, g_vdlist, g_delivery_folder, g_delivery_package, g_matte, g_combined, g_playlistonly
+def execute_shell(m_interactive=False, m_2k=False, send_email=True, m_matte=False, m_combined=False, m_playlistonly=False, m_deliveryonly=False):
+    global g_version_list, g_version_status, g_package_dir, g_vdlist, g_delivery_folder, g_delivery_package, g_matte, g_combined, g_playlistonly, g_deliveryonly, g_playlists, g_playlist_age_days
 
     if m_2k:
         g_version_status = g_version_status_2k
@@ -595,80 +614,128 @@ def execute_shell(m_interactive=False, m_2k=False, send_email=True, m_matte=Fals
         g_combined = True
 
     g_playlistonly = m_playlistonly
+    g_deliveryonly = m_deliveryonly
 
-    if m_interactive and not m_2k:
-        if g_matte:
-            sys.stdout.write("Proceed with matte delivery? (y|n) ")
+    if not g_deliveryonly:
+        if m_interactive and not m_2k:
+            if g_matte:
+                sys.stdout.write("Proceed with matte delivery? (y|n) ")
+                input = sys.stdin.readline()
+                if 'n' in input or 'N' in input:
+                    print "Program will now exit."
+                    return
+            else:
+                sys.stdout.write("Proceed with low-resolution (Quicktime) delivery? \nAnswering no will switch to high-resolution (2k) delivery: (y|n) ")
+                input = sys.stdin.readline()
+                if 'n' in input or 'N' in input:
+                    print "INFO: Switching to high-resolution delivery."
+                    g_version_status = g_version_status_2k
+
+        if m_interactive and m_2k:
+            sys.stdout.write("Proceed with high-resolution (2K) delivery? (y|n) ")
             input = sys.stdin.readline()
             if 'n' in input or 'N' in input:
                 print "Program will now exit."
                 return
-        else:        
-            sys.stdout.write("Proceed with low-resolution (Quicktime) delivery? \nAnswering no will switch to high-resolution (2k) delivery: (y|n) ")
+
+        if m_interactive and m_combined:
+            sys.stdout.write("Proceed with combined delivery? (y|n) ")
             input = sys.stdin.readline()
             if 'n' in input or 'N' in input:
-                print "INFO: Switching to high-resolution delivery."
-                g_version_status = g_version_status_2k
+                print "Program will now exit."
+                return
 
-    if m_interactive and m_2k:
-        sys.stdout.write("Proceed with high-resolution (2K) delivery? (y|n) ")
-        input = sys.stdin.readline()
-        if 'n' in input or 'N' in input:
-            print "Program will now exit."
-            return
+        if g_matte:
+            load_versions_with_mattes()
+        else:
+            load_versions_for_status(g_version_status)
 
-    if m_interactive and m_combined:
-        sys.stdout.write("Proceed with combined delivery? (y|n) ")
-        input = sys.stdin.readline()
-        if 'n' in input or 'N' in input:
-            print "Program will now exit."
-            return
-    
+        version_names = []
+        for version in g_version_list:
+            version_names.append(version.g_version_code)
 
-    if g_matte:
-        load_versions_with_mattes()
+        print("INFO: List of versions matching status %s:" % g_version_status)
+        print("")
+        for count, version_name in enumerate(version_names, 1):
+            print("%2d. %s" % (count, version_name))
+
+        print("")
+        if len(version_names) == 0:
+            print("WARNING: No versions in the database for status %s!" % g_version_status)
+            print("Program will now exit.")
+
+        if m_interactive:
+            sys.stdout.write("Remove any versions from the delivery?\nInput a comma-separated list of version index numbers: ")
+            input = sys.stdin.readline()
+            versions_rm = []
+            for idx in input.split(','):
+                i_idx = 0
+                try:
+                    i_idx = int(idx)
+                except ValueError:
+                    print("ERROR: %s is not a valid number." % idx)
+                    continue
+                if i_idx > 0 and i_idx <= len(version_names):
+                    versions_rm.append(i_idx - 1)
+                else:
+                    print("ERROR: %s is not a valid index number." % idx)
+                    continue
+            new_version_list = []
+            for count, version in enumerate(g_version_list):
+                if count in versions_rm:
+                    print("INFO: Removing version %s from delivery list." % version.g_version_code)
+                else:
+                    new_version_list.append(version)
+            g_version_list = new_version_list
+
     else:
-        load_versions_for_status(g_version_status)
-        
-    version_names = []
-    for version in g_version_list:
-        version_names.append(version.g_version_code)
-    
-    print "INFO: List of versions matching status %s:"%g_version_status
-    print ""
-    for count, version_name in enumerate(version_names, 1):
-        print "%2d. %s"%(count, version_name)
-    
-    print ""
-    if len(version_names) == 0:
-        print "WARNING: No versions in the database for status %s!"%g_version_status
-        print "Program will now exit."
-        
-    if m_interactive:
-        sys.stdout.write("Remove any versions from the delivery?\nInput a comma-separated list of version index numbers: ")
-        input = sys.stdin.readline()
-        versions_rm = []
-        for idx in input.split(','):
-            i_idx = 0
-            try:
-                i_idx = int(idx)
-            except ValueError:
-                print "ERROR: %s is not a valid number."%idx
-                continue
-            if i_idx > 0 and i_idx <= len(version_names):
-                versions_rm.append(i_idx - 1)
-            else:
-                print "ERROR: %s is not a valid index number."%idx
-                continue
-        new_version_list = []
-        for count, version in enumerate(g_version_list):
-            if count in versions_rm:
-                print "INFO: Removing version %s from delivery list."%version.g_version_code
-            else:
-                new_version_list.append(version)
-        g_version_list = new_version_list
+        g_playlistonly = False
+        o_hero_playlist = None
+        if m_interactive:
+            sys.stdout.write("Proceed with delivery only? (y|n) ")
+            input = sys.stdin.readline()
+            if 'n' in input or 'N' in input:
+                print("Program will now exit.")
+                return
 
-    file_list = []    
+        # retrieve the list of available playlists from the database
+        load_playlists()
+        playlist_names = []
+        for playlist in g_playlists:
+            playlist_names.append(playlist.g_playlist_name)
+
+        print("INFO: Playlists created within the last %d days:"%g_playlist_age_days)
+        print("")
+        for count, playlist_name in enumerate(playlist_names, 1):
+            print("%2d. %s" % (count, playlist_name))
+
+        print("")
+        if len(playlist_names) == 0:
+            print("WARNING: No playlists have been created in the database in the last %d days!" % g_playlist_age_days)
+            print("Program will now exit.")
+            return
+
+        if m_interactive:
+            while (True):
+                sys.stdout.write("Please enter the number for the playlist you would like to deliver to production: ")
+                input = sys.stdin.readline()
+                i_idx = 0
+                try:
+                    i_idx = int(input)
+                    o_hero_playlist = g_playlists[i_idx - 1]
+                    break
+                except ValueError:
+                    print("ERROR: %s is not a valid number." % input)
+                except IndexError:
+                    print("ERROR: There is no playlist number %s." % input)
+        else:
+            print("INFO: Not running in interactive mode. Will choose playlist #1 above.")
+            o_hero_playlist = g_playlists[0]
+
+        print("INFO: Will deliver all versions from playlist %s."%o_hero_playlist.g_playlist_name)
+        load_versions_from_playlist(o_hero_playlist)
+
+    file_list = []
     try:
         get_delivery_directory()
         print "INFO: Delivery package initialized to %s."%g_delivery_package
@@ -689,8 +756,9 @@ def execute_shell(m_interactive=False, m_2k=False, send_email=True, m_matte=Fals
             build_subform()
             print "INFO: Setting status of all versions in submission to Delivered."
             set_version_delivered()
-        print "INFO: Building a playlist in the database."
-        build_playlist()
+        if not g_deliveryonly:
+            print "INFO: Building a playlist in the database."
+            build_playlist()
         if send_email and not g_playlistonly:
             print "INFO: Spawning a sync child processs to copy files to production. Email notification will be sent upon completion."
             handle_sync_and_send_email(os.path.join(g_delivery_folder, g_package_dir), file_list)

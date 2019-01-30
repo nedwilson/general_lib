@@ -86,6 +86,12 @@ class DBAccess(object):
         """Returns a playlist object from the database"""
 
     @abc.abstractmethod
+    def fetch_playlists_timeframe(self, m_days_back=30, m_populate_versions=False):
+        """Returns a list of playlist objects from the database created in the last N days. Default is 30 days, add
+           m_days_back paramater to change the timeframe. Set m_populate_versions = True to retreive database objects
+           for each version in the Playlist. Set to False by default since this is slow."""
+
+    @abc.abstractmethod
     def fetch_notes_for_version(self, m_version_obj, b_populate_playlists=False):                
         """Returns a list of Note objects linked to a particular version. By default, it will not attempt
            to fill playlist objects with a database record for each version. However, setting b_populate_playlists 
