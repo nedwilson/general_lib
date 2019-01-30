@@ -357,6 +357,7 @@ def load_versions_from_playlist(m_playlist_obj):
     o_hero_playlist = ihdb.fetch_playlist(m_playlist_obj.g_playlist_name)
     tmp_version_list = []
     for tmp_version in o_hero_playlist.g_playlist_versions:
+        print(tmp_version)
         if tmp_version.g_status == g_internal_approval_status:
             tmp_version_list.append(tmp_version)
     g_version_list = tmp_version_list
