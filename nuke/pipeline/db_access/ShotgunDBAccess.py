@@ -301,7 +301,9 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             'sg_status_list' : m_version_obj.g_status,
         }
         if m_version_obj.g_delivered:
-            data['sg_delivered'] = 'True'
+            data['sg_delivered'] = True
+        else:
+            data['sg_delivered'] = False
             
         self.g_sg.update('Version', m_version_obj.g_dbid, data)
 
