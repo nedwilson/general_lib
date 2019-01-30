@@ -91,11 +91,12 @@ g_email_text = ""
 g_rsync_enabled = False
 g_rsync_filetypes = []
 g_rsync_dest = ""
+g_internal_approval_status = 'iapr'
 
 def globals_from_config():
     global ihdb, g_ih_show_cfg_path, g_ih_show_root, g_ih_show_code, g_config, g_version_status, g_version_status_2k, g_version_status_qt, g_project_code, g_vendor_code, g_vendor_name, g_delivery_folder, g_fileop, g_delivery_res
     global g_distro_list_to, g_distro_list_cc, g_mail_from, g_write_ale, g_shared_root, g_credentials_dir, g_client_secret, g_gmail_creds, g_application_name, g_email_text, g_rsync_enabled, g_rsync_filetypes, g_rsync_dest, g_subform_lpf
-    global g_playlist_age_days
+    global g_playlist_age_days, g_internal_approval_status
     try:
         g_ih_show_code = os.environ['IH_SHOW_CODE']
         g_ih_show_root = os.environ['IH_SHOW_ROOT']
@@ -130,11 +131,12 @@ def globals_from_config():
     except:        
         e = sys.exc_info()
         print e[1]
-    # for playlist_age_days, it won't matter if it's not in the config file, just default to 30
+    # for playlist_age_days and internal_approval_status, it won't matter if it's not in the config file, just default to hard-coded values
     try:
         g_playlist_age_days = int(g_config.get('delivery', 'playlist_age_days'))
+        g_internal_approval_status = g_config.get('delivery', 'internal_approval_status')
     except:
-        g_playlist_age_days = 30
+        pass
 
 
 def handle_sync_and_send_email(m_source_folder, file_list):
@@ -260,7 +262,8 @@ def get_delivery_directory():
     else:
         new_serial = str(max_serial + 1)
     d_folder_format = {'vendor_code' : g_vendor_code, 'project_code' : g_project_code, 'date' : today, 'serial' : new_serial, 'delivery_type' : delivery_type}
-    g_package_dir = g_config.get('delivery', 'package_directory').format(**d_folder_format)
+    if not g_deliveryonly:
+        g_package_dir = g_config.get('delivery', 'package_directory').format(**d_folder_format)
     g_batch_id = g_config.get('delivery', 'batch_id').format(**d_folder_format)
     g_delivery_package = os.path.join(g_delivery_folder, g_package_dir)
 
@@ -350,9 +353,13 @@ def load_playlists():
     g_playlists = ihdb.fetch_playlists_timeframe(m_days_back=g_playlist_age_days)
 
 def load_versions_from_playlist(m_playlist_obj):
-    global g_version_list
+    global g_version_list, g_internal_approval_status
     o_hero_playlist = ihdb.fetch_playlist(m_playlist_obj.g_playlist_name)
-    g_version_list = o_hero_playlist.g_playlist_versions
+    tmp_version_list = []
+    for tmp_version in o_hero_playlist.g_playlist_versions:
+        if tmp_version.g_status == g_internal_approval_status:
+            tmp_version_list.append(tmp_version)
+    g_version_list = tmp_version_list
 
 # build the submission form
 def build_subform():
@@ -600,7 +607,9 @@ def build_playlist():
     print "INFO: Created playlist %s in database."%(g_package_dir)
         
 def execute_shell(m_interactive=False, m_2k=False, send_email=True, m_matte=False, m_combined=False, m_playlistonly=False, m_deliveryonly=False):
-    global g_version_list, g_version_status, g_package_dir, g_vdlist, g_delivery_folder, g_delivery_package, g_matte, g_combined, g_playlistonly, g_deliveryonly, g_playlists, g_playlist_age_days
+    global g_version_list, g_version_status, g_package_dir, g_vdlist, g_delivery_folder, g_delivery_package, g_matte, \
+        g_combined, g_playlistonly, g_deliveryonly, g_playlists, g_playlist_age_days, g_package_dir, \
+        g_internal_approval_status
 
     if m_2k:
         g_version_status = g_version_status_2k
@@ -732,7 +741,9 @@ def execute_shell(m_interactive=False, m_2k=False, send_email=True, m_matte=Fals
             print("INFO: Not running in interactive mode. Will choose playlist #1 above.")
             o_hero_playlist = g_playlists[0]
 
-        print("INFO: Will deliver all versions from playlist %s."%o_hero_playlist.g_playlist_name)
+        print("INFO: Setting package name equal to playlist name: %s"%o_hero_playlist.g_playlist_name)
+        g_package_dir = o_hero_playlist.g_playlist_name
+        print("INFO: Will deliver all versions with %s status from playlist %s."%(g_internal_approval_status,o_hero_playlist.g_playlist_name))
         load_versions_from_playlist(o_hero_playlist)
 
     file_list = []
