@@ -12,6 +12,8 @@ import ConfigParser
 import traceback
 import socket
 
+gb_use_rvsdi = False
+
 class RVFlipbook(flipbooking.FlipbookApplication):
     """This is an example implementation of how to deal with implementing a
      flipbook application other than FrameCycler for NUKE. This script needs
@@ -20,6 +22,7 @@ class RVFlipbook(flipbooking.FlipbookApplication):
 
     def __init__(self):
         # initialize show config
+        global gb_use_rvsdi
         self._hostname = socket.gethostname().split('.', 1)[0]
         self._config = None
         self._lin_to_log_lut_path = None
@@ -33,6 +36,7 @@ class RVFlipbook(flipbooking.FlipbookApplication):
         self._shot_regexp = None
         self._temp_regexp = None
         self._rvsdi_hosts = []
+        self._use_shot_cc = False
         try:
             str_show_cfg_path = os.environ['IH_SHOW_CFG_PATH']
             str_show_code = os.environ['IH_SHOW_CODE']
@@ -60,6 +64,7 @@ class RVFlipbook(flipbooking.FlipbookApplication):
             if os.path.exists("/Applications/RVSDI.app/Contents/MacOS/RVSDI"):
                 self._rvPath = "/Applications/RVSDI.app/Contents/MacOS/RVSDI"
                 self._rvName = "RVSDI"
+                gb_use_rvsdi = True
             else:
                 self._rvPath = "/Applications/RV64.app/Contents/MacOS/RV64"
                 self._rvName = "RV64"
@@ -67,6 +72,7 @@ class RVFlipbook(flipbooking.FlipbookApplication):
             if os.path.exists("C:\\Program Files\\RVSDI\\RVSDI.exe"):
                 self._rvPath = "C:\\Program Files\\RVSDI\\RVSDI.exe"
                 self._rvName = "RVSDI"
+                gb_use_rvsdi = True
             else:
                 self._rvPath = "C:\\Program Files\\Shotgun\\RV-7.2.3\\bin\\rv.exe"
                 self._rvName = "RV64"
@@ -74,6 +80,7 @@ class RVFlipbook(flipbooking.FlipbookApplication):
             if os.path.exists("/usr/local/tweak/rvsdi"):
                 self._rvPath = "/usr/local/tweak/rvsdi"
                 self._rvName = "RVSDI"
+                gb_use_rvsdi = True
             else:
                 self._rvPath = "/usr/local/tweak/rv64"
                 self._rvName = "RV64"
@@ -132,6 +139,9 @@ class RVFlipbook(flipbooking.FlipbookApplication):
         elif lut == "rec709":
             args.append('-rec709')
 
+        if self._use_shot_cc:
+            print("DEBUG: shot_cc checked in the Flipbook Panel!")
+
         args.append('[')
         args.append(repr(filename))
         args.append(sequence_interval)
@@ -139,7 +149,7 @@ class RVFlipbook(flipbooking.FlipbookApplication):
         shotmatch = self._shot_regexp.search(filename)
         lut_filename = None
         file_extension = os.path.splitext(filename)[1][1:]
-        istemp = self._temp_regexp.search(filename)
+
         shot_re_dict = {}
         if shotmatch:
             try:
@@ -157,12 +167,12 @@ class RVFlipbook(flipbooking.FlipbookApplication):
                 print "ERROR: Unable to determine shot LUT path. Skipping."
                 print traceback.format_exc()
 
-        if self._use_lin_to_log_lut and file_extension in self._shot_lut_exts and not istemp:
+        if self._use_lin_to_log_lut and file_extension in self._shot_lut_exts and self._use_shot_cc:
             args.append('-pclut')
             args.append(self._lin_to_log_lut_path)
 
         # append shot LUT to command line, if it exists and we are not looking at a Quicktime
-        if lut_filename and file_extension in self._shot_lut_exts and not istemp:
+        if lut_filename and file_extension in self._shot_lut_exts and self._use_shot_cc:
             if self._shot_lut_file_ext in ['cdl', 'cc', 'ccc']:
                 args.append('-fcdl')
             else:
@@ -170,7 +180,7 @@ class RVFlipbook(flipbooking.FlipbookApplication):
             args.append(lut_filename)
         
         # append look LUT to command line, if the file extension is correct and we are using it for this show
-        if self._use_display_lut and file_extension in self._shot_lut_exts and not istemp:
+        if self._use_display_lut and file_extension in self._shot_lut_exts and self._use_shot_cc:
             args.append('-llut')
             args.append(self._display_lut_path)
 
@@ -204,5 +214,22 @@ class RVFlipbook(flipbooking.FlipbookApplication):
             'fileTypes' : ["j2k","jpt","jp2","dpx","cin","cineon","jpeg","jpg","rla","rpf","yuv","exr","openexr","sxr","tif","tiff","sm","tex","tx","tdl","shd","targa","tga","tpic","rgbe","hdr","iff","png","z","zfile","sgi","bw","rgb","rgba","*mraysubfile*","movieproc","stdinfb","aiff","aif","aifc","wav","snd","au","mov","avi","mp4","m4v","dv"]
         }
 
+    def dialogKnobs(self, dialog):
+        shot_cc_knob = nuke.Boolean_Knob('shot_cc', 'Add Shot Color Correction?')
+        shot_cc_knob.setFlag(nuke.STARTLINE)
+        dialog.addKnob(shot_cc_knob)
+
+    def dialogKnobChanged(self, dialog, knob):
+        # if the user has changed the shot_cc knob, adjust the self._use_shot_cc variable
+        if knob.name() == 'shot_cc':
+            kval = knob.getValue()
+            if kval == 1.0:
+                self._use_shot_cc = True
+            else:
+                self._use_shot_cc = False
+
 flipbooking.register( RVFlipbook() )
-nukescripts.setFlipbookDefaultOption("flipbook", "RV64")
+if gb_use_rvsdi:
+    nukescripts.setFlipbookDefaultOption("flipbook", "RVSDI")
+else:
+    nukescripts.setFlipbookDefaultOption("flipbook", "RV64")
