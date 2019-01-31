@@ -65,13 +65,22 @@ class VersionDelivery():
         self.version_data['client_filename'] = None
         self.version_data['subreason'] = None
         self.version_data['client_filetype'] = None
+        self.version_data['subfilename'] = None
         
         # hires and low res client filenames
         self.version_data['client_hires_filename'] = None
         self.version_data['client_hires_filetype'] = None
         self.version_data['client_lores_filename'] = None
         self.version_data['client_lores_filetype'] = None
-    
+
+    # sets an arbitrary key in the version_data dictionary
+    def set_arbitrary_version_data_item(self, m_key, m_value):
+        self.version_data[m_key] = m_value
+
+    # sets the name of the submission filename
+    def set_subfilename(self, subfilename):
+        self.version_data['subfilename'] = subfilename
+
     # sets the name of the delivery package
     def set_package(self, package):
         self.version_data['package'] = package

@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import copy
 import csv
+import xlsxwriter
 import tempfile
 import traceback
 
@@ -63,15 +64,15 @@ g_batch_id = None
 g_fileop = 'copy'
 g_delivery_res = None
 g_delivery_package = None
-g_csv_file = None
+g_sub_file_path = None
 g_ale_file = None
 g_matte = False
 g_combined = False
 g_playlistonly = False
 g_deliveryonly = False
 g_playlist_age_days = 30
-
-# copy/paste from goosebumps2_delivery
+g_delivery_package_basename = None
+g_subform_file_format = 'xlsx'
 
 g_distro_list_to = None
 g_distro_list_cc = None
@@ -96,7 +97,7 @@ g_internal_approval_status = 'iapr'
 def globals_from_config():
     global ihdb, g_ih_show_cfg_path, g_ih_show_root, g_ih_show_code, g_config, g_version_status, g_version_status_2k, g_version_status_qt, g_project_code, g_vendor_code, g_vendor_name, g_delivery_folder, g_fileop, g_delivery_res
     global g_distro_list_to, g_distro_list_cc, g_mail_from, g_write_ale, g_shared_root, g_credentials_dir, g_client_secret, g_gmail_creds, g_application_name, g_email_text, g_rsync_enabled, g_rsync_filetypes, g_rsync_dest, g_subform_lpf
-    global g_playlist_age_days, g_internal_approval_status
+    global g_playlist_age_days, g_internal_approval_status, g_subform_file_format
     try:
         g_ih_show_code = os.environ['IH_SHOW_CODE']
         g_ih_show_root = os.environ['IH_SHOW_ROOT']
@@ -135,6 +136,7 @@ def globals_from_config():
     try:
         g_playlist_age_days = int(g_config.get('delivery', 'playlist_age_days'))
         g_internal_approval_status = g_config.get('delivery', 'internal_approval_status')
+        g_subform_file_format = g_config.get('delivery', 'subform_file_format')
     except:
         pass
 
@@ -200,7 +202,8 @@ Data
         return
 
 def get_delivery_directory():
-    global g_version_status, g_version_status_qt, g_version_status_2k, g_ih_show_code, g_project_code, g_vendor_code, g_vendor_name, g_package_dir, g_batch_id, g_delivery_folder, g_delivery_package, g_combined
+    global g_version_status, g_version_status_qt, g_version_status_2k, g_ih_show_code, g_project_code, g_vendor_code, \
+        g_vendor_name, g_package_dir, g_batch_id, g_delivery_folder, g_delivery_package, g_combined, g_delivery_package_basename
     dt_hires = g_config.get('delivery', 'hires_delivery_type')
     dt_lores = g_config.get('delivery', 'lores_delivery_type')
     dt_combined = g_config.get('delivery', 'combined_delivery_type')
@@ -261,9 +264,21 @@ def get_delivery_directory():
         new_serial = chr(ord(max_serial) + 1)
     else:
         new_serial = str(max_serial + 1)
-    d_folder_format = {'vendor_code' : g_vendor_code, 'project_code' : g_project_code, 'date' : today, 'serial' : new_serial, 'delivery_type' : delivery_type}
+    d_folder_format = {}
     if not g_deliveryonly:
+        d_folder_format = {'vendor_code': g_vendor_code, 'project_code': g_project_code, 'date': today,
+                           'serial': new_serial, 'delivery_type': delivery_type}
         g_package_dir = g_config.get('delivery', 'package_directory').format(**d_folder_format)
+    else:
+        folder_match = folder_re.search(g_package_dir)
+        folder_match_dict = {}
+        if folder_match:
+            folder_match_dict = folder_match.groupdict()
+        else:
+            raise Exception('Error: Something is very wrong. Boolean g_deliveryonly is set to True, yet hero playlist name %s does not match package regex.'%g_package_dir)
+        d_folder_format = {'vendor_code': g_vendor_code, 'project_code': g_project_code, 'date': folder_match_dict['date'],
+                           'serial': folder_match_dict['serial'], 'delivery_type': delivery_type}
+
     g_batch_id = g_config.get('delivery', 'batch_id').format(**d_folder_format)
     g_delivery_package = os.path.join(g_delivery_folder, g_package_dir)
 
@@ -357,7 +372,6 @@ def load_versions_from_playlist(m_playlist_obj):
     o_hero_playlist = ihdb.fetch_playlist(m_playlist_obj.g_playlist_name)
     tmp_version_list = []
     for tmp_version in o_hero_playlist.g_playlist_versions:
-        print(tmp_version)
         if tmp_version.g_status == g_internal_approval_status:
             tmp_version_list.append(tmp_version)
     g_version_list = tmp_version_list
@@ -365,10 +379,46 @@ def load_versions_from_playlist(m_playlist_obj):
 # build the submission form
 def build_subform():
     
-    global g_vdlist, g_version_status, g_version_status_2k, g_version_status_qt, g_delivery_folder, g_delivery_package, g_config, g_csv_file, g_ale_file, g_matte, g_combined, g_subform_lpf
-    
+    global g_vdlist, g_version_status, g_version_status_2k, g_version_status_qt, g_delivery_folder, g_delivery_package, \
+        g_config, g_sub_file_path, g_ale_file, g_matte, g_combined, g_subform_lpf, g_package_dir
+
+    subform_file_format = g_config.get('delivery', 'subform_file_format')
+    subform_filename_format = g_config.get('delivery', 'subform_filename_format')
+    subform_filename = subform_filename_format.format(package = g_package_dir, ext = subform_file_format)
+    subform_boolean_true = g_config.get('delivery', 'subform_boolean_true')
+    subform_boolean_false = g_config.get('delivery', 'subform_boolean_false')
+
     delivery_path = os.path.join(g_delivery_folder, g_package_dir)
-    
+    l_subform_hardcode_items = g_config.get('delivery', 'subform_hardcode_items').split(',')
+    d_subform_hardcode_items = {}
+    for kvpair in l_subform_hardcode_items:
+        names = kvpair.split('|')
+        d_subform_hardcode_items[names[0]] = names[1]
+
+    # excel header format
+    l_subform_excel_header_format = g_config.get('delivery', 'subform_excel_header_format').split(',')
+    d_subform_excel_header_format = {}
+    for kvpair in l_subform_excel_header_format:
+        names = kvpair.split('|')
+        if names[1] == 'False':
+            d_subform_excel_header_format[names[0]] = False
+        elif names[1] == 'True':
+            d_subform_excel_header_format[names[0]] = True
+        else:
+            d_subform_excel_header_format[names[0]] = names[1]
+
+    # excel data format
+    l_subform_excel_data_format = g_config.get('delivery', 'subform_excel_data_format').split(',')
+    d_subform_excel_data_format = {}
+    for kvpair in l_subform_excel_data_format:
+        names = kvpair.split('|')
+        if names[1] == 'False':
+            d_subform_excel_data_format[names[0]] = False
+        elif names[1] == 'True':
+            d_subform_excel_data_format[names[0]] = True
+        else:
+            d_subform_excel_data_format[names[0]] = names[1]
+
     d_subform_translate = {}
     subform_cols = g_config.get('delivery', 'subform_translate').split(',')
     for kvpair in subform_cols:
@@ -391,6 +441,13 @@ def build_subform():
     matte_delivery_type = g_config.get('delivery', 'matte_delivery_type')
     
     for vd in g_vdlist:
+        # Set the submission filename
+        vd.set_subfilename(subform_filename)
+
+        # set hard coded submission form entries
+        for hc_key in d_subform_hardcode_items.keys():
+            vd.set_arbitrary_version_data_item(hc_key, d_subform_hardcode_items[hc_key])
+
         rowdict = {}
         mattedict = {}
         ale_row_single = {}
@@ -400,7 +457,15 @@ def build_subform():
             if vd.version_data['b_hires']:
                 for kvpair in subform_cols:
                     csv_col = kvpair.split('|')[0]
-                    rowdict[csv_col] = vd.version_data[d_subform_translate[csv_col]]
+                    # handle booleans
+                    if isinstance(vd.version_data[d_subform_translate[csv_col]], bool):
+                        if vd.version_data[d_subform_translate[csv_col]]:
+                            rowdict[csv_col] = subform_boolean_true
+                        else:
+                            rowdict[csv_col] = subform_boolean_false
+                    else:
+                        rowdict[csv_col] = vd.version_data[d_subform_translate[csv_col]]
+
                     if d_subform_translate[csv_col] == 'client_filename':
                         rowdict[csv_col] = vd.version_data['client_hires_filename']
                     if d_subform_translate[csv_col] == 'client_filetype':
@@ -410,7 +475,14 @@ def build_subform():
             rowdict = {}
             for kvpair in subform_cols:
                 csv_col = kvpair.split('|')[0]
-                rowdict[csv_col] = vd.version_data[d_subform_translate[csv_col]]
+                # handle booleans
+                if isinstance(vd.version_data[d_subform_translate[csv_col]], bool):
+                    if vd.version_data[d_subform_translate[csv_col]]:
+                        rowdict[csv_col] = subform_boolean_true
+                    else:
+                        rowdict[csv_col] = subform_boolean_false
+                else:
+                    rowdict[csv_col] = vd.version_data[d_subform_translate[csv_col]]
                 if d_subform_translate[csv_col] == 'client_filename':
                     rowdict[csv_col] = vd.version_data['client_lores_filename']
                 if d_subform_translate[csv_col] == 'client_filetype':
@@ -419,7 +491,14 @@ def build_subform():
         else:
             for kvpair in subform_cols:
                 csv_col = kvpair.split('|')[0]
-                rowdict[csv_col] = vd.version_data[d_subform_translate[csv_col]]
+                # handle booleans
+                if isinstance(vd.version_data[d_subform_translate[csv_col]], bool):
+                    if vd.version_data[d_subform_translate[csv_col]]:
+                        rowdict[csv_col] = subform_boolean_true
+                    else:
+                        rowdict[csv_col] = subform_boolean_false
+                else:
+                    rowdict[csv_col] = vd.version_data[d_subform_translate[csv_col]]
             if vd.version_data['b_matte'] and g_matte:
                 for csv_col in d_subform_translate.keys():
                     mattedict[csv_col] = vd.version_data[d_subform_translate[csv_col]]
@@ -449,14 +528,37 @@ def build_subform():
         ale_row_single['ASC_SAT'] = str(vd.version_data['ccdata'].saturation)
         ale_rows.append(ale_row_single)
 
-        g_csv_file = os.path.join(delivery_path, "%s.csv"%g_package_dir)
-        csvfile_path = os.path.join(delivery_path, "%s.csv"%g_package_dir)
-        csvfile_fh = open(csvfile_path, 'w')
-        csvfile_dw = csv.DictWriter(csvfile_fh, headers)
-        csvfile_dw.writeheader()
-        csvfile_dw.writerows(rows)
-        csvfile_fh.close()        
-        
+        g_sub_file_path = os.path.join(delivery_path, subform_filename)
+
+        if subform_file_format == 'csv':
+            csvfile_fh = open(g_sub_file_path, 'w')
+            csvfile_dw = csv.DictWriter(csvfile_fh, headers)
+            csvfile_dw.writeheader()
+            csvfile_dw.writerows(rows)
+            csvfile_fh.close()
+        elif subform_file_format == 'xlsx':
+            # Write out xlsx file
+            workbook = xlsxwriter.Workbook(g_sub_file_path)
+            worksheet = workbook.add_worksheet(g_package_dir)
+            # column width hack
+            d_column_width = {}
+            header_format = workbook.add_format(d_subform_excel_header_format)
+            data_format = workbook.add_format(d_subform_excel_data_format)
+            # write headers
+            for header_idx, header_value in enumerate(headers):
+                worksheet.write(0, header_idx, header_value, header_format)
+                d_column_width[header_idx] = len(header_value)
+            for row_idx, tmp_row_dict in enumerate(rows):
+                for col_idx, header_name in enumerate(headers):
+                    worksheet.write(row_idx + 1, col_idx, str(tmp_row_dict[header_name]), data_format)
+                    if len(str(tmp_row_dict[header_name])) > d_column_width[col_idx]:
+                        d_column_width[col_idx] = len(str(tmp_row_dict[header_name]))
+            for tmp_col_idx in d_column_width.keys():
+                worksheet.set_column(tmp_col_idx, tmp_col_idx, d_column_width[tmp_col_idx] + 5)
+            workbook.close()
+        else:
+            raise Exception("Submission form file format %s not recognized."%subform_file_format)
+
         if g_write_ale and not g_matte:
             g_ale_file = os.path.join(delivery_path, "%s.ale"%g_package_dir)
             alefile_path = os.path.join(delivery_path, "%s.ale"%g_package_dir)
@@ -763,8 +865,8 @@ def execute_shell(m_interactive=False, m_2k=False, send_email=True, m_matte=Fals
                 copy_files(tmp_vd)
 
             print "INFO: Building Submission Form and ALE Files."
-            print "INFO: CSV Location: %s.csv"%os.path.join(g_package_dir, g_delivery_package)
-            print "INFO: ALE Location: %s.ale"%os.path.join(g_package_dir, g_delivery_package)
+            print "INFO: %s Location: %s.%s"%(g_subform_file_format.upper(), os.path.join(g_delivery_package, g_package_dir), g_subform_file_format.lower())
+            print "INFO: ALE Location: %s.ale"%os.path.join(g_delivery_package, g_package_dir)
             build_subform()
             print "INFO: Setting status of all versions in submission to Delivered."
             set_version_delivered()
