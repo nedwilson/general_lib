@@ -73,6 +73,10 @@ g_deliveryonly = False
 g_playlist_age_days = 30
 g_delivery_package_basename = None
 g_subform_file_format = 'xlsx'
+g_use_two_step_delivery = False
+g_playlists_loaded = False
+g_hero_playlist = None
+g_send_email = False
 
 g_distro_list_to = None
 g_distro_list_cc = None
@@ -97,7 +101,7 @@ g_internal_approval_status = 'iapr'
 def globals_from_config():
     global ihdb, g_ih_show_cfg_path, g_ih_show_root, g_ih_show_code, g_config, g_version_status, g_version_status_2k, g_version_status_qt, g_project_code, g_vendor_code, g_vendor_name, g_delivery_folder, g_fileop, g_delivery_res
     global g_distro_list_to, g_distro_list_cc, g_mail_from, g_write_ale, g_shared_root, g_credentials_dir, g_client_secret, g_gmail_creds, g_application_name, g_email_text, g_rsync_enabled, g_rsync_filetypes, g_rsync_dest, g_subform_lpf
-    global g_playlist_age_days, g_internal_approval_status, g_subform_file_format
+    global g_playlist_age_days, g_internal_approval_status, g_subform_file_format, g_use_two_step_delivery
     try:
         g_ih_show_code = os.environ['IH_SHOW_CODE']
         g_ih_show_root = os.environ['IH_SHOW_ROOT']
@@ -137,6 +141,8 @@ def globals_from_config():
         g_playlist_age_days = int(g_config.get('delivery', 'playlist_age_days'))
         g_internal_approval_status = g_config.get('delivery', 'internal_approval_status')
         g_subform_file_format = g_config.get('delivery', 'subform_file_format')
+        if g_config.get('delivery', 'g_use_two_step_delivery') in ['Y', 'y', 'Yes', 'YES', 'yes', 'True', 'TRUE', 'true']:
+            g_use_two_step_delivery = True
     except:
         pass
 
@@ -203,7 +209,9 @@ Data
 
 def get_delivery_directory():
     global g_version_status, g_version_status_qt, g_version_status_2k, g_ih_show_code, g_project_code, g_vendor_code, \
-        g_vendor_name, g_package_dir, g_batch_id, g_delivery_folder, g_delivery_package, g_combined, g_delivery_package_basename
+        g_vendor_name, g_package_dir, g_batch_id, g_delivery_folder, g_delivery_package, g_combined, \
+        g_delivery_package_basename, g_use_two_step_delivery, ihdb, g_playlists
+
     dt_hires = g_config.get('delivery', 'hires_delivery_type')
     dt_lores = g_config.get('delivery', 'lores_delivery_type')
     dt_combined = g_config.get('delivery', 'combined_delivery_type')
@@ -233,7 +241,16 @@ def get_delivery_directory():
     date_format = g_config.get('delivery', 'date_format')
     today = datetime.date.today().strftime(date_format)
     
-    matching_folders = sorted(glob.glob(os.path.join(g_delivery_folder, "*")))
+    matching_folders = []
+    if g_use_two_step_delivery:
+        load_playlists()
+        l_tmp_playlists = []
+        for o_tmp_playlist in g_playlists:
+            l_tmp_playlists.append(o_tmp_playlist.g_playlist_name)
+        matching_folders = sorted(l_tmp_playlists)
+    else:
+        matching_folders = sorted(glob.glob(os.path.join(g_delivery_folder, "*")))
+
     folder_re_text = g_config.get('delivery', 'package_directory_regexp')
     folder_re = re.compile(folder_re_text)
     
@@ -364,8 +381,10 @@ def load_versions_with_mattes():
     g_version_list = ihdb.fetch_versions_with_mattes()
 
 def load_playlists():
-    global g_playlists, g_playlist_age_days
-    g_playlists = ihdb.fetch_playlists_timeframe(m_days_back=g_playlist_age_days)
+    global g_playlists, g_playlist_age_days, g_playlists_loaded, ihdb
+    if not g_playlists_loaded:
+        g_playlists = ihdb.fetch_playlists_timeframe(m_days_back=g_playlist_age_days)
+        g_playlists_loaded = True
 
 def load_versions_from_playlist(m_playlist_obj):
     global g_version_list, g_internal_approval_status
@@ -709,7 +728,7 @@ def build_playlist():
     ihdb.create_playlist(dbplaylist)
     print "INFO: Created playlist %s in database."%(g_package_dir)
         
-def execute_shell(m_interactive=False, m_2k=False, send_email=True, m_matte=False, m_combined=False, m_playlistonly=False, m_deliveryonly=False):
+def execute_shell(m_interactive=False, m_2k=False, send_email=True, m_matte=False, m_combined=False, m_playlistonly=False, m_deliveryonly=False, m_hero_playlist=None):
     global g_version_list, g_version_status, g_package_dir, g_vdlist, g_delivery_folder, g_delivery_package, g_matte, \
         g_combined, g_playlistonly, g_deliveryonly, g_playlists, g_playlist_age_days, g_package_dir, \
         g_internal_approval_status
@@ -813,36 +832,44 @@ def execute_shell(m_interactive=False, m_2k=False, send_email=True, m_matte=Fals
         # retrieve the list of available playlists from the database
         load_playlists()
         playlist_names = []
+        o_hero_playlist_match = None
         for playlist in g_playlists:
             playlist_names.append(playlist.g_playlist_name)
+            if m_hero_playlist:
+                if playlist.g_playlist_name == m_hero_playlist:
+                    o_hero_playlist_match = playlist
 
-        print("INFO: Playlists created within the last %d days:"%g_playlist_age_days)
-        print("")
-        for count, playlist_name in enumerate(playlist_names, 1):
-            print("%2d. %s" % (count, playlist_name))
+        if not o_hero_playlist_match:
+            print("INFO: Playlists created within the last %d days:"%g_playlist_age_days)
+            print("")
+            for count, playlist_name in enumerate(playlist_names, 1):
+                print("%2d. %s" % (count, playlist_name))
 
-        print("")
-        if len(playlist_names) == 0:
-            print("WARNING: No playlists have been created in the database in the last %d days!" % g_playlist_age_days)
-            print("Program will now exit.")
-            return
+            print("")
+            if len(playlist_names) == 0:
+                print("WARNING: No playlists have been created in the database in the last %d days!" % g_playlist_age_days)
+                print("Program will now exit.")
+                return
 
-        if m_interactive:
-            while (True):
-                sys.stdout.write("Please enter the number for the playlist you would like to deliver to production: ")
-                input = sys.stdin.readline()
-                i_idx = 0
-                try:
-                    i_idx = int(input)
-                    o_hero_playlist = g_playlists[i_idx - 1]
-                    break
-                except ValueError:
-                    print("ERROR: %s is not a valid number." % input)
-                except IndexError:
-                    print("ERROR: There is no playlist number %s." % input)
+            if m_interactive:
+                while (True):
+                    sys.stdout.write("Please enter the number for the playlist you would like to deliver to production: ")
+                    input = sys.stdin.readline()
+                    i_idx = 0
+                    try:
+                        i_idx = int(input)
+                        o_hero_playlist = g_playlists[i_idx - 1]
+                        break
+                    except ValueError:
+                        print("ERROR: %s is not a valid number." % input)
+                    except IndexError:
+                        print("ERROR: There is no playlist number %s." % input)
+            else:
+                print("INFO: Not running in interactive mode. Will choose playlist #1 above.")
+                o_hero_playlist = g_playlists[0]
         else:
-            print("INFO: Not running in interactive mode. Will choose playlist #1 above.")
-            o_hero_playlist = g_playlists[0]
+            o_hero_playlist = o_hero_playlist_match
+            print("INFO: Playlist %s provided on the command line matches playlist in database with id %s."%(o_hero_playlist.g_playlist_name, o_hero_playlist.g_dbid))
 
         print("INFO: Setting package name equal to playlist name: %s"%o_hero_playlist.g_playlist_name)
         g_package_dir = o_hero_playlist.g_playlist_name
@@ -1177,11 +1204,142 @@ class PublishDeliveryResultsWindow(QMainWindow):
     def window_close(self):
         QCoreApplication.instance().quit()
 
-def display_window(m_2k=False, send_email=True, m_matte=False, m_combined=False, m_playlistonly=False, m_deliveryonly=False):
-    global g_version_list, g_version_status, g_vdlist, g_matte, g_combined, g_playlistonly, g_deliveryonly
+class PublishDeliveryPlaylistWindow(QMainWindow):
+    def __init__(self):
+        global g_playlists, g_hero_playlist
+        super(PublishDeliveryPlaylistWindow, self).__init__()
+        load_playlists()
+        self.setWindowTitle('Select a Playlist')
+        self.setMinimumSize(250, 250)
+
+        # central widget
+        self.widget = QWidget()
+        self.setCentralWidget(self.widget)
+        self.layout = QVBoxLayout()
+        self.widget.setLayout(self.layout)
+
+        self.layout_top = QHBoxLayout()
+        self.playlist_select = QListWidget()
+        o_selected_lwi = None
+
+        for o_tmp_playlist in g_playlists:
+            lwi_playlist = QListWidgetItem(o_tmp_playlist.g_playlist_name)
+            if g_hero_playlist == o_tmp_playlist.g_playlist_name:
+                o_selected_lwi = lwi_playlist
+            self.playlist_select.addItem(lwi_playlist)
+
+        if o_selected_lwi:
+            self.playlist_select.setCurrentItem(o_selected_lwi)
+
+        self.layout_top.addWidget(self.playlist_select)
+        self.layout.addLayout(self.layout_top)
+        # buttons at the bottom
+        self.layout_bottom = QHBoxLayout()
+        self.close_button = QPushButton("Cancel", self)
+        # self.close_button.setOrientation(Qt.Horizontal)
+        # self.close_button.setStandardButtons(QDialogButtonBox.Ok|QDialogButtonBox.Cancel)
+        self.close_button.clicked.connect(self.window_close)
+        # self.close_button.setEnabled(False)
+        self.process_button = QPushButton("OK", self)
+        self.process_button.clicked.connect(self.process)
+        self.layout_bottom.addWidget(self.close_button)
+        self.layout_bottom.addWidget(self.process_button)
+        self.layout.addLayout(self.layout_bottom)
+
+        self.results_window = PublishDeliveryResultsWindow(self)
+
+    def window_close(self):
+        QCoreApplication.instance().quit()
+
+    def process(self):
+        global g_hero_playlist, g_playlists, g_package_dir, g_internal_approval_status, g_delivery_package, \
+            g_delivery_folder, g_send_email
+        file_list = []
+        o_selected_lwi = self.playlist_select.selectedItems()
+        if not o_selected_lwi:
+            o_msgbox = QMessageBox()
+            o_msgbox.setWindowTitle("Publish Delivery Error")
+            o_msgbox.setTextFormat(Qt.PlainText)
+            o_msgbox.setIcon(QMessageBox.Warning)
+            o_msgbox.setText("Please select a playlist to publish!")
+            o_msgbox.setStandardButtons(QMessageBox.Ok)
+            o_msgbox.exec_()
+            return
+        else:
+            g_hero_playlist = o_selected_lwi[0].text()
+            print("INFO: User selected playlist %s for processing."%g_hero_playlist)
+        # now that we have a playlist to work with, let's build the delivery.
+        self.hide()
+        self.results_window.show()
+        try:
+            self.results_window.delivery_results.appendPlainText("INFO: You have selected playlist %s for processing."%g_hero_playlist)
+            QApplication.processEvents()
+            o_hero_playlist = None
+            for o_tmp_playlist in g_playlists:
+                if o_tmp_playlist.g_playlist_name == g_hero_playlist:
+                    o_hero_playlist = o_tmp_playlist
+
+            self.results_window.delivery_results.appendPlainText("INFO: Setting package name equal to playlist name: %s" % o_hero_playlist.g_playlist_name)
+            g_package_dir = o_hero_playlist.g_playlist_name
+            self.results_window.delivery_results.appendPlainText("INFO: Will deliver all versions with %s status from playlist %s." % (g_internal_approval_status, o_hero_playlist.g_playlist_name))
+            load_versions_from_playlist(o_hero_playlist)
+            QApplication.processEvents()
+
+            # get delivery directory
+            get_delivery_directory()
+            self.results_window.delivery_results.appendPlainText("INFO: Delivery package initialized to %s."%g_delivery_package)
+            QApplication.processEvents()
+
+            # get detailed version delivery list from list of database versions
+            vd_list_from_versions()
+            for tmp_vd in g_vdlist:
+                print "INFO: Proceeding with delivery for client version %s."%tmp_vd.version_data['client_version']
+            if len(g_vdlist) == 0:
+                raise RuntimeError("There are no versions selected to send to production! Please select at least one in order to proceed.")
+            else:
+                self.results_window.delivery_results.appendPlainText("INFO: Retrieved all information from database.")
+            QApplication.processEvents()
+            for tmp_vd in g_vdlist:
+                self.results_window.delivery_results.appendPlainText("INFO: Copying files for version %s to package."%tmp_vd.version_data['dbversion'].g_version_code)
+                file_list.append(tmp_vd.version_data['client_filename'])
+                QApplication.processEvents()
+                copy_files(tmp_vd)
+            self.results_window.delivery_results.appendPlainText("INFO: Building Submission Form and ALE Files.")
+            self.results_window.delivery_results.appendPlainText("INFO: %s Location: %s.%s"%(g_subform_file_format.upper(), os.path.join(g_delivery_package, g_package_dir), g_subform_file_format.lower()))
+            self.results_window.delivery_results.appendPlainText("INFO: ALE Location: %s.ale"%os.path.join(g_package_dir, g_delivery_package))
+            QApplication.processEvents()
+            build_subform()
+            self.results_window.delivery_results.appendPlainText("INFO: Setting status of all versions in submission to Delivered.")
+            QApplication.processEvents()
+            set_version_delivered()
+            QApplication.processEvents()
+            if g_send_email:
+                self.results_window.delivery_results.appendPlainText("INFO: Spawning a sync child processs to copy files to production. Email notification will be sent upon completion.")
+                QApplication.processEvents()
+                handle_sync_and_send_email(os.path.join(g_delivery_folder, g_package_dir), file_list)
+            self.results_window.delivery_results.appendPlainText("INFO: Delivery is complete.")
+            QApplication.processEvents()
+        except:
+            e = sys.exc_info()
+            etype = e[0].__name__
+            emsg = e[1]
+            self.results_window.delivery_results.appendPlainText("ERROR: Caught exception of type %s!"%etype)
+            self.results_window.delivery_results.appendPlainText("  MSG: %s"%emsg)
+            self.results_window.delivery_results.appendPlainText(traceback.format_exc(e[2]))
+            QApplication.processEvents()
+            print("ERROR: Caught exception of type %s!"%etype)
+            print("  MSG: %s"%emsg)
+            print(traceback.format_exc(e[2]))
+        self.results_window.close_button.setEnabled(True)
+
+
+def display_window(m_2k=False, send_email=True, m_matte=False, m_combined=False, m_playlistonly=False, m_deliveryonly=False, m_hero_playlist=None):
+    global g_version_list, g_version_status, g_vdlist, g_matte, g_combined, g_playlistonly, g_deliveryonly, g_playlists, \
+        g_hero_playlist, g_send_email
     g_combined = m_combined
     g_playlistonly = m_playlistonly
     g_deliveryonly = m_deliveryonly
+    g_send_email = send_email
     if m_2k:
         g_version_status = g_version_status_2k
     else:
@@ -1193,12 +1351,19 @@ def display_window(m_2k=False, send_email=True, m_matte=False, m_combined=False,
     else:
         g_matte = False
         load_versions_for_status(g_version_status)
-        
+
+    if m_hero_playlist:
+        g_hero_playlist = m_hero_playlist
     # Create a Qt application
     app = QApplication(sys.argv)
- 
-    # Our main window will be a QListView
-    window = PublishDeliveryWindow(m_2k, send_email, g_matte, g_combined, g_playlistonly)
+
+    window = None
+    if g_deliveryonly:
+        window = PublishDeliveryPlaylistWindow()
+    else:
+        # Our main window will be a QListView
+        window = PublishDeliveryWindow(m_2k, send_email, g_matte, g_combined, g_playlistonly)
+
     window.show()
     app.exec_()
     
