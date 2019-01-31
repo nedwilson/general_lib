@@ -40,6 +40,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             self.g_shotgun_plates_entity = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'plates_entity')
             self.g_shotgun_plates_scene_field = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'plates_scene_field')
             self.g_shotgun_plates_slate_field = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'plates_slate_field')
+            self.g_shotgun_path_to_matte_frames_field = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'path_to_matte_frames_field')
             self.g_sg = shotgun_api3.Shotgun(self.g_shotgun_server_path, self.g_shotgun_script_name, self.g_shotgun_api_key)
         except ConfigParser.NoSectionError:
             e = sys.exc_info()
@@ -267,7 +268,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
     def update_version(self, m_version_obj):
         if m_version_obj.g_matte_only:
             data = {
-                'sg_path_to_matte_frames' : m_version_obj.g_path_to_matte_frames
+                self.g_shotgun_path_to_matte_frames_field : m_version_obj.g_path_to_matte_frames
             }
             if m_version_obj.g_matte_ready : 
                 data['sg_matte_ready_'] = True
@@ -288,7 +289,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             if m_version_obj.g_client_code : 
                 data['client_code'] = m_version_obj.g_client_code
             if m_version_obj.g_path_to_matte_frames : 
-                data['sg_path_to_matte_frames'] = m_version_obj.g_path_to_matte_frames
+                data[self.g_shotgun_path_to_matte_frames_field] = m_version_obj.g_path_to_matte_frames
             if m_version_obj.g_matte_ready : 
                 data['sg_matte_ready_'] = True
             if m_version_obj.g_matte_delivered : 
@@ -326,7 +327,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             ['entity', 'is', {'type' : 'Shot', 'id' : int(m_shot_obj.g_dbid)}],
             ['code', 'is', m_version_name]
         ]
-        fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', 'sg_path_to_matte_frames', 'sg_matte_ready_', 'sg_matte_delivered_']
+        fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', self.g_shotgun_path_to_matte_frames_field, 'sg_matte_ready_', 'sg_matte_delivered_']
         sg_ver = self.g_sg.find_one("Version", filters, fields)
         if not sg_ver:
             return ver_ret
@@ -344,8 +345,8 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             for tmp_pl_struct in sg_ver['playlists']:
                 tmp_playlists.append(Playlist.Playlist(tmp_pl_struct['name'], [], tmp_pl_struct['id']))
             ver_ret.set_playlists(tmp_playlists)
-            if sg_ver['sg_path_to_matte_frames']:
-                ver_ret.set_path_to_matte_frames(sg_ver['sg_path_to_matte_frames'])
+            if sg_ver[self.g_shotgun_path_to_matte_frames_field]:
+                ver_ret.set_path_to_matte_frames(sg_ver[self.g_shotgun_path_to_matte_frames_field])
             if sg_ver['sg_matte_ready_'] == 'True':
                 ver_ret.set_matte_ready(True)
             if sg_ver['sg_matte_delivered_'] == 'True':
@@ -358,7 +359,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             ['project', 'is', {'type' : 'Project', 'id' : int(self.g_shotgun_project_id)}],
             ['id', 'is', m_version_id]
         ]
-        fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', 'sg_path_to_matte_frames', 'sg_matte_ready_', 'sg_matte_delivered_']
+        fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', self.g_shotgun_path_to_matte_frames_field, 'sg_matte_ready_', 'sg_matte_delivered_']
         sg_ver = self.g_sg.find_one("Version", filters, fields)
         if not sg_ver:
             return ver_ret
@@ -377,8 +378,8 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             for tmp_pl_struct in sg_ver['playlists']:
                 tmp_playlists.append(Playlist.Playlist(tmp_pl_struct['name'], [], tmp_pl_struct['id']))
             ver_ret.set_playlists(tmp_playlists)
-            if sg_ver['sg_path_to_matte_frames']:
-                ver_ret.set_path_to_matte_frames(sg_ver['sg_path_to_matte_frames'])
+            if sg_ver[self.g_shotgun_path_to_matte_frames_field]:
+                ver_ret.set_path_to_matte_frames(sg_ver[self.g_shotgun_path_to_matte_frames_field])
             if sg_ver['sg_matte_ready_'] == 'True':
                 ver_ret.set_matte_ready(True)
             if sg_ver['sg_matte_delivered_'] == 'True':
@@ -391,7 +392,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             ['project', 'is', {'type' : 'Project', 'id' : int(self.g_shotgun_project_id)}],
             ['sg_status_list', 'is', m_status]
         ]
-        fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', 'sg_path_to_matte_frames', 'sg_matte_ready_', 'sg_matte_delivered_']
+        fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', self.g_shotgun_path_to_matte_frames_field, 'sg_matte_ready_', 'sg_matte_delivered_']
         sg_vers = self.g_sg.find("Version", filters, fields)
         if not sg_vers:
             return ver_ret
@@ -410,8 +411,8 @@ class ShotgunDBAccess(DBAccess.DBAccess):
                 for tmp_pl_struct in sg_ver['playlists']:
                     tmp_playlists.append(Playlist.Playlist(tmp_pl_struct['name'], [], tmp_pl_struct['id']))
                 tmp_ver.set_playlists(tmp_playlists)
-                if sg_ver['sg_path_to_matte_frames']:
-                    tmp_ver.set_path_to_matte_frames(sg_ver['sg_path_to_matte_frames'])
+                if sg_ver[self.g_shotgun_path_to_matte_frames_field]:
+                    tmp_ver.set_path_to_matte_frames(sg_ver[self.g_shotgun_path_to_matte_frames_field])
                 if sg_ver['sg_matte_ready_'] == 'True':
                     tmp_ver.set_matte_ready(True)
                 if sg_ver['sg_matte_delivered_'] == 'True':
@@ -426,7 +427,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             ['sg_matte_ready_', 'is', True],
             ['sg_matte_delivered_', 'is', False]
         ]
-        fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', 'sg_path_to_matte_frames', 'sg_matte_ready_', 'sg_matte_delivered_']
+        fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', self.g_shotgun_path_to_matte_frames_field, 'sg_matte_ready_', 'sg_matte_delivered_']
         sg_vers = self.g_sg.find("Version", filters, fields)
         if not sg_vers:
             return ver_ret
@@ -445,8 +446,8 @@ class ShotgunDBAccess(DBAccess.DBAccess):
                 for tmp_pl_struct in sg_ver['playlists']:
                     tmp_playlists.append(Playlist.Playlist(tmp_pl_struct['name'], [], tmp_pl_struct['id']))
                 tmp_ver.set_playlists(tmp_playlists)
-                if sg_ver['sg_path_to_matte_frames']:
-                    tmp_ver.set_path_to_matte_frames(sg_ver['sg_path_to_matte_frames'])
+                if sg_ver[self.g_shotgun_path_to_matte_frames_field]:
+                    tmp_ver.set_path_to_matte_frames(sg_ver[self.g_shotgun_path_to_matte_frames_field])
                 if sg_ver['sg_matte_ready_'] == 'True':
                     tmp_ver.set_matte_ready(True)
                 if sg_ver['sg_matte_delivered_'] == 'True':
@@ -460,7 +461,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             ['project', 'is', {'type' : 'Project', 'id' : int(self.g_shotgun_project_id)}],
             ['entity', 'is', {'type' : 'Shot', 'id' : int(m_shot_obj.g_dbid)}]
         ]
-        fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', 'sg_path_to_matte_frames', 'sg_matte_ready_', 'sg_matte_delivered_']
+        fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', self.g_shotgun_path_to_matte_frames_field, 'sg_matte_ready_', 'sg_matte_delivered_']
         sg_vers = self.g_sg.find("Version", filters, fields)
         if not sg_vers:
             return ver_ret
@@ -478,8 +479,8 @@ class ShotgunDBAccess(DBAccess.DBAccess):
                 for tmp_pl_struct in sg_ver['playlists']:
                     tmp_playlists.append(Playlist.Playlist(tmp_pl_struct['name'], [], tmp_pl_struct['id']))
                 tmp_ver.set_playlists(tmp_playlists)
-                if sg_ver['sg_path_to_matte_frames']:
-                    tmp_ver.set_path_to_matte_frames(sg_ver['sg_path_to_matte_frames'])
+                if sg_ver[self.g_shotgun_path_to_matte_frames_field]:
+                    tmp_ver.set_path_to_matte_frames(sg_ver[self.g_shotgun_path_to_matte_frames_field])
                 if sg_ver['sg_matte_ready_'] == 'True':
                     tmp_ver.set_matte_ready(True)
                 if sg_ver['sg_matte_delivered_'] == 'True':
@@ -644,7 +645,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
         if m_version_obj.g_client_code : 
             data['client_code'] = m_version_obj.g_client_code
         if m_version_obj.g_path_to_matte_frames : 
-            data['sg_path_to_matte_frames'] = m_version_obj.g_path_to_matte_frames
+            data[self.g_shotgun_path_to_matte_frames_field] = m_version_obj.g_path_to_matte_frames
         if m_version_obj.g_matte_ready : 
             data['sg_matte_ready_'] = True
         if m_version_obj.g_matte_delivered : 
