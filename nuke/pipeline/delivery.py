@@ -1177,10 +1177,11 @@ class PublishDeliveryResultsWindow(QMainWindow):
     def window_close(self):
         QCoreApplication.instance().quit()
 
-def display_window(m_2k=False, send_email=True, m_matte=False, m_combined=False, m_playlistonly=False):
-    global g_version_list, g_version_status, g_vdlist, g_matte, g_combined, g_playlistonly
+def display_window(m_2k=False, send_email=True, m_matte=False, m_combined=False, m_playlistonly=False, m_deliveryonly=False):
+    global g_version_list, g_version_status, g_vdlist, g_matte, g_combined, g_playlistonly, g_deliveryonly
     g_combined = m_combined
     g_playlistonly = m_playlistonly
+    g_deliveryonly = m_deliveryonly
     if m_2k:
         g_version_status = g_version_status_2k
     else:
