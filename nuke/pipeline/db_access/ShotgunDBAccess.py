@@ -795,9 +795,9 @@ class ShotgunDBAccess(DBAccess.DBAccess):
         # If we've found one, just return. No sense in entering the data twice.
         if dbpublishret:
             # make sure the notes are up-to-date
-            data = { 'description' : m_clean_notes }
+            data = { 'description' : m_publish_notes }
             self.g_sg.update('PublishedFile', dbpublishret['id'], data)
-            dbpublishret['description'] = m_clean_notes
+            dbpublishret['description'] = m_publish_notes
             return dbpublishret
 
         # set shotgun authentication
