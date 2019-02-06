@@ -660,6 +660,8 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             data['sg_matte_delivered_'] = True
         if m_version_obj.g_version_type:
             data['sg_version_type'] = m_version_obj.g_version_type
+        if m_version_obj.g_status:
+            data['sg_status_list'] = m_version_obj.g_status
         try:
             sg_version = self.g_sg.create('Version', data)
             m_version_obj.g_dbid = sg_version['id']
