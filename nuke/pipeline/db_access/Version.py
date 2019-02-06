@@ -41,6 +41,7 @@ class Version():
         self.g_matte_only = False
         self.g_matte_ready = False
         self.g_matte_delivered = False
+        self.g_version_type = None
     def set_status(self, m_status):
         self.g_status = m_status
     def set_delivered(self, m_delivered):
@@ -57,6 +58,8 @@ class Version():
         self.g_client_code = m_client_code
     def set_playlists(self, m_playlists):
         self.g_playlists = m_playlists
+    def set_version_type(self, m_version_type):
+        self.g_version_type = m_version_type
     def __str__(self):
         task = 'NULL'
         if self.g_task:
