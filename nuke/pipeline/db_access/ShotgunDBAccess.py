@@ -282,11 +282,13 @@ class ShotgunDBAccess(DBAccess.DBAccess):
                 'frame_count' : m_version_obj.g_duration, 
                 'sg_path_to_frames' : m_version_obj.g_path_to_frames, 
                 'sg_path_to_movie' : m_version_obj.g_path_to_movie, 
-                'user' : {'type' : 'HumanUser', 'id' : int(m_version_obj.g_artist.g_dbid)}, 
+                # 'user' : {'type' : 'HumanUser', 'id' : int(m_version_obj.g_artist.g_dbid)},
                 'sg_status_list' : m_version_obj.g_status, 
                 'sg_delivered' : m_version_obj.g_delivered
             }
-            if m_version_obj.g_client_code : 
+            if m_version_obj.g_artist:
+                data['user'] = {'type': 'HumanUser', 'id': int(m_version_obj.g_artist.g_dbid)}
+            if m_version_obj.g_client_code :
                 data['client_code'] = m_version_obj.g_client_code
             if m_version_obj.g_path_to_matte_frames : 
                 data[self.g_shotgun_path_to_matte_frames_field] = m_version_obj.g_path_to_matte_frames
@@ -637,11 +639,15 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             'sg_path_to_frames' : m_version_obj.g_path_to_frames,
             'sg_path_to_movie' : m_version_obj.g_path_to_movie,
             'entity' : {'type' : 'Shot', 'id' : int(m_version_obj.g_shot.g_dbid)},
-            'user' : {'type' : 'HumanUser', 'id' : int(m_version_obj.g_artist.g_dbid)},
-            'sg_task' : {'type' : 'Task', 'id' : int(m_version_obj.g_task.g_dbid)},
+            # 'user' : {'type' : 'HumanUser', 'id' : int(m_version_obj.g_artist.g_dbid)},
+            # 'sg_task' : {'type' : 'Task', 'id' : int(m_version_obj.g_task.g_dbid)},
             # 'sg_delivered' : str(m_version_obj.g_delivered)
             'sg_delivered': m_version_obj.g_delivered
         }
+        if m_version_obj.g_artist:
+            data['user'] = {'type' : 'HumanUser', 'id' : int(m_version_obj.g_artist.g_dbid)}
+        if m_version_obj.g_task:
+            data['sg_task'] = {'type' : 'Task', 'id' : int(m_version_obj.g_task.g_dbid)}
         if m_version_obj.g_client_code : 
             data['client_code'] = m_version_obj.g_client_code
         if m_version_obj.g_path_to_matte_frames : 
