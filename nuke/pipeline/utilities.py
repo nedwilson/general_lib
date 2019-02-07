@@ -845,8 +845,8 @@ def get_client_version(db_version_name):
         ret_string = cvformat.format(shot = filename_gd['shot'], version_separator = vsep, version_number = filename_gd['version_number'], element_type = filename_gd['element_type'])
         return ret_string
     else:
-        raise ValueError("utilities: get_client_version(): db_version_name argument provided \'%s\' does not match show-level filename regular expression."%db_version_name)
-    
+        return None
+
 # class displays a GUI asking the user for deliverable type selection and slate notes
 class DeliveryNotesPanel(nukescripts.panels.PythonPanel):
     def __init__(self, review_notes='For Review'):
@@ -1364,9 +1364,12 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
                 tmp_cv = tmp_dbv.g_client_code
                 if not tmp_cv:
                     tmp_cv = get_client_version(tmp_dbv.g_version_code)
-                if tmp_cv == s_client_version and tmp_dbv.g_delivered:
-                    nuke.critical("This version has already been delivered to production as %s! Please upversion your Nuke script, re-render, and resubmit."%s_client_version)
-                    return
+                if tmp_cv == None:
+                    print('Warning: Unable to retrieve a client version name for database version %s. This means that the version name does not match the approved naming convention for the show.'%tmp_dbv.g_version_code)
+                else:
+                    if tmp_cv == s_client_version and tmp_dbv.g_delivered:
+                        nuke.critical("This version has already been delivered to production as %s! Please upversion your Nuke script, re-render, and resubmit."%s_client_version)
+                        return
             s_cdl_file_ext = g_config.get(s_show, 'cdl_file_ext')
             
 
