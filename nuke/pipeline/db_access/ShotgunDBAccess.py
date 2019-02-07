@@ -336,8 +336,12 @@ class ShotgunDBAccess(DBAccess.DBAccess):
         if not sg_ver:
             return ver_ret
         else:
-            local_task = self.fetch_task_from_id(int(sg_ver['sg_task']['id']), m_shot_obj)
-            local_artist = self.fetch_artist_from_id(int(sg_ver['user']['id']))
+            local_task = None
+            local_artist = None
+            if sg_ver['sg_task']:
+                local_task = self.fetch_task_from_id(int(sg_ver['sg_task']['id']), m_shot_obj)
+            if sg_ver['user']:
+                local_artist = self.fetch_artist_from_id(int(sg_ver['user']['id']))
             ver_ret = Version.Version(sg_ver['code'], sg_ver['id'], sg_ver['description'], sg_ver['sg_first_frame'], sg_ver['sg_last_frame'], sg_ver['frame_count'], sg_ver['sg_path_to_frames'], sg_ver['sg_path_to_movie'], m_shot_obj, local_artist, local_task)
             tmp_delivered = False
             if sg_ver['sg_delivered'] == 'True':
@@ -369,8 +373,12 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             return ver_ret
         else:
             local_shot = self.fetch_shot_from_id(sg_ver['entity']['id'])
-            local_task = self.fetch_task_from_id(int(sg_ver['sg_task']['id']), local_shot)
-            local_artist = self.fetch_artist_from_id(int(sg_ver['user']['id']))
+            local_task = None
+            local_artist = None
+            if sg_ver['sg_task']:
+                local_task = self.fetch_task_from_id(int(sg_ver['sg_task']['id']), local_shot)
+            if sg_ver['user']:
+                local_artist = self.fetch_artist_from_id(int(sg_ver['user']['id']))
             ver_ret = Version.Version(sg_ver['code'], sg_ver['id'], sg_ver['description'], sg_ver['sg_first_frame'], sg_ver['sg_last_frame'], sg_ver['frame_count'], sg_ver['sg_path_to_frames'], sg_ver['sg_path_to_movie'], local_shot, local_artist, local_task)
             tmp_delivered = False
             if sg_ver['sg_delivered'] == 'True':
