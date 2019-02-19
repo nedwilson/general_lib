@@ -1127,7 +1127,10 @@ def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame
                 nuke.message("The show configuration file is missing an option! Specifically:\n%s"%e.message)
             if b_upload_movie:
                 print "INFO: About to upload: %s"%d_db_thread_helper['export_dest']
-                g_ihdb.upload_movie('Version', dbversion, d_db_thread_helper['export_dest'])
+                if os.path.exists(d_db_thread_helper['export_dest']):
+                    g_ihdb.upload_movie('Version', dbversion, d_db_thread_helper['export_dest'])
+                else:
+                    print("Warning: delivery : upload_movie is set to True in the config file, but movie file %s does not exist."%d_db_thread_helper['export_dest'])
                 print "INFO: Done."
             g_ihdb.upload_thumbnail('Shot', dbshot, thumb_file_gen)
             dbtask.g_status = g_config.get('delivery', 'version_status_qt')
