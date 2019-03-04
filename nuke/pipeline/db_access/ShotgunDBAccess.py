@@ -394,6 +394,8 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             ['entity', 'is', {'type' : 'Shot', 'id' : int(m_shot_obj.g_dbid)}],
             ['code', 'is', m_version_name]
         ]
+        self.log_message(m_log_level='debug', m_log_message='Searching for Versions in the database with the following filters:')
+        self.log_message(m_log_level='debug', m_log_message=pprint.pprint(filters))
         fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', self.g_shotgun_path_to_matte_frames_field, 'sg_matte_ready_', 'sg_matte_delivered_']
         sg_ver = self.g_sg.find_one("Version", filters, fields)
         if not sg_ver:
