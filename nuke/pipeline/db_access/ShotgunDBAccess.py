@@ -31,27 +31,26 @@ import sgtk
 class ShotgunDBAccess(DBAccess.DBAccess):
 
     def __init__(self):
-        try:
-            self.g_shotgun_api_key = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'shotgun_api_key')
-            self.g_shotgun_script_name = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'shotgun_script_name')
-            self.g_shotgun_server_path = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'shotgun_server_path')
-            self.g_shotgun_project_id = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'shotgun_project_id')
-            self.g_shotgun_task_template = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'shotgun_task_template')
-            self.g_shotgun_plates_entity = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'plates_entity')
-            self.g_shotgun_plates_scene_field = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'plates_scene_field')
-            self.g_shotgun_plates_slate_field = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'plates_slate_field')
-            self.g_shotgun_path_to_matte_frames_field = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'path_to_matte_frames_field')
-            self.g_sg = shotgun_api3.Shotgun(self.g_shotgun_server_path, self.g_shotgun_script_name, self.g_shotgun_api_key)
-            self.g_log = None
-        except ConfigParser.NoSectionError:
-            e = sys.exc_info()
-            print e[1]
-        except ConfigParser.NoOptionError:
-            e = sys.exc_info()
-            print e[1]
-        except:        
-            e = sys.exc_info()
-            print e[1]
+        self.g_shotgun_api_key = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'shotgun_api_key')
+        self.g_shotgun_script_name = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'shotgun_script_name')
+        self.g_shotgun_server_path = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'shotgun_server_path')
+        self.g_shotgun_project_id = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'shotgun_project_id')
+        self.g_shotgun_task_template = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'shotgun_task_template')
+        self.g_shotgun_plates_entity = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'plates_entity')
+        self.g_shotgun_plates_scene_field = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'plates_scene_field')
+        self.g_shotgun_plates_slate_field = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'plates_slate_field')
+        self.g_shotgun_path_to_matte_frames_field = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'path_to_matte_frames_field')
+        self.g_sg = shotgun_api3.Shotgun(self.g_shotgun_server_path, self.g_shotgun_script_name, self.g_shotgun_api_key)
+        self.g_log = None
+        # except ConfigParser.NoSectionError:
+        #     e = sys.exc_info()
+        #     print e[1]
+        # except ConfigParser.NoOptionError:
+        #     e = sys.exc_info()
+        #     print e[1]
+        # except:
+        #     e = sys.exc_info()
+        #     print e[1]
 
     def set_logger_object(self, m_logger_object):
         self.g_log = m_logger_object
@@ -256,8 +255,8 @@ class ShotgunDBAccess(DBAccess.DBAccess):
                 sg_artist = self.g_sg.find_one("HumanUser", filters, fields)
                 artist_ret = Artist.Artist(sg_artist['firstname'], sg_artist['lastname'], sg_artist['login'], sg_artist['id'])
             except:
-                print "ERROR: Unable to retrieve user information from Shotgun using sg_network_login as a field name."
-                print traceback.format_exc()
+                self.log_message(m_log_level='error', m_log_message="ERROR: Unable to retrieve user information from Shotgun using sg_network_login as a field name.")
+                self.log_message(m_log_level='error', m_log_message=traceback.format_exc())
             return artist_ret
         else:
             artist_ret = Artist.Artist(sg_artist['firstname'], sg_artist['lastname'], sg_artist['login'], sg_artist['id'])
@@ -295,7 +294,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
                     try:
                         artist = self.fetch_artist_from_id(sg_task['task_assignees'][0]['id'])
                     except KeyError:
-                        print "WARNING: Task %s appears to have a blank assignees list. Using generic Artist object."
+                        self.log_message(m_log_level='warning', m_log_message="Task %s appears to have a blank assignees list. Using generic Artist object.")
                 task_ret = Task.Task(sg_task['content'], artist, sg_task['sg_status_list'], m_shot_obj, sg_task['id'])
                 tasks_array.append(task_ret)
             return tasks_array
@@ -318,7 +317,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             try:
                 artist = self.fetch_artist_from_id(sg_task['task_assignees'][0]['id'])
             except:
-                print "ERROR: Task assignees for task %s is NULL!"%sg_task
+                self.log_message(m_log_level='error', m_log_message="Task assignees for task %s is NULL!"%sg_task)
                 artist = Artist.Artist('Alan', 'Smithee', 'asmithee', -1)
             task_ret = Task.Task(sg_task['content'], artist, sg_task['sg_status_list'], m_shot_obj, sg_task['id'])
             return task_ret
@@ -739,9 +738,9 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             m_version_obj.g_dbid = sg_version['id']
         except:
             exception = sys.exc_info()
-            print "Caught exception %s!"%exception[1]
-            print data
-            print traceback.print_exception(exception[0], exception[1], exception[2])
+            self.log_message(m_log_level='error', m_log_message="Caught exception %s!"%exception[1])
+            self.log_message(m_log_level='error', m_log_message=data)
+            self.log_message(m_log_level='error', m_log_message=traceback.print_exception(exception[0], exception[1], exception[2]))
 
     def create_plate(self, m_plate_obj):
         data = {
@@ -809,9 +808,9 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             else:
                 raise ValueError('ShotgunDBAccess.upload_thumbnail(): entity type %s not supported.'%m_entity_type)
         except:
-            print "ShotgunDBAccess: upload_thumbnail(): Unexpected Error caught!"
-            print sys.exc_info()[0]
-            print sys.exc_info()[1]
+            self.log_message(m_log_level='error', m_log_message="ShotgunDBAccess: upload_thumbnail(): Unexpected Error caught!")
+            self.log_message(m_log_level='error', m_log_message=sys.exc_info()[0])
+            self.log_message(m_log_level='error', m_log_message=sys.exc_info()[1])
 
     # uploads a Quicktime movie for a given database object type.
     # currently, valid values are 'Version'
@@ -822,9 +821,9 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             else:
                 raise ValueError('ShotgunDBAccess.upload_movie(): entity type %s not supported.'%m_entity_type)
         except:
-            print "ShotgunDBAccess: upload_movie(): Unexpected Error caught!"
-            print sys.exc_info()[0]
-            print sys.exc_info()[1]
+            self.log_message(m_log_level='error', m_log_message="ShotgunDBAccess: upload_movie(): Unexpected Error caught!")
+            self.log_message(m_log_level='error', m_log_message=sys.exc_info()[0])
+            self.log_message(m_log_level='error', m_log_message=sys.exc_info()[1])
 
     def publish_for_shot(self, m_shot_obj, m_publish_path, m_clean_notes):
         cfg_version_separator = DBAccessGlobals.DBAccessGlobals.g_config.get(DBAccessGlobals.DBAccessGlobals.g_ih_show_code, 'version_separator')
