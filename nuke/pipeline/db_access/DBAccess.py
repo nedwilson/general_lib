@@ -10,6 +10,16 @@ class DBAccess(object):
     __metaclass__ = abc.ABCMeta
     
     @abc.abstractmethod
+    def set_logger_object(self, m_logger_object):
+        """Sets a logger object to use"""
+
+    @abc.abstractmethod
+    def log_message(self, m_log_level, m_log_message):
+        """Uses the logger object defined in set_logger_object() to write a message,
+           or creates a new one if none exists. m_log_level should be one of critical,
+           error, warning, info, or debug."""
+
+    @abc.abstractmethod
     def fetch_shot(self, m_shot_code):
         """Returns a shot object from the database"""
 

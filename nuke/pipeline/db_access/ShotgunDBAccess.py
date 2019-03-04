@@ -8,7 +8,7 @@ import shotgun_api3
 import pprint
 import threading
 import traceback
-
+import logging
 
 import Sequence
 import Shot
@@ -42,6 +42,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             self.g_shotgun_plates_slate_field = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'plates_slate_field')
             self.g_shotgun_path_to_matte_frames_field = DBAccessGlobals.DBAccessGlobals.g_config.get('database', 'path_to_matte_frames_field')
             self.g_sg = shotgun_api3.Shotgun(self.g_shotgun_server_path, self.g_shotgun_script_name, self.g_shotgun_api_key)
+            self.g_log = None
         except ConfigParser.NoSectionError:
             e = sys.exc_info()
             print e[1]
@@ -51,7 +52,54 @@ class ShotgunDBAccess(DBAccess.DBAccess):
         except:        
             e = sys.exc_info()
             print e[1]
-            
+
+    def set_logger_object(self, m_logger_object):
+        self.g_log = m_logger_object
+        self.g_log.debug('Logger object initialized by method.')
+
+    def log_message(self, m_log_level, m_log_message):
+        # if a logger object hasn't been
+        if not self.g_log:
+            homedir = os.path.expanduser('~')
+            logfile = ""
+            if sys.platform == 'win32':
+                logfile = os.path.join(homedir, 'AppData', 'Local', 'IHPipeline', '%s.log'%self.__class__.__name__)
+            elif sys.platform == 'darwin':
+                logfile = os.path.join(homedir, 'Library', 'Logs', 'IHPipeline', '%s.log'%self.__class__.__name__)
+            elif sys.platform == 'linux2':
+                logfile = os.path.join(homedir, 'Logs', 'IHPipeline', '%s.log'%self.__class__.__name__)
+            if not os.path.exists(os.path.dirname(logfile)):
+                os.makedirs(os.path.dirname(logfile))
+            logFormatter = logging.Formatter("%(asctime)s:[%(threadName)s]:[%(levelname)s]:%(message)s")
+            log = logging.getLogger()
+            log.setLevel(logging.INFO)
+            try:
+                devmode = os.environ['NUKE_DEVEL']
+                log.setLevel(logging.DEBUG)
+            except:
+                pass
+            fileHandler = logging.FileHandler(logfile)
+            fileHandler.setFormatter(logFormatter)
+            log.addHandler(fileHandler)
+            consoleHandler = logging.StreamHandler()
+            consoleHandler.setFormatter(logFormatter)
+            log.addHandler(consoleHandler)
+            self.g_log = log
+            self.g_log.info('Default log file path initialized to %s.'%logfile)
+        if m_log_level == 'debug':
+            self.g_log.debug(m_log_message)
+        elif m_log_level == 'info':
+            self.g_log.info(m_log_message)
+        elif m_log_level == 'warning':
+            self.g_log.warning(m_log_message)
+        elif m_log_level == 'error':
+            self.g_log.error(m_log_message)
+        elif m_log_level == 'critical':
+            self.g_log.critical(m_log_message)
+        else:
+            self.g_log.warning('%s is not a supported log level.'%m_log_level)
+            self.g_log.warning(m_log_message)
+
     def fetch_shot(self, m_shot_code):
     	# use the sequence matching regular expression here instead of hard coding m_shot_code[0:5]
         matchobject = DBAccessGlobals.DBAccessGlobals.g_shot_regexp.search(m_shot_code)
