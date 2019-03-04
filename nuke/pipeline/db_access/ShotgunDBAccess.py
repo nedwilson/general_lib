@@ -741,7 +741,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             m_version_obj.g_dbid = sg_version['id']
         except:
             exception = sys.exc_info()
-            self.log_message(m_log_level='error', m_log_message="Caught exception %s!"%exception[1])
+            self.log_message(m_log_level='error', m_log_message="Unable to create version %s!, caught exception %s!"%(m_version_obj.g_version_code, exception[1]))
             self.log_message(m_log_level='error', m_log_message=data)
             self.log_message(m_log_level='error', m_log_message=traceback.print_exception(exception[0], exception[1], exception[2]))
 
