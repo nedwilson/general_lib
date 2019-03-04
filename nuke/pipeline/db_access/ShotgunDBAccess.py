@@ -127,14 +127,19 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             try:
                 local_seq = Sequence.Sequence(sg_shot['sg_sequence']['name'], DBAccessGlobals.DBAccessGlobals.get_path_for_sequence(sg_shot['sg_sequence']['name']), sg_shot['sg_sequence']['id'])
             except KeyError:
-                print "ERROR: %s - Sequence is NULL! %s"%(threading.current_thread().getName(), sg_shot)
+                self.log_message(m_log_level='error', m_log_message="Shot %s has no assosciated sequence!"%sg_shot['code'])
                 local_seq = Sequence.Sequence(seq, DBAccessGlobals.DBAccessGlobals.get_path_for_sequence(seq), -1)
+            tmp_task_template_name = ""
+            try:
+                tmp_task_template_name = sg_shot['task_template']['name']
+            except TypeError:
+                self.log_message(m_log_level='warning', m_log_message='Shot %s was not created with a Task Template! Setting to blank.'%sg_shot['code'])
             local_shot_path = DBAccessGlobals.DBAccessGlobals.get_path_for_shot(sg_shot['code'])
             shot_ret = Shot.Shot(sg_shot['code'],
                             local_shot_path,
                             sg_shot['id'],
                             local_seq,
-                            sg_shot['task_template']['name'],
+                            tmp_task_template_name,
                             sg_shot['sg_head_in'],
                             sg_shot['sg_cut_in'],
                             sg_shot['sg_cut_out'],
@@ -153,13 +158,24 @@ class ShotgunDBAccess(DBAccess.DBAccess):
         if not sg_shot:
             return shot_ret
         else:
-            local_seq = Sequence.Sequence(sg_shot['sg_sequence']['name'], DBAccessGlobals.DBAccessGlobals.get_path_for_sequence(sg_shot['sg_sequence']['name']), sg_shot['sg_sequence']['id'])
+            local_seq = None
+            try:
+                local_seq = Sequence.Sequence(sg_shot['sg_sequence']['name'], DBAccessGlobals.DBAccessGlobals.get_path_for_sequence(sg_shot['sg_sequence']['name']), sg_shot['sg_sequence']['id'])
+            except KeyError:
+                self.log_message(m_log_level='error', m_log_message="Shot %s has no assosciated sequence!"%sg_shot['code'])
+                local_seq = Sequence.Sequence(seq, DBAccessGlobals.DBAccessGlobals.get_path_for_sequence(seq), -1)
+            tmp_task_template_name = ""
+            try:
+                tmp_task_template_name = sg_shot['task_template']['name']
+            except TypeError:
+                self.log_message(m_log_level='warning', m_log_message='Shot %s was not created with a Task Template! Setting to blank.'%sg_shot['code'])
+
             local_shot_path = DBAccessGlobals.DBAccessGlobals.get_path_for_shot(sg_shot['code'])
             shot_ret = Shot.Shot(sg_shot['code'],
                             local_shot_path,
                             sg_shot['id'],
                             local_seq,
-                            sg_shot['task_template']['name'],
+                            tmp_task_template_name,
                             sg_shot['sg_head_in'],
                             sg_shot['sg_cut_in'],
                             sg_shot['sg_cut_out'],
