@@ -638,6 +638,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
     def create_playlist(self, m_playlist_obj):
         version_list = []
         for ver in m_playlist_obj.g_playlist_versions:
+            self.log_message(m_log_level='debug', m_log_message=ver)
             version_list.append({'type' : 'Version', 'id' : ver.g_dbid})
         
         data = {
@@ -647,8 +648,10 @@ class ShotgunDBAccess(DBAccess.DBAccess):
         }
         sg_playlist = None
         if m_playlist_obj.g_dbid == -1:
+            self.log_message(m_log_level='debug', m_log_message='About to create a playlist. Internal dictionary data: %s'%pprint.pprint(data))
             sg_playlist = self.g_sg.create('Playlist', data)
         else:
+            self.log_message(m_log_level='debug', m_log_message='About to update a playlist with DBID = %d. Internal dictionary data: %s'%(m_playlist_obj.g_dbid, pprint(data)))
             sg_playlist = self.g_sg.update('Playlist', m_playlist_obj.g_dbid, data)
         m_playlist_obj.g_dbid = sg_playlist['id']
 
