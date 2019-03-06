@@ -7,7 +7,7 @@ import xml.etree.ElementTree as ET
 from db_access import Version
 from timecode import TimeCode
 from ccdata import CCData
-
+import logging
 
 #
 #
@@ -72,6 +72,56 @@ class VersionDelivery():
         self.version_data['client_hires_filetype'] = None
         self.version_data['client_lores_filename'] = None
         self.version_data['client_lores_filetype'] = None
+
+        # logger object
+        self.g_log = None
+
+    def set_logger_object(self, m_logger_object):
+        self.g_log = m_logger_object
+        self.g_log.debug('Logger object initialized by method.')
+
+    def log_message(self, m_log_level, m_log_message):
+        # if a logger object hasn't been
+        if not self.g_log:
+            homedir = os.path.expanduser('~')
+            logfile = ""
+            if sys.platform == 'win32':
+                logfile = os.path.join(homedir, 'AppData', 'Local', 'IHPipeline', '%s.log'%self.__class__.__name__)
+            elif sys.platform == 'darwin':
+                logfile = os.path.join(homedir, 'Library', 'Logs', 'IHPipeline', '%s.log'%self.__class__.__name__)
+            elif sys.platform == 'linux2':
+                logfile = os.path.join(homedir, 'Logs', 'IHPipeline', '%s.log'%self.__class__.__name__)
+            if not os.path.exists(os.path.dirname(logfile)):
+                os.makedirs(os.path.dirname(logfile))
+            logFormatter = logging.Formatter("%(asctime)s:[%(threadName)s]:[%(levelname)s]:%(message)s")
+            log = logging.getLogger()
+            log.setLevel(logging.INFO)
+            try:
+                devmode = os.environ['NUKE_DEVEL']
+                log.setLevel(logging.DEBUG)
+            except:
+                pass
+            fileHandler = logging.FileHandler(logfile)
+            fileHandler.setFormatter(logFormatter)
+            log.addHandler(fileHandler)
+            consoleHandler = logging.StreamHandler()
+            consoleHandler.setFormatter(logFormatter)
+            log.addHandler(consoleHandler)
+            self.g_log = log
+            self.g_log.info('Default log file path initialized to %s.'%logfile)
+        if m_log_level == 'debug':
+            self.g_log.debug(m_log_message)
+        elif m_log_level == 'info':
+            self.g_log.info(m_log_message)
+        elif m_log_level == 'warning':
+            self.g_log.warning(m_log_message)
+        elif m_log_level == 'error':
+            self.g_log.error(m_log_message)
+        elif m_log_level == 'critical':
+            self.g_log.critical(m_log_message)
+        else:
+            self.g_log.warning('%s is not a supported log level.'%m_log_level)
+            self.g_log.warning(m_log_message)
 
     # sets an arbitrary key in the version_data dictionary
     def set_arbitrary_version_data_item(self, m_key, m_value):
@@ -195,12 +245,19 @@ class VersionDelivery():
             pass
         # try and find a .CC file
         ccfiles = glob.glob(os.path.join(delivery_root, 'support_files', '*.c*'))
+        b_use_default_cc = True
         if len(ccfiles) > 0:
-            self.version_data['ccfile'] = ccfiles[0]
-            self.version_data['ccdata'] = CCData(ccfiles[0])
-        else:
+            fileext = os.path.splitext(ccfiles[0])[-1]
+            if fileext not in ['.ccc', '.cc', '.cdl']:
+                self.log_message(m_log_level='warning', m_log_message='Color Correction file at %s is NOT an XML file. Skipping.'%ccfiles[0])
+            else:
+                b_use_default_cc = False
+                self.log_message(m_log_level='info', m_log_message='Using CC file located at %s.'%ccfiles[0])
+                self.version_data['ccfile'] = ccfiles[0]
+                self.version_data['ccdata'] = CCData(ccfiles[0])
+        if b_use_default_cc:
             __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-            print os.path.join(__location__, 'default.cc')
+            self.log_message(m_log_level='info', m_log_message='Using default CC file at %s.'%os.path.join(__location__, 'default.cc'))
             self.version_data['ccfile'] = os.path.join(__location__, 'default.cc')
             self.version_data['ccdata'] = CCData(os.path.join(__location__, 'default.cc'))
             

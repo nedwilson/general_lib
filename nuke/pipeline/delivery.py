@@ -15,21 +15,7 @@ import csv
 import xlsxwriter
 import tempfile
 import traceback
-
-# gmail/oauth
-
-import httplib2
-import oauth2client
-import base64
-import mimetypes
-
-from oauth2client import client, tools
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from apiclient import errors, discovery
-from email.mime.image import MIMEImage
-from email.mime.audio import MIMEAudio
-from email.mime.base import MIMEBase
+import logging
 
 # PyQt5
 
@@ -97,6 +83,7 @@ g_rsync_enabled = False
 g_rsync_filetypes = []
 g_rsync_dest = ""
 g_internal_approval_status = 'iapr'
+g_log = None
 
 def globals_from_config():
     global ihdb, g_ih_show_cfg_path, g_ih_show_root, g_ih_show_code, g_config, g_version_status, g_version_status_2k, g_version_status_qt, g_project_code, g_vendor_code, g_vendor_name, g_delivery_folder, g_fileop, g_delivery_res
@@ -122,20 +109,21 @@ def globals_from_config():
         if g_config.get(g_ih_show_code, 'write_ale') == 'yes':
             g_write_ale = True
         ihdb = DB.DBAccessGlobals.get_db_access()
-        print "INFO: globals initiliazed from config %s."%g_ih_show_cfg_path
+        g_log.info("globals initiliazed from config %s."%g_ih_show_cfg_path)
     except KeyError:
         e = sys.exc_info()
-        print e[1]
-        print "This is most likely because this system has not been set up to run inside the In-House environment."
+        g_log.info(e[1])
+        g_log.info("This is most likely because this system has not been set up to run inside the In-House environment.")
     except ConfigParser.NoSectionError:
         e = sys.exc_info()
-        print e[1]
+        g_log.info(e[1])
     except ConfigParser.NoOptionError:
         e = sys.exc_info()
-        print e[1]
+        g_log.info(e[1])
     except:        
         e = sys.exc_info()
-        print e[1]
+        g_log.info(e[1])
+
     # for playlist_age_days and internal_approval_status, it won't matter if it's not in the config file, just default to hard-coded values
     try:
         g_playlist_age_days = int(g_config.get('delivery', 'playlist_age_days'))
@@ -156,7 +144,7 @@ def handle_sync_and_send_email(m_source_folder, file_list):
     os.close(fh_tmpcfg)
     send_sync_bin = g_config.get('delivery', 'sync_email_cmd_%s'%sys.platform)
     sync_cmd = [send_sync_bin, s_tmpcfg]
-    print "INFO: Executing command: %s"%" ".join(sync_cmd)
+    g_log.info("Executing command: %s"%" ".join(sync_cmd))
     subprocess.Popen(" ".join(sync_cmd), shell=True)
 
 class ALEWriter():
@@ -300,7 +288,7 @@ def get_delivery_directory():
     g_delivery_package = os.path.join(g_delivery_folder, g_package_dir)
 
 def vd_list_from_versions():
-    global g_version_list, g_vdlist
+    global g_version_list, g_vdlist, g_log
     global g_config, g_ih_show_code, g_vendor_code, g_vendor_name, g_batch_id, g_package_dir, g_version_status, g_version_status_2k, g_version_status_qt, g_matte
     version_separator = g_config.get(g_ih_show_code, 'version_separator')
     ftu = g_config.get('delivery', 'fields_to_uppercase').split(',')
@@ -312,8 +300,9 @@ def vd_list_from_versions():
     client_filename_format = g_config.get('delivery', 'client_filename')
     client_matte_filename_format = g_config.get('delivery', 'client_matte_filename')
     for dbversion in g_version_list:
-        print "INFO: Attempting to build a delivery for version %s."%dbversion.g_version_code
+        g_log.info("Attempting to build a delivery for version %s."%dbversion.g_version_code)
         vd_tmp = VersionDelivery(dbversion)
+        vd_tmp.set_logger_object(g_log)
         vd_tmp.set_version_separator(version_separator)
         vd_tmp.set_vendor_code(g_vendor_code)
         vd_tmp.set_vendor_name(g_vendor_name)
@@ -323,7 +312,7 @@ def vd_list_from_versions():
         if et_match:
             vd_tmp.set_element_type(et_match.groupdict()['element_type'])
         vd_tmp.load_from_filesystem()
-        # print vd_tmp.version_data
+        # g_log.info(vd_tmp.version_data)
         for vd_tmp_key in vd_tmp.version_data.keys():
             if vd_tmp_key in ftu:
                 tmp_str = vd_tmp.version_data[vd_tmp_key].upper()
@@ -604,7 +593,7 @@ def copy_files(vd):
     exportqt_dest = g_config.get('delivery', 'exportqt_dest')
     output_path = os.path.join(g_delivery_folder, g_package_dir)
     if not os.path.exists(output_path):
-        print "INFO: Making directory %s."%output_path
+        g_log.info("Making directory %s."%output_path)
         os.makedirs(output_path)
     b_hires = False
     if g_version_status == g_version_status_2k:
@@ -629,7 +618,7 @@ def copy_files(vd):
                 dest_file = os.path.join(output_path, hires_dest.format(**d_file_format))
                 if not os.path.exists(os.path.dirname(dest_file)):
                     os.makedirs(os.path.dirname(dest_file))
-                print "INFO: %s %s -> %s"%(g_fileop, hr_src_file, dest_file)
+                g_log.info("%s %s -> %s"%(g_fileop, hr_src_file, dest_file))
                 if g_fileop == 'copy' : 
                     shutil.copyfile(hr_src_file, dest_file)
                 elif g_fileop == 'hardlink' :
@@ -638,7 +627,7 @@ def copy_files(vd):
                 dest_file = os.path.join(output_path, cc_dest.format(**d_file_format))
                 if not os.path.exists(os.path.dirname(dest_file)):
                     os.makedirs(os.path.dirname(dest_file))
-                print "INFO: CC Data -> %s"%(dest_file)
+                g_log.info("CC Data -> %s"%(dest_file))
                 if cc_filetype == 'cc':
                     vd.version_data['ccdata'].write_cc_file(dest_file)
                 elif cc_filetype == 'ccc':
@@ -655,7 +644,7 @@ def copy_files(vd):
                 dest_file = os.path.join(output_path, matte_dest.format(**d_file_format))
                 if not os.path.exists(os.path.dirname(dest_file)):
                     os.makedirs(os.path.dirname(dest_file))
-                print "INFO: %s %s -> %s"%(g_fileop, matte_src_file, dest_file)
+                g_log.info("%s %s -> %s"%(g_fileop, matte_src_file, dest_file))
                 if g_fileop == 'copy' : 
                     shutil.copyfile(matte_src_file, dest_file)
                 elif g_fileop == 'hardlink' :
@@ -669,7 +658,7 @@ def copy_files(vd):
             dest_file = os.path.join(output_path, avidqt_dest.format(**d_file_format))
             if not os.path.exists(os.path.dirname(dest_file)):
                 os.makedirs(os.path.dirname(dest_file))
-            print "INFO: %s %s -> %s"%(g_fileop, avidqt_src, dest_file)
+            g_log.info("%s %s -> %s"%(g_fileop, avidqt_src, dest_file))
             if g_fileop == 'copy' : 
                 shutil.copyfile(avidqt_src, dest_file)
             elif g_fileop == 'hardlink' :
@@ -681,7 +670,7 @@ def copy_files(vd):
             dest_file = os.path.join(output_path, vfxqt_dest.format(**d_file_format))
             if not os.path.exists(os.path.dirname(dest_file)):
                 os.makedirs(os.path.dirname(dest_file))
-            print "INFO: %s %s -> %s"%(g_fileop, vfxqt_src, dest_file)
+            g_log.info("%s %s -> %s"%(g_fileop, vfxqt_src, dest_file))
             if g_fileop == 'copy' : 
                 shutil.copyfile(vfxqt_src, dest_file)
             elif g_fileop == 'hardlink' :
@@ -693,7 +682,7 @@ def copy_files(vd):
             dest_file = os.path.join(output_path, exportqt_dest.format(**d_file_format))
             if not os.path.exists(os.path.dirname(dest_file)):
                 os.makedirs(os.path.dirname(dest_file))
-            print "INFO: %s %s -> %s"%(g_fileop, exportqt_src, dest_file)
+            g_log.info("%s %s -> %s"%(g_fileop, exportqt_src, dest_file))
             if g_fileop == 'copy' : 
                 shutil.copyfile(exportqt_src, dest_file)
             elif g_fileop == 'hardlink' :
@@ -710,10 +699,10 @@ def set_version_delivered():
         tmp_dbversion.set_status(dlvr_status)
         tmp_dbversion.set_delivered(True)
         if g_matte:
-            print "INFO: Setting matte_delivered to True on %s."%tmp_dbversion.g_version_code
+            g_log.info("Setting matte_delivered to True on %s."%tmp_dbversion.g_version_code)
             ihdb.update_version_matte_delivered(tmp_dbversion)
         else:
-            print "INFO: Setting status on %s to %s."%(tmp_dbversion.g_version_code, tmp_dbversion.g_status)
+            g_log.info("Setting status on %s to %s."%(tmp_dbversion.g_version_code, tmp_dbversion.g_status))
             ihdb.update_version_status(tmp_dbversion)
 
 # builds a playlist in the database for all current versions
@@ -726,7 +715,7 @@ def build_playlist():
         dbplaylist = DB.Playlist(g_package_dir, [], -1)
     dbplaylist.g_playlist_versions = g_version_list
     ihdb.create_playlist(dbplaylist)
-    print "INFO: Created playlist %s in database."%(g_package_dir)
+    g_log.info("Created playlist %s in database."%(g_package_dir))
         
 def execute_shell(m_interactive=False, m_2k=False, send_email=True, m_matte=False, m_combined=False, m_playlistonly=False, m_deliveryonly=False, m_hero_playlist=None):
     global g_version_list, g_version_status, g_package_dir, g_vdlist, g_delivery_folder, g_delivery_package, g_matte, \
@@ -753,27 +742,27 @@ def execute_shell(m_interactive=False, m_2k=False, send_email=True, m_matte=Fals
                 sys.stdout.write("Proceed with matte delivery? (y|n) ")
                 input = sys.stdin.readline()
                 if 'n' in input or 'N' in input:
-                    print "Program will now exit."
+                    g_log.info("Program will now exit.")
                     return
             else:
                 sys.stdout.write("Proceed with low-resolution (Quicktime) delivery? \nAnswering no will switch to high-resolution (2k) delivery: (y|n) ")
                 input = sys.stdin.readline()
                 if 'n' in input or 'N' in input:
-                    print "INFO: Switching to high-resolution delivery."
+                    g_log.info("Switching to high-resolution delivery.")
                     g_version_status = g_version_status_2k
 
         if m_interactive and m_2k:
             sys.stdout.write("Proceed with high-resolution (2K) delivery? (y|n) ")
             input = sys.stdin.readline()
             if 'n' in input or 'N' in input:
-                print "Program will now exit."
+                g_log.info("Program will now exit.")
                 return
 
         if m_interactive and m_combined:
             sys.stdout.write("Proceed with combined delivery? (y|n) ")
             input = sys.stdin.readline()
             if 'n' in input or 'N' in input:
-                print "Program will now exit."
+                g_log.info("Program will now exit.")
                 return
 
         if g_matte:
@@ -785,15 +774,15 @@ def execute_shell(m_interactive=False, m_2k=False, send_email=True, m_matte=Fals
         for version in g_version_list:
             version_names.append(version.g_version_code)
 
-        print("INFO: List of versions matching status %s:" % g_version_status)
-        print("")
+        g_log.info("List of versions matching status %s:" % g_version_status)
+        g_log.info("")
         for count, version_name in enumerate(version_names, 1):
-            print("%2d. %s" % (count, version_name))
+            g_log.info("%2d. %s" % (count, version_name))
 
-        print("")
+        g_log.info("")
         if len(version_names) == 0:
-            print("WARNING: No versions in the database for status %s!" % g_version_status)
-            print("Program will now exit.")
+            g_log.warning("No versions in the database for status %s!" % g_version_status)
+            g_log.warning("Program will now exit.")
 
         if m_interactive:
             sys.stdout.write("Remove any versions from the delivery?\nInput a comma-separated list of version index numbers: ")
@@ -804,17 +793,17 @@ def execute_shell(m_interactive=False, m_2k=False, send_email=True, m_matte=Fals
                 try:
                     i_idx = int(idx)
                 except ValueError:
-                    print("ERROR: %s is not a valid number." % idx)
+                    g_log.error("%s is not a valid number." % idx)
                     continue
                 if i_idx > 0 and i_idx <= len(version_names):
                     versions_rm.append(i_idx - 1)
                 else:
-                    print("ERROR: %s is not a valid index number." % idx)
+                    g_log.error("%s is not a valid index number." % idx)
                     continue
             new_version_list = []
             for count, version in enumerate(g_version_list):
                 if count in versions_rm:
-                    print("INFO: Removing version %s from delivery list." % version.g_version_code)
+                    g_log.info("Removing version %s from delivery list." % version.g_version_code)
                 else:
                     new_version_list.append(version)
             g_version_list = new_version_list
@@ -826,7 +815,7 @@ def execute_shell(m_interactive=False, m_2k=False, send_email=True, m_matte=Fals
             sys.stdout.write("Proceed with delivery only? (y|n) ")
             input = sys.stdin.readline()
             if 'n' in input or 'N' in input:
-                print("Program will now exit.")
+                g_log.info("Program will now exit.")
                 return
 
         # retrieve the list of available playlists from the database
@@ -840,15 +829,15 @@ def execute_shell(m_interactive=False, m_2k=False, send_email=True, m_matte=Fals
                     o_hero_playlist_match = playlist
 
         if not o_hero_playlist_match:
-            print("INFO: Playlists created within the last %d days:"%g_playlist_age_days)
-            print("")
+            g_log.info("Playlists created within the last %d days:"%g_playlist_age_days)
+            g_log.info("")
             for count, playlist_name in enumerate(playlist_names, 1):
-                print("%2d. %s" % (count, playlist_name))
+                g_log.info("%2d. %s" % (count, playlist_name))
 
-            print("")
+            g_log.info("")
             if len(playlist_names) == 0:
-                print("WARNING: No playlists have been created in the database in the last %d days!" % g_playlist_age_days)
-                print("Program will now exit.")
+                g_log.warning("No playlists have been created in the database in the last %d days!" % g_playlist_age_days)
+                g_log.info("Program will now exit.")
                 return
 
             if m_interactive:
@@ -861,56 +850,56 @@ def execute_shell(m_interactive=False, m_2k=False, send_email=True, m_matte=Fals
                         o_hero_playlist = g_playlists[i_idx - 1]
                         break
                     except ValueError:
-                        print("ERROR: %s is not a valid number." % input)
+                        g_log.error("%s is not a valid number." % input)
                     except IndexError:
-                        print("ERROR: There is no playlist number %s." % input)
+                        g_log.error("There is no playlist number %s." % input)
             else:
-                print("INFO: Not running in interactive mode. Will choose playlist #1 above.")
+                g_log.info("Not running in interactive mode. Will choose playlist #1 above.")
                 o_hero_playlist = g_playlists[0]
         else:
             o_hero_playlist = o_hero_playlist_match
-            print("INFO: Playlist %s provided on the command line matches playlist in database with id %s."%(o_hero_playlist.g_playlist_name, o_hero_playlist.g_dbid))
+            g_log.info("Playlist %s provided on the command line matches playlist in database with id %s."%(o_hero_playlist.g_playlist_name, o_hero_playlist.g_dbid))
 
-        print("INFO: Setting package name equal to playlist name: %s"%o_hero_playlist.g_playlist_name)
+        g_log.info("Setting package name equal to playlist name: %s"%o_hero_playlist.g_playlist_name)
         g_package_dir = o_hero_playlist.g_playlist_name
-        print("INFO: Will deliver all versions with %s status from playlist %s."%(g_internal_approval_status,o_hero_playlist.g_playlist_name))
+        g_log.info("Will deliver all versions with %s status from playlist %s."%(g_internal_approval_status,o_hero_playlist.g_playlist_name))
         load_versions_from_playlist(o_hero_playlist)
 
     file_list = []
     try:
         get_delivery_directory()
-        print "INFO: Delivery package initialized to %s."%g_delivery_package
+        g_log.info("Delivery package initialized to %s."%g_delivery_package)
         vd_list_from_versions()
         if len(g_vdlist) == 0:
             raise RuntimeError("There are no versions available to send to production! Please select at least one in order to proceed.")
         else:
-            print "INFO: Retrieved all information from database."
+            g_log.info("Retrieved all information from database.")
         if not g_playlistonly:
             for tmp_vd in g_vdlist:
-                print "INFO: Copying files for version %s to package."%tmp_vd.version_data['dbversion'].g_version_code
+                g_log.info("Copying files for version %s to package."%tmp_vd.version_data['dbversion'].g_version_code)
                 file_list.append(tmp_vd.version_data['client_filename'])
                 copy_files(tmp_vd)
 
-            print "INFO: Building Submission Form and ALE Files."
-            print "INFO: %s Location: %s.%s"%(g_subform_file_format.upper(), os.path.join(g_delivery_package, g_package_dir), g_subform_file_format.lower())
-            print "INFO: ALE Location: %s.ale"%os.path.join(g_delivery_package, g_package_dir)
+            g_log.info("Building Submission Form and ALE Files.")
+            g_log.info("%s Location: %s.%s"%(g_subform_file_format.upper(), os.path.join(g_delivery_package, g_package_dir), g_subform_file_format.lower()))
+            g_log.info("ALE Location: %s.ale"%os.path.join(g_delivery_package, g_package_dir))
             build_subform()
-            print "INFO: Setting status of all versions in submission to Delivered."
+            g_log.info("Setting status of all versions in submission to Delivered.")
             set_version_delivered()
         if not g_deliveryonly:
-            print "INFO: Building a playlist in the database."
+            g_log.info("Building a playlist in the database.")
             build_playlist()
         if send_email and not g_playlistonly:
-            print "INFO: Spawning a sync child processs to copy files to production. Email notification will be sent upon completion."
+            g_log.info("Spawning a sync child processs to copy files to production. Email notification will be sent upon completion.")
             handle_sync_and_send_email(os.path.join(g_delivery_folder, g_package_dir), file_list)
-        print "INFO: Delivery is complete."
+        g_log.info("Delivery is complete.")
     except:
         e = sys.exc_info()
         etype = e[0].__name__
         emsg = e[1]
-        print "ERROR: Caught exception of type %s!"%etype
-        print "  MSG: %s"%emsg
-        print traceback.format_exc(e[2])
+        g_log.error("Caught exception of type %s!"%etype)
+        g_log.info("  MSG: %s"%emsg)
+        g_log.info(traceback.format_exc(e[2]))
         
 
     
@@ -939,7 +928,7 @@ class CheckBoxDelegate(QItemDelegate):
         if the user presses the left mousebutton and this cell is editable. Otherwise do nothing.
         '''
         #         if not int(index.flags() & Qt.ItemIsEditable) > 0:
-        #             print 'Item not editable'
+        #             g_log.info('Item not editable')
         #             return False
 
         if event.type() == QEvent.MouseButtonRelease and event.button() == Qt.LeftButton:
@@ -954,8 +943,8 @@ class CheckBoxDelegate(QItemDelegate):
         '''
         The user wanted to change the old state in the opposite.
         '''
-        # print "INFO: Inside setModelData() for CheckBoxDelegate"
-        # print "INFO: index.data() = %s"%index.data()
+        # g_log.info("Inside setModelData() for CheckBoxDelegate")
+        # g_log.info("index.data() = %s"%index.data())
         model.setData(index, True if int(index.data()) == 0 else False, Qt.EditRole)
 
 class PublishDeliveryWindow(QMainWindow):
@@ -1023,7 +1012,7 @@ class PublishDeliveryWindow(QMainWindow):
     def reject(self):
         global g_cancel
         g_cancel = True
-        print "INFO: User has cancelled operation."
+        g_log.info("User has cancelled operation.")
         QCoreApplication.instance().quit()
 
     def process_delivery(self):
@@ -1039,7 +1028,7 @@ class PublishDeliveryWindow(QMainWindow):
             # get detailed version delivery list from list of database versions
             vd_list_from_versions()
             for tmp_vd in g_vdlist:
-                print "INFO: Proceeding with delivery for client version %s."%tmp_vd.version_data['client_version']
+                g_log.info("Proceeding with delivery for client version %s."%tmp_vd.version_data['client_version'])
             if len(g_vdlist) == 0:
                 raise RuntimeError("There are no versions selected to send to production! Please select at least one in order to proceed.")
             else:
@@ -1084,14 +1073,14 @@ class PublishDeliveryWindow(QMainWindow):
     def accept(self):
         global g_version_list
         tmp_version_list = []
-        print "INFO: Proceeding with delivery publish."
+        g_log.info("Proceeding with delivery publish.")
         for index, row in enumerate(self.table_model.mylist):
             if not row[0]:
-                print "INFO: User requested removal of %s from delivery."%row[2]
+                g_log.info("User requested removal of %s from delivery."%row[2])
             else:
                 for dbversion in g_version_list:
                     if dbversion.g_version_code == row[2]:
-                        print "INFO: Version %s will be included in delivery."%row[2]
+                        g_log.info("Version %s will be included in delivery."%row[2])
                         tmp_version_list.append(dbversion)
         g_version_list = tmp_version_list
         self.process_delivery()
@@ -1115,19 +1104,19 @@ class PublishDeliveryWindow(QMainWindow):
         global g_version_status, g_version_list, g_combined
     
         if idx == 0:
-            print "INFO: Switching delivery type to Avid/VFX Quicktime."
+            g_log.info("Switching delivery type to Avid/VFX Quicktime.")
             g_version_status = g_version_status_qt
             load_versions_for_status(g_version_status)
         elif idx == 1:
-            print "INFO: Switching delivery type to High Resolution (DPX/EXR)."
+            g_log.info("Switching delivery type to High Resolution (DPX/EXR).")
             g_version_status = g_version_status_2k
             load_versions_for_status(g_version_status)
         elif idx == 2:
-            print "INFO: Switching delivery type to DI Matte."
+            g_log.info("Switching delivery type to DI Matte.")
             g_version_status = g_version_status_2k
             load_versions_with_mattes()
         elif idx == 3:
-            print "INFO: Switching delivery type to Combined."
+            g_log.info("Switching delivery type to Combined.")
             g_version_status = g_version_status_qt
             g_combined = True
             load_versions_for_status(g_version_status)
@@ -1155,7 +1144,7 @@ class DeliveryTableModel(QAbstractTableModel):
         return self.mylist[index.row()][index.column()]
     def setData(self, index, value, role=Qt.DisplayRole):
         if index.column() == 0:
-            print "INFO: Setting checkbox value to %s"%value
+            g_log.info("Setting checkbox value to %s"%value)
             self.mylist[index.row()][0] = value
             return value
         return value
@@ -1267,7 +1256,7 @@ class PublishDeliveryPlaylistWindow(QMainWindow):
             return
         else:
             g_hero_playlist = o_selected_lwi[0].text()
-            print("INFO: User selected playlist %s for processing."%g_hero_playlist)
+            g_log.info("User selected playlist %s for processing."%g_hero_playlist)
         # now that we have a playlist to work with, let's build the delivery.
         self.hide()
         self.results_window.show()
@@ -1293,7 +1282,7 @@ class PublishDeliveryPlaylistWindow(QMainWindow):
             # get detailed version delivery list from list of database versions
             vd_list_from_versions()
             for tmp_vd in g_vdlist:
-                print "INFO: Proceeding with delivery for client version %s."%tmp_vd.version_data['client_version']
+                g_log.info("Proceeding with delivery for client version %s."%tmp_vd.version_data['client_version'])
             if len(g_vdlist) == 0:
                 raise RuntimeError("There are no versions selected to send to production! Please select at least one in order to proceed.")
             else:
@@ -1327,9 +1316,9 @@ class PublishDeliveryPlaylistWindow(QMainWindow):
             self.results_window.delivery_results.appendPlainText("  MSG: %s"%emsg)
             self.results_window.delivery_results.appendPlainText(traceback.format_exc(e[2]))
             QApplication.processEvents()
-            print("ERROR: Caught exception of type %s!"%etype)
-            print("  MSG: %s"%emsg)
-            print(traceback.format_exc(e[2]))
+            g_log.error("Caught exception of type %s!"%etype)
+            g_log.info("  MSG: %s"%emsg)
+            g_log.info(traceback.format_exc(e[2]))
         self.results_window.close_button.setEnabled(True)
 
 
@@ -1366,6 +1355,10 @@ def display_window(m_2k=False, send_email=True, m_matte=False, m_combined=False,
 
     window.show()
     app.exec_()
+
+def set_logger(m_log_object):
+    global g_log
+    g_log = m_log_object
     
 
     
