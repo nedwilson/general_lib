@@ -48,8 +48,8 @@ def get_thumbnail_for_shot(m_shot):
     show_code = os.environ['IH_SHOW_CODE']
 
     shot_regexp = config.get(show_code, 'shot_regexp')
-    shot_lut_file_path = config.get('color', 'shot_lut_file_path_%s' % sys.platform)
-    shot_lut_file_ext = config.get('color', 'shot_lut_file_ext')
+    shot_thumb_file_path = config.get('thumbnails', 'shot_thumb_default_path_%s' % sys.platform)
+    shot_thumb_file_ext = config.get('thumbnails', 'thumb_file_extension')
 
     shot_re = re.compile(shot_regexp)
 
@@ -63,12 +63,10 @@ def get_thumbnail_for_shot(m_shot):
             "Shot name provided to get_thumbnail_for_shot(), %s, does not match the shot naming convention for show %s." % (
             m_shot, show_code))
 
-    d_shot_lut_file = { 'sequence' : seq, 'shot' : shot, 'ext' : shot_lut_file_ext }
-    default_shot_lut_path = shot_lut_file_path.format(**d_shot_lut_file)
+    d_shot_thumb_file = { 'sequence' : seq, 'shot' : shot, 'ext' : shot_thumb_file_ext }
+    default_shot_thumb_path = shot_thumb_file_path.format(**d_shot_thumb_file)
 
-    return default_shot_lut_path
-
-
+    return default_shot_thumb_path
 
 
 
