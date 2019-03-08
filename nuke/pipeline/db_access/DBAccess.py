@@ -14,6 +14,10 @@ class DBAccess(object):
         """Sets a logger object to use"""
 
     @abc.abstractmethod
+    def set_project_id(self, m_project_id):
+        """The default project ID is set by the config file. Call this method if you wish to use a different project ID."""
+
+    @abc.abstractmethod
     def log_message(self, m_log_level, m_log_message):
         """Uses the logger object defined in set_logger_object() to write a message,
            or creates a new one if none exists. m_log_level should be one of critical,

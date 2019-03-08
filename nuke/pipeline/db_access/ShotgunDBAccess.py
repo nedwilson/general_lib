@@ -52,6 +52,10 @@ class ShotgunDBAccess(DBAccess.DBAccess):
         #     e = sys.exc_info()
         #     print e[1]
 
+    def set_project_id(self, m_project_id):
+        self.log_message(m_log_level='debug', m_log_message='Changing g_shotgun_project_id from %d to %d.'%(self.g_shotgun_project_id, m_project_id))
+        self.g_shotgun_project_id = m_project_id
+
     def set_logger_object(self, m_logger_object):
         self.g_log = m_logger_object
         self.g_log.debug('Logger object initialized by method.')
