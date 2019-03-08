@@ -569,6 +569,43 @@ class ShotgunDBAccess(DBAccess.DBAccess):
                 ver_ret.append(tmp_ver)
             return ver_ret
 
+    def fetch_versions_for_entity(self, m_version_name_contains, m_entity_type, m_entity_id):
+        ver_ret = []
+        filters = [
+            ['code', 'contains', m_version_name_contains],
+            ['project', 'is', {'type' : 'Project', 'id' : int(self.g_shotgun_project_id)}],
+            ['entity', 'is', {'type' : m_entity_type, 'id' : int(m_entity_id)}]
+        ]
+        fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count',
+                  'sg_path_to_frames', 'sg_path_to_movie', 'sg_path_to_dnxhd', 'entity', 'user', 'sg_delivered',
+                  'client_code', self.g_shotgun_path_to_matte_frames_field, 'sg_matte_ready_', 'sg_matte_delivered_',
+                  'sg_version_type']
+        sg_vers = self.g_sg.find("Version", filters, fields)
+        if not sg_vers:
+            return ver_ret
+        else:
+            for sg_ver in sg_vers:
+                tmp_ver = Version.Version(sg_ver['code'], sg_ver['id'], sg_ver['description'], sg_ver['sg_first_frame'],
+                                          sg_ver['sg_last_frame'], sg_ver['frame_count'], sg_ver['sg_path_to_frames'],
+                                          sg_ver['sg_path_to_movie'], None, None, None)
+                tmp_delivered = False
+                if sg_ver['sg_delivered'] == 'True':
+                    tmp_delivered = True
+                tmp_ver.set_status(sg_ver['sg_status_list'])
+                tmp_ver.set_delivered(tmp_delivered)
+                tmp_ver.set_client_code(sg_ver['client_code'])
+                if sg_ver[self.g_shotgun_path_to_matte_frames_field]:
+                    tmp_ver.set_path_to_matte_frames(sg_ver[self.g_shotgun_path_to_matte_frames_field])
+                if sg_ver['sg_matte_ready_'] == 'True':
+                    tmp_ver.set_matte_ready(True)
+                if sg_ver['sg_matte_delivered_'] == 'True':
+                    tmp_ver.set_matte_delivered(True)
+                if sg_ver['sg_version_type']:
+                    tmp_ver.set_version_type(sg_ver['sg_version_type'])
+                ver_ret.append(tmp_ver)
+            return ver_ret
+
+
     def fetch_playlist(self, m_playlist_name):                
         playlist_ret = None
         filters = [

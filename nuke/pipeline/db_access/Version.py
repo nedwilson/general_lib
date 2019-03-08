@@ -42,6 +42,7 @@ class Version():
         self.g_matte_ready = False
         self.g_matte_delivered = False
         self.g_version_type = None
+        self.g_version_entity = None
     def set_status(self, m_status):
         self.g_status = m_status
     def set_delivered(self, m_delivered):
@@ -60,6 +61,8 @@ class Version():
         self.g_playlists = m_playlists
     def set_version_type(self, m_version_type):
         self.g_version_type = m_version_type
+    def set_version_entity(self, m_version_entity):
+        self.g_version_entity = m_version_entity
     def __str__(self):
         task = 'NULL'
         if self.g_task:
@@ -80,6 +83,7 @@ class Version():
     Delivered: {g_delivered}
     Client Version Name: {g_client_code}
     Playlist(s): {g_playlists}
+    Entity: {g_version_entity}
 """.format(g_version_code = self.g_version_code, 
            g_dbid = self.g_dbid,
            g_description = self.g_description,
@@ -94,7 +98,8 @@ class Version():
            g_status = self.g_status,
            g_delivered = self.g_delivered,
            g_client_code = self.g_client_code,
-           g_playlists = ', '.join([pl.g_playlist_name for pl in self.g_playlists]))
+           g_playlists = ', '.join([pl.g_playlist_name for pl in self.g_playlists]),
+           g_version_entity = str(self.g_version_entity))
         return ret_str
     def __repr__(self):
         task = 'NULL'
