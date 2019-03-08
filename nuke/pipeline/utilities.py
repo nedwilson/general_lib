@@ -1654,18 +1654,21 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
             if not avidqt_delivery:
                 os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(True)\n"%g_config.get('delivery', 'avid_write_node'))
             else:
+                os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(False)\n"%g_config.get('delivery', 'avid_write_node'))
                 os.write(fh_nukepy, "nuke.toNode('%s').knob('file').setValue('%s')\n"%(g_config.get('delivery', 'avid_write_node'), s_avidqt_dest))
                 l_exec_nodes.append(g_config.get('delivery', 'avid_write_node'))
             
             if not vfxqt_delivery or sys.platform == 'win32':
                 os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(True)\n"%g_config.get('delivery', 'vfx_write_node'))
             else:
+                os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(False)\n"%g_config.get('delivery', 'vfx_write_node'))
                 os.write(fh_nukepy, "nuke.toNode('%s').knob('file').setValue('%s')\n"%(g_config.get('delivery', 'vfx_write_node'), s_vfxqt_dest))
                 l_exec_nodes.append(g_config.get('delivery', 'vfx_write_node'))
 
             if not export_delivery:
                 os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(True)\n"%g_config.get('delivery', 'export_write_node'))
             else:
+                os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(False)\n"%g_config.get('delivery', 'export_write_node'))
                 os.write(fh_nukepy, "nuke.toNode('%s').knob('file').setValue('%s')\n"%(g_config.get('delivery', 'export_write_node'), s_exportqt_dest))
                 l_exec_nodes.append(g_config.get('delivery', 'export_write_node'))
             
@@ -1673,6 +1676,7 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
                 os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(True)\n"%g_config.get('delivery', 'hires_write_node'))
                 b_deliver_cdl = False
             else:
+                os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(False)\n" % g_config.get('delivery', 'hires_write_node'))
                 if s_delivery_fileext == 'exr':
                     os.write(fh_nukepy, "nuke.toNode('%s').knob('file').setValue('%s')\n"%(g_config.get('delivery', 'hires_write_node'), s_exr_dest.replace('*', '%04d')))
                 if s_delivery_fileext == 'dpx':
@@ -1682,6 +1686,7 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
             if not matte_delivery:
                 os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(True)\n"%g_config.get('delivery', 'matte_write_node'))
             else:
+                os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(False)\n"%g_config.get('delivery', 'matte_write_node'))
                 os.write(fh_nukepy, "nuke.toNode('%s').knob('file').setValue('%s')\n"%(g_config.get('delivery', 'matte_write_node'), s_matte_dest.replace('*', '%04d')))
                 l_exec_nodes.append(g_config.get('delivery', 'matte_write_node'))
             
