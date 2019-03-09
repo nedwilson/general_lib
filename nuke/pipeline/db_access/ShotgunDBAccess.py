@@ -353,6 +353,8 @@ class ShotgunDBAccess(DBAccess.DBAccess):
                 'sg_status_list' : m_version_obj.g_status, 
                 'sg_delivered' : m_version_obj.g_delivered
             }
+            if m_version_obj.g_version_entity:
+                data['entity'] = m_version_obj.g_version_entity
             if m_version_obj.g_artist:
                 data['user'] = {'type': 'HumanUser', 'id': int(m_version_obj.g_artist.g_dbid)}
             if m_version_obj.g_client_code :
