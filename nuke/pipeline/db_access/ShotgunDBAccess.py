@@ -53,7 +53,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
         #     print e[1]
 
     def set_project_id(self, m_project_id):
-        self.log_message(m_log_level='debug', m_log_message='Changing g_shotgun_project_id from %d to %d.'%(self.g_shotgun_project_id, m_project_id))
+        self.log_message(m_log_level='debug', m_log_message='Changing g_shotgun_project_id from %d to %d.'%(int(self.g_shotgun_project_id), m_project_id))
         self.g_shotgun_project_id = m_project_id
 
     def set_logger_object(self, m_logger_object):
