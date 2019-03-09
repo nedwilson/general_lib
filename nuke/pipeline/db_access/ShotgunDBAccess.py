@@ -752,6 +752,11 @@ class ShotgunDBAccess(DBAccess.DBAccess):
         m_shot_obj.g_dbid = sg_shot['id']        
 
     def create_version(self, m_version_obj):
+        tmp_entity = None
+        if m_version_obj.g_version_entity:
+            tmp_entity = m_version_obj.g_version_entity
+        else:
+            tmp_entity = {'type' : 'Shot', 'id' : int(m_version_obj.g_shot.g_dbid)}
         data = {
             'project' : {'type' : 'Project', 'id' : int(self.g_shotgun_project_id)},
             'code' : m_version_obj.g_version_code,
@@ -761,7 +766,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             'frame_count' : m_version_obj.g_duration,
             'sg_path_to_frames' : m_version_obj.g_path_to_frames,
             'sg_path_to_movie' : m_version_obj.g_path_to_movie,
-            'entity' : {'type' : 'Shot', 'id' : int(m_version_obj.g_shot.g_dbid)},
+            'entity' : tmp_entity,
             # 'user' : {'type' : 'HumanUser', 'id' : int(m_version_obj.g_artist.g_dbid)},
             # 'sg_task' : {'type' : 'Task', 'id' : int(m_version_obj.g_task.g_dbid)},
             # 'sg_delivered' : str(m_version_obj.g_delivered)
