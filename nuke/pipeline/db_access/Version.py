@@ -73,6 +73,12 @@ class Version():
         task = 'NULL'
         if self.g_task:
             task = self.g_task.task_name
+        shot = 'NULL'
+        if self.g_shot:
+            shot = self.g_shot.s_shot_code
+        artist = 'NULL'
+        if self.g_artist:
+            artist = self.g_artist.g_full_name
         ret_str = """class Version():
     Version Name: {g_version_code} 
     DBID: {g_dbid}
@@ -98,8 +104,8 @@ class Version():
            g_duration = self.g_duration,
            g_path_to_frames = self.g_path_to_frames,
            g_path_to_movie = self.g_path_to_movie,
-           g_shot = self.g_shot.g_shot_code,
-           g_artist = self.g_artist.g_full_name,
+           g_shot = shot,
+           g_artist = artist,
            g_task = task,
            g_status = self.g_status,
            g_delivered = self.g_delivered,
@@ -111,6 +117,12 @@ class Version():
         task = 'NULL'
         if self.g_task:
             task = self.g_task.task_name
+        shot = 'NULL'
+        if self.g_shot:
+            shot = self.g_shot.s_shot_code
+        artist = 'NULL'
+        if self.g_artist:
+            artist = self.g_artist.g_full_name
         ret_str = """class Version():
     Version Name: {g_version_code} 
     DBID: {g_dbid}
@@ -135,8 +147,8 @@ class Version():
            g_duration = self.g_duration,
            g_path_to_frames = self.g_path_to_frames,
            g_path_to_movie = self.g_path_to_movie,
-           g_shot = self.g_shot.g_shot_code,
-           g_artist = self.g_artist.g_full_name,
+           g_shot = shot,
+           g_artist = artist,
            g_task = task,
            g_status = self.g_status,
            g_delivered = self.g_delivered,
