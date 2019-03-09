@@ -569,10 +569,10 @@ class ShotgunDBAccess(DBAccess.DBAccess):
                 ver_ret.append(tmp_ver)
             return ver_ret
 
-    def fetch_versions_for_entity(self, m_version_name_contains, m_entity_type, m_entity_id):
+    def fetch_versions_for_entity(self, m_version_name, m_entity_type, m_entity_id):
         ver_ret = []
         filters = [
-            ['code', 'contains', m_version_name_contains],
+            ['code', 'is', m_version_name],
             ['project', 'is', {'type' : 'Project', 'id' : int(self.g_shotgun_project_id)}],
             ['entity', 'is', {'type' : m_entity_type, 'id' : int(m_entity_id)}]
         ]

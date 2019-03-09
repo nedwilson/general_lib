@@ -96,9 +96,9 @@ class DBAccess(object):
         """Returns a list of versions in the database that have been submitted for a particular shot"""
 
     @abc.abstractmethod
-    def fetch_versions_for_entity(self, m_version_name_contains, m_entity_type, m_entity_id):
+    def fetch_versions_for_entity(self, m_version_name, m_entity_type, m_entity_id):
         """Returns a list of versions in the database, linked to an entity with id m_entity_id and of type
-           m_entity_type, and where the name contains m_version_name_contains."""
+           m_entity_type, and where the name is m_version_name."""
 
     @abc.abstractmethod
     def fetch_playlist(self, m_playlist_name):                
