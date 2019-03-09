@@ -43,6 +43,8 @@ class Version():
         self.g_matte_delivered = False
         self.g_version_type = None
         self.g_version_entity = None
+        self.g_path_to_dnxhd = None
+        self.g_path_to_export = None
     def set_status(self, m_status):
         self.g_status = m_status
     def set_delivered(self, m_delivered):
@@ -63,6 +65,10 @@ class Version():
         self.g_version_type = m_version_type
     def set_version_entity(self, m_version_entity):
         self.g_version_entity = m_version_entity
+    def set_path_to_dnxhd(self, m_path_to_dnxhd):
+        self.g_path_to_dnxhd = m_path_to_dnxhd
+    def set_path_to_export(self, m_path_to_export):
+        self.g_path_to_export = m_path_to_export
     def __str__(self):
         task = 'NULL'
         if self.g_task:

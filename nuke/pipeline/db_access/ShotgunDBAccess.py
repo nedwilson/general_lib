@@ -365,6 +365,8 @@ class ShotgunDBAccess(DBAccess.DBAccess):
                 data['sg_matte_delivered_'] = True
             if m_version_obj.g_version_type:
                 data['sg_version_type'] = m_version_obj.g_version_type
+            if m_version_obj.g_path_to_dnxhd:
+                data['sg_path_to_dnxhd'] = m_version_obj.g_path_to_dnxhd
 
         self.g_sg.update('Version', m_version_obj.g_dbid, data)
 
@@ -602,6 +604,8 @@ class ShotgunDBAccess(DBAccess.DBAccess):
                     tmp_ver.set_matte_delivered(True)
                 if sg_ver['sg_version_type']:
                     tmp_ver.set_version_type(sg_ver['sg_version_type'])
+                if sg_ver['sg_path_to_dnxhd']:
+                    tmp_ver.set_path_to_dnxhd(sg_ver['sg_path_to_dnxhd'])
                 ver_ret.append(tmp_ver)
             return ver_ret
 
@@ -779,6 +783,8 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             data['sg_version_type'] = m_version_obj.g_version_type
         if m_version_obj.g_status:
             data['sg_status_list'] = m_version_obj.g_status
+        if m_version_obj.g_path_to_dnxhd:
+            data['sg_path_to_dnxhd'] = m_version_obj.g_path_to_dnxhd
         try:
             sg_version = self.g_sg.create('Version', data)
             m_version_obj.g_dbid = sg_version['id']
