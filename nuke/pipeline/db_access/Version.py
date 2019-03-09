@@ -79,6 +79,9 @@ class Version():
         artist = 'NULL'
         if self.g_artist:
             artist = self.g_artist.g_full_name
+        playlists = 'NULL'
+        if self.g_playlists:
+            playlists = ', '.join([pl.g_playlist_name for pl in self.g_playlists])
         ret_str = """class Version():
     Version Name: {g_version_code} 
     DBID: {g_dbid}
@@ -110,7 +113,7 @@ class Version():
            g_status = self.g_status,
            g_delivered = self.g_delivered,
            g_client_code = self.g_client_code,
-           g_playlists = ', '.join([pl.g_playlist_name for pl in self.g_playlists]),
+           g_playlists = playlists,
            g_version_entity = str(self.g_version_entity))
         return ret_str
     def __repr__(self):
@@ -123,6 +126,9 @@ class Version():
         artist = 'NULL'
         if self.g_artist:
             artist = self.g_artist.g_full_name
+        playlists = 'NULL'
+        if self.g_playlists:
+            playlists = ', '.join([pl.g_playlist_name for pl in self.g_playlists])
         ret_str = """class Version():
     Version Name: {g_version_code} 
     DBID: {g_dbid}
@@ -153,6 +159,6 @@ class Version():
            g_status = self.g_status,
            g_delivered = self.g_delivered,
            g_client_code = self.g_client_code,
-           g_playlists = ', '.join([pl.g_playlist_name for pl in self.g_playlists]))
+           g_playlists = playlists)
         return ret_str
 
