@@ -54,7 +54,7 @@ class DBAccessGlobals():
             raise e
     
     @staticmethod
-    def get_db_access():
+    def get_db_access(m_logger_object=None):
 
         if DBAccessGlobals.g_db_access_class:
             return DBAccessGlobals.g_db_access_class
@@ -67,6 +67,8 @@ class DBAccessGlobals():
             raise NotImplementedError("No class definition available for DBAccess subclass %s"%DBAccessGlobals.g_python_class)
         else:
             DBAccessGlobals.g_db_access_class = eval('%s.%s()'%(DBAccessGlobals.g_python_class, DBAccessGlobals.g_python_class))
+            if m_logger_object:
+                DBAccessGlobals.g_db_access_class.set_logger_object(m_logger_object)
             return DBAccessGlobals.g_db_access_class
     
     @staticmethod

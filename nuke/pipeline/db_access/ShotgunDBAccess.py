@@ -61,7 +61,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
         self.g_log.debug('Logger object initialized by method.')
 
     def log_message(self, m_log_level, m_log_message):
-        # if a logger object hasn't been
+        # if a logger object hasn't been set using the above set_logger_object method, make a new one.
         if not self.g_log:
             homedir = os.path.expanduser('~')
             logfile = ""
@@ -84,9 +84,10 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             fileHandler = logging.FileHandler(logfile)
             fileHandler.setFormatter(logFormatter)
             log.addHandler(fileHandler)
-            consoleHandler = logging.StreamHandler()
-            consoleHandler.setFormatter(logFormatter)
-            log.addHandler(consoleHandler)
+            # Don't set up multiple console loggers potentially - if one has already been defined
+            # consoleHandler = logging.StreamHandler()
+            # consoleHandler.setFormatter(logFormatter)
+            # log.addHandler(consoleHandler)
             self.g_log = log
             self.g_log.info('Default log file path initialized to %s.'%logfile)
         if m_log_level == 'debug':
