@@ -30,10 +30,13 @@ class VersionDelivery():
         self.version_data['xmlfile'] = None
         self.version_data['shot'] = None
         self.version_data['avidqt'] = None
+        self.version_data['avidqt_base'] = None
         self.version_data['b_avidqt'] = False
         self.version_data['vfxqt'] = None
+        self.version_data['vfxqt_base'] = None
         self.version_data['b_vfxqt'] = False
         self.version_data['exportqt'] = None
+        self.version_data['exportqt_base'] = None
         self.version_data['b_exportqt'] = False
         self.version_data['hires_format'] = None
         self.version_data['lores_ext'] = None
@@ -72,6 +75,14 @@ class VersionDelivery():
         self.version_data['client_hires_filetype'] = None
         self.version_data['client_lores_filename'] = None
         self.version_data['client_lores_filetype'] = None
+        self.version_data['client_matte_filename'] = None
+        self.version_data['client_matte_filetype'] = None
+        self.version_data['client_avidqt_filename'] = None
+        self.version_data['client_avidqt_filetype'] = None
+        self.version_data['client_vfxqt_filename'] = None
+        self.version_data['client_vfxqt_filetype'] = None
+        self.version_data['client_exportqt_filename'] = None
+        self.version_data['client_exportqt_filetype'] = None
 
         # logger object
         self.g_log = None
@@ -174,7 +185,27 @@ class VersionDelivery():
         self.version_data['client_lores_filename'] = client_lores_filename
     def set_client_lores_filetype(self, client_lores_filetype):
         self.version_data['client_lores_filetype'] = client_lores_filetype
-    
+    def set_client_matte_filename(self, client_matte_filename):
+        self.version_data['client_matte_filename'] = client_matte_filename
+    def set_client_matte_filetype(self, client_matte_filetype):
+        self.version_data['client_matte_filetype'] = client_matte_filetype
+
+    # various quicktime file formats
+    def set_client_avidqt_filename(self, client_avidqt_filename):
+        self.version_data['client_avidqt_filename'] = client_avidqt_filename
+    def set_client_avidqt_filetype(self, client_avidqt_filetype):
+        self.version_data['client_avidqt_filetype'] = client_avidqt_filetype
+
+    def set_client_vfxqt_filename(self, client_vfxqt_filename):
+        self.version_data['client_vfxqt_filename'] = client_vfxqt_filename
+    def set_client_vfxqt_filetype(self, client_vfxqt_filetype):
+        self.version_data['client_vfxqt_filetype'] = client_vfxqt_filetype
+
+    def set_client_exportqt_filename(self, client_exportqt_filename):
+        self.version_data['client_exportqt_filename'] = client_exportqt_filename
+    def set_client_exportqt_filetype(self, client_exportqt_filetype):
+        self.version_data['client_exportqt_filetype'] = client_exportqt_filetype
+
                         
     # loads the XML file from the shot delivery folder/version name subfolder
     def load_from_filesystem(self):
@@ -197,6 +228,7 @@ class VersionDelivery():
         self.version_data['shot'] = dsub_dict['Shot']
         try:
             self.version_data['avidqt'] = os.path.join(delivery_root, 'mov', dsub_dict['AvidQTFileName'])
+            self.version_data['avidqt_base'] = dsub_dict['AvidQTFileName']
             self.version_data['lores_ext'] = os.path.splitext(dsub_dict['AvidQTFileName'])[1].lstrip('.')
             self.version_data['b_avidqt'] = True
         except KeyError:
@@ -204,11 +236,13 @@ class VersionDelivery():
             pass
         try:
             self.version_data['vfxqt'] = os.path.join(delivery_root, 'mov', dsub_dict['VFXQTFileName'])
+            self.version_data['vfxqt_base'] = dsub_dict['VFXQTFileName']
             self.version_data['b_vfxqt'] = True
         except KeyError:
             pass
         try:
             self.version_data['exportqt'] = os.path.join(delivery_root, 'mov', dsub_dict['ExportQTFileName'])
+            self.version_data['exportqt_base'] = dsub_dict['ExportQTFileName']
             self.version_data['b_exportqt'] = True
         except KeyError:
             pass

@@ -298,6 +298,10 @@ def vd_list_from_versions():
     vfmt_str = g_config.get(g_ih_show_code, 'version_format')
     
     client_filename_format = g_config.get('delivery', 'client_filename')
+    client_avidqt_filename_format = g_config.get('delivery', 'client_avidqt_filename')
+    client_vfxqt_filename_format = g_config.get('delivery', 'client_vfxqt_filename')
+    client_exportqt_filename_format = g_config.get('delivery', 'client_exportqt_filename')
+
     client_matte_filename_format = g_config.get('delivery', 'client_matte_filename')
     for dbversion in g_version_list:
         g_log.info("Attempting to build a delivery for version %s."%dbversion.g_version_code)
@@ -342,7 +346,21 @@ def vd_list_from_versions():
             else:
                 vd_tmp.set_client_filetype(vd_tmp.version_data['lores_ext'])
                 d_client_fname_fmt['fileext'] = vd_tmp.version_data['lores_ext'].lower()
-        
+        # all the quicktimes
+        tmp_client_version = vd_tmp.version_data['client_version']
+        if vd_tmp.version_data['b_avidqt']:
+            avidqt_client_fileext = os.path.splitext(vd_tmp.version_data['avidqt_base'])[-1].lstrip('.')
+            tmp_avidqt_filename = client_avidqt_filename_format.format(client_version = tmp_client_version, fileext = avidqt_client_fileext)
+            vd_tmp.set_client_avidqt_filename(tmp_avidqt_filename)
+        if vd_tmp.version_data['b_vfxqt']:
+            vfxqt_client_fileext = os.path.splitext(vd_tmp.version_data['vfxqt_base'])[-1].lstrip('.')
+            tmp_vfxqt_filename = client_vfxqt_filename_format.format(client_version = tmp_client_version, fileext = vfxqt_client_fileext)
+            vd_tmp.set_client_vfxqt_filename(tmp_vfxqt_filename)
+        if vd_tmp.version_data['b_exportqt']:
+            exportqt_client_fileext = os.path.splitext(vd_tmp.version_data['exportqt_base'])[-1].lstrip('.')
+            tmp_exportqt_filename = client_exportqt_filename_format.format(client_version = tmp_client_version, fileext = exportqt_client_fileext)
+            vd_tmp.set_client_exportqt_filename(tmp_exportqt_filename)
+
         if g_matte:
             vd_tmp.set_client_filename(client_matte_filename_format.format(**d_client_fname_fmt))
         else:
@@ -447,6 +465,9 @@ def build_subform():
     
     matte_subreason = g_config.get('delivery', 'matte_subreason')
     matte_delivery_type = g_config.get('delivery', 'matte_delivery_type')
+
+    # include which types of version delivery if we are doing lines per file
+    subform_include_versiontypes = g_config.get('delivery', 'subform_include_versiontypes').split(',')
     
     for vd in g_vdlist:
         # Set the submission filename
@@ -461,41 +482,26 @@ def build_subform():
         ale_row_single = {}
 
         if g_subform_lpf:
-            # add a line for the hires version if present
-            if vd.version_data['b_hires']:
-                for kvpair in subform_cols:
-                    csv_col = kvpair.split('|')[0]
-                    # handle booleans
-                    if isinstance(vd.version_data[d_subform_translate[csv_col]], bool):
-                        if vd.version_data[d_subform_translate[csv_col]]:
-                            rowdict[csv_col] = subform_boolean_true
+            for versiontype in subform_include_versiontypes:
+                rowdict = {}
+                # add a line for the each version type if present
+                if vd.version_data['b_%s'%versiontype]:
+                    for kvpair in subform_cols:
+                        csv_col = kvpair.split('|')[0]
+                        # handle booleans
+                        if isinstance(vd.version_data[d_subform_translate[csv_col]], bool):
+                            if vd.version_data[d_subform_translate[csv_col]]:
+                                rowdict[csv_col] = subform_boolean_true
+                            else:
+                                rowdict[csv_col] = subform_boolean_false
                         else:
-                            rowdict[csv_col] = subform_boolean_false
-                    else:
-                        rowdict[csv_col] = vd.version_data[d_subform_translate[csv_col]]
+                            rowdict[csv_col] = vd.version_data[d_subform_translate[csv_col]]
 
-                    if d_subform_translate[csv_col] == 'client_filename':
-                        rowdict[csv_col] = vd.version_data['client_hires_filename']
-                    if d_subform_translate[csv_col] == 'client_filetype':
-                        rowdict[csv_col] = vd.version_data['client_hires_filetype']
-                rows.append(rowdict)
-            # and add a line for the lores version
-            rowdict = {}
-            for kvpair in subform_cols:
-                csv_col = kvpair.split('|')[0]
-                # handle booleans
-                if isinstance(vd.version_data[d_subform_translate[csv_col]], bool):
-                    if vd.version_data[d_subform_translate[csv_col]]:
-                        rowdict[csv_col] = subform_boolean_true
-                    else:
-                        rowdict[csv_col] = subform_boolean_false
-                else:
-                    rowdict[csv_col] = vd.version_data[d_subform_translate[csv_col]]
-                if d_subform_translate[csv_col] == 'client_filename':
-                    rowdict[csv_col] = vd.version_data['client_lores_filename']
-                if d_subform_translate[csv_col] == 'client_filetype':
-                    rowdict[csv_col] = vd.version_data['client_lores_filetype']
-            rows.append(rowdict)
+                        if d_subform_translate[csv_col] == 'client_filename':
+                            rowdict[csv_col] = vd.version_data['client_%s_filename'%versiontype]
+                        if d_subform_translate[csv_col] == 'client_filetype':
+                            rowdict[csv_col] = vd.version_data['client_%s_filetype'%versiontype]
+                    rows.append(rowdict)
         else:
             for kvpair in subform_cols:
                 csv_col = kvpair.split('|')[0]
