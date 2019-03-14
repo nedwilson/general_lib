@@ -22,7 +22,7 @@ import nukescripts
 
 import nuke
 
-if not sys.platform == 'win32':
+if not sys.platform == 'win32' and not sys.platform == 'linux2':
     import pwd
     import OpenEXR
 
