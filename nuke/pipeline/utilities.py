@@ -888,7 +888,7 @@ def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame
     if sys.platform == 'win32':
         s_windows_addl = ' --remap "%s,%s"'%(l_win32_netpath_transforms[0], l_win32_netpath_transforms[1])
     
-    s_cmd = "%s -i -V 2%s -c 2G -t %s" % (s_nuke_exe_path, s_windows_addl, s_pyscript)
+    s_cmd = "%s --gpu -V 2%s -c 8G -t %s" % (s_nuke_exe_path, s_windows_addl, s_pyscript)
     s_cmd_ar = [s_nuke_exe_path, '-i', '-V', '2']
     if sys.platform == 'win32':
         s_cmd_ar.append('--remap')
