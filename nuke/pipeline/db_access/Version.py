@@ -74,12 +74,15 @@ class Version():
 
     # populate this object, initialized with None/-1, from a dictionary. Useful if the object has been serialized.
     def populate_from_dictionary(self, m_data_dict):
+        # first, populate the data dictionary
+        if not self.data:
+            self.data = {}
         self.data['g_version_code'] = m_data_dict['g_version_code']
-        self.data['g_dbid'] = m_data_dict['g_dbid']
+        self.data['g_dbid'] = int(m_data_dict['g_dbid'])
         self.data['g_description'] = m_data_dict['g_description']
-        self.data['g_start_frame'] = m_data_dict['g_start_frame']
-        self.data['g_end_frame'] = m_data_dict['g_end_frame']
-        self.data['g_duration'] = m_data_dict['g_duration']
+        self.data['g_start_frame'] = int(m_data_dict['g_start_frame'])
+        self.data['g_end_frame'] = int(m_data_dict['g_end_frame'])
+        self.data['g_duration'] = int(m_data_dict['g_duration'])
         self.data['g_path_to_frames'] = m_data_dict['g_path_to_frames']
         self.data['g_path_to_movie'] = m_data_dict['g_path_to_movie']
         self.data['g_shot'] = m_data_dict['g_shot']
@@ -97,6 +100,30 @@ class Version():
         self.data['g_version_entity'] = m_data_dict['g_version_entity']
         self.data['g_path_to_dnxhd'] = m_data_dict['g_path_to_dnxhd']
         self.data['g_path_to_export'] = m_data_dict['g_path_to_export']
+        # then, populate the class variables
+        self.g_version_code = m_data_dict['g_version_code']
+        self.g_dbid = int(m_data_dict['g_dbid'])
+        self.g_description = m_data_dict['g_description']
+        self.g_start_frame = int(m_data_dict['g_start_frame'])
+        self.g_end_frame = int(m_data_dict['g_end_frame'])
+        self.g_duration = int(m_data_dict['g_duration'])
+        self.g_path_to_frames = m_data_dict['g_path_to_frames']
+        self.g_path_to_movie = m_data_dict['g_path_to_movie']
+        self.g_shot = m_data_dict['g_shot']
+        self.g_artist = m_data_dict['g_artist']
+        self.g_task = m_data_dict['g_task']
+        self.g_status = m_data_dict['g_status']
+        self.g_delivered = m_data_dict['g_delivered']
+        self.g_client_code = m_data_dict['g_client_code']
+        self.g_playlists = m_data_dict['g_playlists']
+        self.g_path_to_matte_frames = m_data_dict['g_path_to_matte_frames']
+        self.g_matte_only = m_data_dict['g_matte_only']
+        self.g_matte_ready = m_data_dict['g_matte_ready']
+        self.g_matte_delivered = m_data_dict['g_matte_delivered']
+        self.g_version_type = m_data_dict['g_version_type']
+        self.g_version_entity = m_data_dict['g_version_entity']
+        self.g_path_to_dnxhd = m_data_dict['g_path_to_dnxhd']
+        self.g_path_to_export = m_data_dict['g_path_to_export']
 
     def set_status(self, m_status):
         self.data['g_status'] = m_status
