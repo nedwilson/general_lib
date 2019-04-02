@@ -45,29 +45,68 @@ class Version():
         self.g_version_entity = None
         self.g_path_to_dnxhd = None
         self.g_path_to_export = None
+
+        self.data = {}
+
+        self.data['g_version_code'] = m_version_code 
+        self.data['g_dbid'] = m_dbid
+        self.data['g_description'] = m_description
+        self.data['g_start_frame'] = m_start_frame 
+        self.data['g_end_frame'] = m_end_frame
+        self.data['g_duration'] = m_duration
+        self.data['g_path_to_frames'] = m_path_to_frames
+        self.data['g_path_to_movie'] = m_path_to_movie
+        self.data['g_shot'] = m_shot
+        self.data['g_artist'] = m_artist
+        self.data['g_task'] = m_task
+        self.data['g_status'] = 'rev'
+        self.data['g_delivered'] = False
+        self.data['g_client_code'] = None
+        self.data['g_playlists'] = None
+        self.data['g_path_to_matte_frames'] = None
+        self.data['g_matte_only'] = False
+        self.data['g_matte_ready'] = False
+        self.data['g_matte_delivered'] = False
+        self.data['g_version_type'] = None
+        self.data['g_version_entity'] = None
+        self.data['g_path_to_dnxhd'] = None
+        self.data['g_path_to_export'] = None
+
     def set_status(self, m_status):
+        self.data['g_status'] = m_status
         self.g_status = m_status
     def set_delivered(self, m_delivered):
+        self.data['g_delivered'] = m_delivered
         self.g_delivered = m_delivered
     def set_path_to_matte_frames(self, m_path_to_matte_frames):
+        self.data['g_path_to_matte_frames'] = m_path_to_matte_frames
         self.g_path_to_matte_frames = m_path_to_matte_frames
     def set_matte_only(self, m_matte_only):
+        self.data['g_matte_only'] = m_matte_only
         self.g_matte_only = m_matte_only
     def set_matte_ready(self, m_matte_ready):
+        self.data['g_matte_ready'] = m_matte_ready
         self.g_matte_ready = m_matte_ready
     def set_matte_delivered(self, m_matte_delivered):
+        self.data['g_matte_delivered'] = m_matte_delivered
         self.g_matte_delivered = m_matte_delivered
     def set_client_code(self, m_client_code):
+        self.data['g_client_code'] = m_client_code
         self.g_client_code = m_client_code
     def set_playlists(self, m_playlists):
+        self.data['g_playlists'] = [pl.g_playlist_name for pl in m_playlists]
         self.g_playlists = m_playlists
     def set_version_type(self, m_version_type):
+        self.data['g_version_type'] = m_version_type
         self.g_version_type = m_version_type
     def set_version_entity(self, m_version_entity):
+        self.data['g_version_entity'] = m_version_entity
         self.g_version_entity = m_version_entity
     def set_path_to_dnxhd(self, m_path_to_dnxhd):
+        self.data['g_path_to_dnxhd'] = m_path_to_dnxhd
         self.g_path_to_dnxhd = m_path_to_dnxhd
     def set_path_to_export(self, m_path_to_export):
+        self.data['g_path_to_export'] = m_path_to_export
         self.g_path_to_export = m_path_to_export
     def __str__(self):
         task = 'NULL'
