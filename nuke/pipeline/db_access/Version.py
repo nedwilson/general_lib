@@ -167,7 +167,7 @@ class Version():
             task = self.g_task.task_name
         shot = 'NULL'
         if self.g_shot:
-            shot = self.g_shot.s_shot_code
+            shot = self.g_shot.g_shot_code
         artist = 'NULL'
         if self.g_artist:
             artist = self.g_artist.g_full_name
