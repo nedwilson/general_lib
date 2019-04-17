@@ -490,7 +490,8 @@ def build_subform():
                         csv_col = kvpair.split('|')[0]
                         # handle booleans
                         if isinstance(vd.version_data[d_subform_translate[csv_col]], bool):
-                            if vd.version_data[d_subform_translate[csv_col]]:
+                            # only mark the row above the file type we are interested in
+                            if vd.version_data[d_subform_translate[csv_col]] and d_subform_translate[csv_col] == 'b_%s'%versiontype:
                                 rowdict[csv_col] = subform_boolean_true
                             else:
                                 rowdict[csv_col] = subform_boolean_false
