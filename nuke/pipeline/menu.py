@@ -19,8 +19,14 @@ import autosave_backup
 nuke.addOnScriptSave(autosave_backup.backup_autosave)
 
 def display_delivery_window(cmd):
-    print "INFO: Forking process %s."%cmd
-    subprocess.Popen(cmd, shell=True)
+    print("INFO: Forking process %s."%cmd)
+    proc = None
+    try:
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+        print(proc.stdout.read())
+    except:
+        print(sys.exc_info())
+
 
 def build_delivery_args(output_opts='cc,avidqt,vfxqt,burnin,hires,export'):
     return_string='send_for_review(cc={cc}, b_method_avidqt={avidqt}, b_method_vfxqt={vfxqt}, b_method_burnin={burnin}, b_method_export={export}, b_method_hires={hires}, b_method_matte={matte})'

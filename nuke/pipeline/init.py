@@ -10,15 +10,39 @@ import shlex
 import logging
 import traceback
 
+str_show_cfg_path = None
+config = None
+show_pythonpath_list = None
+
+try:
+    str_show_cfg_path = os.environ['IH_SHOW_CFG_PATH']
+    config = ConfigParser.ConfigParser()
+    config.read(str_show_cfg_path)
+    show_pythonpath_list = config.get('nuke', 'pythonpath').split(':')
+except KeyError:
+    print("WARNING: IH_SHOW_CFG_PATH environment variable not defined. Proceeding without environment.")
+
+if not os.path.exists(str_show_cfg_path):
+    print("WARNING: Show configuration file does not exist at %s." % str_show_cfg_path)
+
+
 if sys.platform == 'win32':
-    print 'Windows detected. Adding C:/Python27/Lib/site-packages to PYTHONPATH'
+    print('Windows detected. Adding C:/Python27/Lib/site-packages to PYTHONPATH')
+    try:
+        show_pythonpath_list = config.get('nuke', 'pythonpath_win32').split(';')
+        for path_item in show_pythonpath_list:
+            if path_item not in sys.path:
+                sys.path.insert(0, path_item)
+    except:
+        pass
     sys.path.append('C:/Python27/Lib/site-packages')
 else:
-    sys.path.append('/Volumes/raid_vol01/shows/SHARED/lib/python')
-    sys.path.append('/Volumes/raid_vol01/shows/goosebumps2/SHARED/shotgun/install/core/python')
-    sys.path.append('/Library/Python/2.7/site-packages')
+    if show_pythonpath_list:
+        for path_item in show_pythonpath_list:
+            if path_item not in sys.path:
+                sys.path.insert(0, path_item)
     sys.path.append('/usr/local/lib/python2.7/site-packages')
-    
+
 # if sys.platform == 'win32':
 #     nuke.pluginAddPath('Y:\\shows\\SHARED\\lib\\rvnuke')
 # else:
@@ -70,6 +94,7 @@ def print_render_frame():
 # function attempts to determine show, sequence, and shot from the nuke script name.
 # does nothing if the path does not produce a match to the shot regular expression
 def init_shot_env():
+    global config
     homedir = os.path.expanduser('~')
     logfile = ""
     if sys.platform == 'win32':
@@ -114,19 +139,6 @@ def init_shot_env():
         log.warning("Show root directory does not exist at %s."%str_show_root)
         return
     
-    str_show_cfg_path = None
-    try:
-        str_show_cfg_path = os.environ['IH_SHOW_CFG_PATH']
-    except KeyError:
-        log.warning("IH_SHOW_CFG_PATH environment variable not defined. Proceeding without environment.")
-        return
-    
-    if not os.path.exists(str_show_cfg_path):
-        log.warning("Show configuration file does not exist at %s."%str_show_cfg_path)
-        return
-        
-    config = ConfigParser.ConfigParser()
-    config.read(str_show_cfg_path)
     cfg_shot_dir = config.get(str_show_code, 'shot_dir_format')
     cfg_seq_dir = config.get(str_show_code, 'seq_dir_format')
     cfg_shot_regexp = config.get(str_show_code, 'shot_regexp')
