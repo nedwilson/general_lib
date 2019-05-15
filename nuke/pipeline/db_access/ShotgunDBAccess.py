@@ -370,7 +370,8 @@ class ShotgunDBAccess(DBAccess.DBAccess):
                 data['sg_version_type'] = m_version_obj.g_version_type
             if m_version_obj.g_path_to_dnxhd:
                 data['sg_path_to_dnxhd'] = m_version_obj.g_path_to_dnxhd
-
+            if m_version_obj.g_submitted_for:
+                data['sg_submitted_for'] = m_version_obj.g_submitted_for
         self.g_sg.update('Version', m_version_obj.g_dbid, data)
 
     def update_version_status(self, m_version_obj):
@@ -405,7 +406,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
         ]
         self.log_message(m_log_level='debug', m_log_message='Searching for Versions in the database with the following filters:')
         self.log_message(m_log_level='debug', m_log_message=pprint.pprint(filters))
-        fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', self.g_shotgun_path_to_matte_frames_field, 'sg_matte_ready_', 'sg_matte_delivered_']
+        fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', self.g_shotgun_path_to_matte_frames_field, 'sg_matte_ready_', 'sg_matte_delivered_', 'sg_submitted_for']
         sg_ver = self.g_sg.find_one("Version", filters, fields)
         if not sg_ver:
             return ver_ret
@@ -433,6 +434,8 @@ class ShotgunDBAccess(DBAccess.DBAccess):
                 ver_ret.set_matte_ready(True)
             if sg_ver['sg_matte_delivered_'] == 'True':
                 ver_ret.set_matte_delivered(True)
+            if sg_ver['sg_submitted_for']:
+                ver_ret.set_submitted_for(sg_ver['sg_submitted_for'])
             return ver_ret
 
     def fetch_version_from_id(self, m_version_id):
@@ -441,7 +444,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             ['project', 'is', {'type' : 'Project', 'id' : int(self.g_shotgun_project_id)}],
             ['id', 'is', m_version_id]
         ]
-        fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', self.g_shotgun_path_to_matte_frames_field, 'sg_matte_ready_', 'sg_matte_delivered_']
+        fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', self.g_shotgun_path_to_matte_frames_field, 'sg_matte_ready_', 'sg_matte_delivered_', 'sg_submitted_for']
         sg_ver = self.g_sg.find_one("Version", filters, fields)
         if not sg_ver:
             return ver_ret
@@ -470,6 +473,8 @@ class ShotgunDBAccess(DBAccess.DBAccess):
                 ver_ret.set_matte_ready(True)
             if sg_ver['sg_matte_delivered_'] == 'True':
                 ver_ret.set_matte_delivered(True)
+            if sg_ver['sg_submitted_for']:
+                ver_ret.set_submitted_for(sg_ver['sg_submitted_for'])
             return ver_ret
 
     def fetch_versions_with_status(self, m_status):
@@ -478,7 +483,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             ['project', 'is', {'type' : 'Project', 'id' : int(self.g_shotgun_project_id)}],
             ['sg_status_list', 'is', m_status]
         ]
-        fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', self.g_shotgun_path_to_matte_frames_field, 'sg_matte_ready_', 'sg_matte_delivered_']
+        fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', self.g_shotgun_path_to_matte_frames_field, 'sg_matte_ready_', 'sg_matte_delivered_', 'sg_submitted_for']
         sg_vers = self.g_sg.find("Version", filters, fields)
         if not sg_vers:
             return ver_ret
@@ -503,6 +508,8 @@ class ShotgunDBAccess(DBAccess.DBAccess):
                     tmp_ver.set_matte_ready(True)
                 if sg_ver['sg_matte_delivered_'] == 'True':
                     tmp_ver.set_matte_delivered(True)
+                if sg_ver['sg_submitted_for']:
+                    ver_ret.set_submitted_for(sg_ver['sg_submitted_for'])
                 ver_ret.append(tmp_ver)
             return ver_ret
 
@@ -513,7 +520,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             ['sg_matte_ready_', 'is', True],
             ['sg_matte_delivered_', 'is', False]
         ]
-        fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', self.g_shotgun_path_to_matte_frames_field, 'sg_matte_ready_', 'sg_matte_delivered_']
+        fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', self.g_shotgun_path_to_matte_frames_field, 'sg_matte_ready_', 'sg_matte_delivered_', 'sg_submitted_for']
         sg_vers = self.g_sg.find("Version", filters, fields)
         if not sg_vers:
             return ver_ret
@@ -538,6 +545,8 @@ class ShotgunDBAccess(DBAccess.DBAccess):
                     tmp_ver.set_matte_ready(True)
                 if sg_ver['sg_matte_delivered_'] == 'True':
                     tmp_ver.set_matte_delivered(True)
+                if sg_ver['sg_submitted_for']:
+                    ver_ret.set_submitted_for(sg_ver['sg_submitted_for'])
                 ver_ret.append(tmp_ver)
             return ver_ret
 
@@ -547,7 +556,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             ['project', 'is', {'type' : 'Project', 'id' : int(self.g_shotgun_project_id)}],
             ['entity', 'is', {'type' : 'Shot', 'id' : int(m_shot_obj.g_dbid)}]
         ]
-        fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', self.g_shotgun_path_to_matte_frames_field, 'sg_matte_ready_', 'sg_matte_delivered_']
+        fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count', 'sg_path_to_frames', 'sg_path_to_movie', 'entity', 'user', 'sg_task', 'sg_delivered', 'client_code', 'playlists', self.g_shotgun_path_to_matte_frames_field, 'sg_matte_ready_', 'sg_matte_delivered_', 'sg_submitted_for']
         sg_vers = self.g_sg.find("Version", filters, fields)
         if not sg_vers:
             return ver_ret
@@ -571,6 +580,8 @@ class ShotgunDBAccess(DBAccess.DBAccess):
                     tmp_ver.set_matte_ready(True)
                 if sg_ver['sg_matte_delivered_'] == 'True':
                     tmp_ver.set_matte_delivered(True)
+                if sg_ver['sg_submitted_for']:
+                    ver_ret.set_submitted_for(sg_ver['sg_submitted_for'])
                 ver_ret.append(tmp_ver)
             return ver_ret
 
@@ -584,7 +595,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
         fields = ['code', 'id', 'description', 'sg_status_list', 'sg_first_frame', 'sg_last_frame', 'frame_count',
                   'sg_path_to_frames', 'sg_path_to_movie', 'sg_path_to_dnxhd', 'entity', 'user', 'sg_delivered',
                   'client_code', self.g_shotgun_path_to_matte_frames_field, 'sg_matte_ready_', 'sg_matte_delivered_',
-                  'sg_version_type']
+                  'sg_version_type', 'sg_submitted_for']
         sg_vers = self.g_sg.find("Version", filters, fields)
         if not sg_vers:
             return ver_ret
@@ -607,6 +618,8 @@ class ShotgunDBAccess(DBAccess.DBAccess):
                     tmp_ver.set_matte_delivered(True)
                 if sg_ver['sg_version_type']:
                     tmp_ver.set_version_type(sg_ver['sg_version_type'])
+                if sg_ver['sg_submitted_for']:
+                    ver_ret.set_submitted_for(sg_ver['sg_submitted_for'])
                 if sg_ver['sg_path_to_dnxhd']:
                     tmp_ver.set_path_to_dnxhd(sg_ver['sg_path_to_dnxhd'])
                 ver_ret.append(tmp_ver)
@@ -793,6 +806,8 @@ class ShotgunDBAccess(DBAccess.DBAccess):
             data['sg_status_list'] = m_version_obj.g_status
         if m_version_obj.g_path_to_dnxhd:
             data['sg_path_to_dnxhd'] = m_version_obj.g_path_to_dnxhd
+        if m_version_obj.g_submitted_for:
+            data['sg_submitted_for'] = m_version_obj.g_submitted_for
         try:
             sg_version = self.g_sg.create('Version', data)
             m_version_obj.g_dbid = sg_version['id']
