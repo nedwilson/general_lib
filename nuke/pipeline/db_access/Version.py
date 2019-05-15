@@ -45,6 +45,7 @@ class Version():
         self.g_version_entity = None
         self.g_path_to_dnxhd = None
         self.g_path_to_export = None
+        self.g_submitted_for = None
 
         self.data = {}
 
@@ -71,6 +72,7 @@ class Version():
         self.data['g_version_entity'] = None
         self.data['g_path_to_dnxhd'] = None
         self.data['g_path_to_export'] = None
+        self.data['g_submitted_for'] = None
 
     # populate this object, initialized with None/-1, from a dictionary. Useful if the object has been serialized.
     def populate_from_dictionary(self, m_data_dict):
@@ -100,6 +102,7 @@ class Version():
         self.data['g_version_entity'] = m_data_dict['g_version_entity']
         self.data['g_path_to_dnxhd'] = m_data_dict['g_path_to_dnxhd']
         self.data['g_path_to_export'] = m_data_dict['g_path_to_export']
+        self.data['g_submitted_for'] = m_data_dict['g_submitted_for']
         # then, populate the class variables
         self.g_version_code = m_data_dict['g_version_code']
         self.g_dbid = int(m_data_dict['g_dbid'])
@@ -124,6 +127,7 @@ class Version():
         self.g_version_entity = m_data_dict['g_version_entity']
         self.g_path_to_dnxhd = m_data_dict['g_path_to_dnxhd']
         self.g_path_to_export = m_data_dict['g_path_to_export']
+        self.g_submitted_for = m_data_dict['g_submitted_for']
 
     def set_status(self, m_status):
         self.data['g_status'] = m_status
@@ -161,6 +165,9 @@ class Version():
     def set_path_to_export(self, m_path_to_export):
         self.data['g_path_to_export'] = m_path_to_export
         self.g_path_to_export = m_path_to_export
+    def set_submitted_for(self, m_submitted_for):
+        self.data['g_submitted_for'] = m_submitted_for
+        self.g_submitted_for = m_submitted_for
     def __str__(self):
         task = 'NULL'
         if self.g_task:
