@@ -619,7 +619,7 @@ class ShotgunDBAccess(DBAccess.DBAccess):
                 if sg_ver['sg_version_type']:
                     tmp_ver.set_version_type(sg_ver['sg_version_type'])
                 if sg_ver['sg_submitted_for']:
-                    ver_ret.set_submitted_for(sg_ver['sg_submitted_for'])
+                    tmp_ver.set_submitted_for(sg_ver['sg_submitted_for'])
                 if sg_ver['sg_path_to_dnxhd']:
                     tmp_ver.set_path_to_dnxhd(sg_ver['sg_path_to_dnxhd'])
                 ver_ret.append(tmp_ver)
