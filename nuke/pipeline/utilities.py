@@ -1739,7 +1739,7 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
             artist_se = etree.SubElement(new_submission, 'Artist')
             artist_se.text = s_artist_name
             notes_se = etree.SubElement(new_submission, 'SubmissionNotes')
-            notes_se.text = cvn_txt
+            notes_se.text = cvn_txt.replace("\'", "&apos;")
 
             # write out xml file to disk
 
