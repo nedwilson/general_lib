@@ -1632,7 +1632,7 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
                 os.write(fh_nukepy, "nd_root.knob('exportburnin').setValue(True)\n")
 
             if matte_delivery:
-                os.write(fh_nukepy, "nd_root.knob('rendermattes').setValue(True)\n")
+                os.write(fh_nukepy, "nd_root.knob('render_mattes').setValue(True)\n")
 
             if not cc_delivery:
                 for csnode in g_config.get('delivery', 'colorspace_nodes').split(','):
