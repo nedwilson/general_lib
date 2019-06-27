@@ -34,10 +34,11 @@ from thumbnails import create_thumbnail_from_movie
 # global config objects
 g_config = None
 g_ihdb = None
+g_config_path = None
 
 # method that returns a config file object, or throws an exception if we are not launched in the In-House pipeline
 def get_config():
-    global g_config
+    global g_config, g_config_path
     if g_config == None:
         g_config = ConfigParser.ConfigParser()
         show_config_path = None
@@ -51,6 +52,7 @@ def get_config():
             g_config.read(show_config_path)
         except:
             raise
+        g_config_path = show_config_path
         return g_config
     else:
         return g_config
@@ -1157,20 +1159,36 @@ def render_delivery_background(ms_python_script, d_db_thread_helper, start_frame
 # send a shot for review
 def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b_method_vfxqt=True, b_method_burnin=True, b_method_hires=True, b_method_export=False, b_method_matte=False, b_method_artist=None):
 
-    global g_config, g_ihdb
+    global g_config, g_ihdb, g_config_path
     if g_config == None:
         get_config()
     get_ihdb()
     
     oglist = []
     vfxqt_delivery = b_method_vfxqt
-
-    s_show_root = os.environ['IH_SHOW_ROOT']
-    s_show = os.environ['IH_SHOW_CODE']
+    s_show_root = None
+    s_show = None
+    try:
+        s_show_root = os.environ['IH_SHOW_ROOT']
+        s_show = os.environ['IH_SHOW_CODE']
+    except KeyError:
+        nuke.critical("Unable to locate environment variables IH_SHOW_ROOT and IH_SHOW_CODE!")
+        return
     # win32 path replacement
     tmp_path_repl = g_config.get(s_show, 'win32_netpath_transforms')
     d_path_repl = { 'posixpath' : tmp_path_repl.split('|')[0], 'win32path' : tmp_path_repl.split('|')[1] }
-    
+
+    b_embedded_mattes = False
+    try:
+        b_embedded_mattes = g_config.getboolean('delivery', 'use_embedded_mattes')
+    except ConfigParser.NoOptionError:
+        print("WARNING: config file %s does not contain use_embedded_mattes option in delivery section!"%g_config_path)
+    except ConfigParser.NoSectionError:
+        print("ERROR: config file %s does not contain a delivery section!"%g_config_path)
+        return
+    except ValueError:
+        print("WARNING: Value for option use_embedded_mattes, \'%s\', is not valid for a boolean type."%g_config.get('delivery', 'use_embedded_mattes'))
+
     # use plate TimeCode?
     b_use_platetc = True
     if g_config.get(s_show, 'use_plate_timecode') in ['no', 'NO', 'No', 'N', 'n', 'False', 'FALSE', 'false']:
@@ -1413,7 +1431,7 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
             # exr source: the rendered comp
             s_exr_src = os.path.join(os.path.dirname(render_path), "%s.*.exr"%s_filename).replace('\\', '/')
             s_delivery_package = 'NOPKG'
-            
+
             # various destinations
             s_avidqt_dest = os.path.join(s_delivery_folder, 'mov', '%s_avid.mov'%s_filename)
             s_vfxqt_dest = os.path.join(s_delivery_folder, 'mov', '%s_vfx.mov'%s_filename)
@@ -1430,7 +1448,7 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
                     all_dests.append(s_exr_dest)
                 elif s_delivery_fileext == 'dpx':
                     all_dests.append(s_dpx_dest)
-            if matte_delivery:
+            if matte_delivery and not b_embedded_mattes:
                 all_dests.append(s_matte_dest)
             for dest in all_dests:
                 dir = os.path.dirname(dest)
@@ -1446,16 +1464,20 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
             d_db_thread_helper['dbshot'] = dbshot
             d_db_thread_helper['nuke_script_path'] = s_nuke_script_path
             d_db_thread_helper['matte_only'] = b_matte_only
-            if matte_delivery:
-                d_db_thread_helper['matte_dest'] = s_matte_dest
-            else:
-                d_db_thread_helper['matte_dest'] = None
- 
+
             if s_delivery_fileext == 'dpx':
                 d_db_thread_helper['hires_dest'] = s_dpx_dest.replace('*', '%04d')
             else:
                 d_db_thread_helper['hires_dest'] = s_exr_dest.replace('*', '%04d')
-            
+
+            if matte_delivery:
+                if b_embedded_mattes:
+                    d_db_thread_helper['matte_dest'] = d_db_thread_helper['hires_dest']
+                else:
+                    d_db_thread_helper['matte_dest'] = s_matte_dest
+            else:
+                d_db_thread_helper['matte_dest'] = None
+
             d_db_thread_helper['shot'] = s_shot
             d_db_thread_helper['notes'] = l_notes
             
@@ -1609,6 +1631,9 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
             if export_delivery:
                 os.write(fh_nukepy, "nd_root.knob('exportburnin').setValue(True)\n")
 
+            if matte_delivery:
+                os.write(fh_nukepy, "nd_root.knob('rendermattes').setValue(True)\n")
+
             if not cc_delivery:
                 for csnode in g_config.get('delivery', 'colorspace_nodes').split(','):
                     if len(csnode) > 0:
@@ -1672,7 +1697,7 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
                 os.write(fh_nukepy, "nuke.toNode('%s').knob('file').setValue('%s')\n"%(g_config.get('delivery', 'export_write_node'), s_exportqt_dest))
                 l_exec_nodes.append(g_config.get('delivery', 'export_write_node'))
             
-            if not hires_delivery:
+            if not hires_delivery and (not matte_delivery and b_embedded_mattes):
                 os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(True)\n"%g_config.get('delivery', 'hires_write_node'))
                 b_deliver_cdl = False
             else:
@@ -1683,7 +1708,7 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
                     os.write(fh_nukepy, "nuke.toNode('%s').knob('file').setValue('%s')\n"%(g_config.get('delivery', 'hires_write_node'), s_dpx_dest.replace('*', '%04d')))
                 l_exec_nodes.append(g_config.get('delivery', 'hires_write_node'))
 
-            if not matte_delivery:
+            if not matte_delivery or b_embedded_mattes:
                 os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(True)\n"%g_config.get('delivery', 'matte_write_node'))
             else:
                 os.write(fh_nukepy, "nuke.toNode('%s').knob('disable').setValue(False)\n"%g_config.get('delivery', 'matte_write_node'))
@@ -1726,8 +1751,16 @@ def send_for_review(cc=True, current_version_notes=None, b_method_avidqt=True, b
                     hires_fname_se = etree.SubElement(new_submission, 'DPXFileName')
                     hires_fname_se.text = os.path.basename(s_dpx_dest)
             if matte_delivery:
-                matte_fname_se = etree.SubElement(new_submission, 'MatteFileName')
-                matte_fname_se.text = os.path.basename(s_matte_dest)
+                if not b_embedded_mattes:
+                    matte_fname_se = etree.SubElement(new_submission, 'MatteFileName')
+                    matte_fname_se.text = os.path.basename(s_matte_dest)
+                else:
+                    if s_delivery_fileext == 'exr':
+                        matte_fname_se = etree.SubElement(new_submission, 'MatteFileName')
+                        matte_fname_se.text = os.path.basename(s_exr_dest)
+                    if s_delivery_fileext == 'dpx':
+                        matte_fname_se = etree.SubElement(new_submission, 'MatteFileName')
+                        matte_fname_se.text = os.path.basename(s_dpx_dest)
             sframe_se = etree.SubElement(new_submission, 'StartFrame')
             sframe_se.text = "%d" % (start_frame - 1)
             eframe_se = etree.SubElement(new_submission, 'EndFrame')
