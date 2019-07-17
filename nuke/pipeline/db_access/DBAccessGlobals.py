@@ -11,6 +11,7 @@ import re
 
 import DBAccess
 import ShotgunDBAccess
+import AirtableDBAccess
 
 # globals
 

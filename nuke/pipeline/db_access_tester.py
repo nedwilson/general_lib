@@ -9,11 +9,11 @@ from timecode import TimeCode
 
 import db_access as DB
 
-sgdb = DB.DBAccessGlobals.get_db_access()
+atdb = DB.DBAccessGlobals.get_db_access()
 # shot = sgdb.fetch_shot('TS000_000')
 # shot = sgdb.fetch_shot('CB061_300')
 
-# seq = sgdb.fetch_sequence('sa')
+# seq = atdb.fetch_sequence('TST')
 # print seq
 
 # shot = sgdb.fetch_shot('sa3080')
@@ -21,11 +21,15 @@ sgdb = DB.DBAccessGlobals.get_db_access()
 # seq = sgdb.fetch_sequence('CB061')
 # print seq
 
-# print "Sequence Create"
-# new_seq_path = DB.DBAccess.get_path_for_sequence('TS000')
-# new_seq_obj = DB.Sequence('TS000', new_seq_path, -1)
-# sgdb.create_sequence(new_seq_obj)
-# print new_seq_obj
+print("Sequence Create")
+new_seq_path = DB.DBAccessGlobals.get_path_for_sequence('TST')
+new_seq_obj = DB.Sequence('TST', new_seq_path, -1)
+atdb.create_sequence(new_seq_obj)
+print(new_seq_obj)
+
+print("Sequence Fetch by Name")
+seq = atdb.fetch_sequence('TST')
+print(seq)
 
 # print "Shot Create"
 # new_shot_path = DB.DBAccess.get_path_for_shot('TS000_000')
@@ -111,7 +115,7 @@ sgdb = DB.DBAccessGlobals.get_db_access()
 
 # Playlists - uncomment out the following to test this functionality
 
-dbplaylists = sgdb.fetch_playlists_timeframe()
+# dbplaylists = sgdb.fetch_playlists_timeframe()
 
-for dbplaylist in dbplaylists:
-    print(dbplaylist)
+# for dbplaylist in dbplaylists:
+#     print(dbplaylist)
